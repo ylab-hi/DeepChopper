@@ -83,4 +83,10 @@ mod tests {
             "CCTTTAAGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGTTTT"
         );
     }
+
+    #[test]
+    fn test_fq() {
+        let fastq_path = PathBuf::from("tests/data/test.fq.gz");
+        let result = read_fx(fastq_path);
+    }
 }

@@ -1,4 +1,4 @@
-# <img src="https://raw.githubusercontent.com/ylab-hi/DeepChopper/main/documentation/logo.webp?token=GHSAT0AAAAAACNLSJM6SZSQQEH27AHB4NUCZOL4KHA" alt="logo" height=100> **DeepChopper** [![social](https://img.shields.io/github/stars/ylab-hi/DeepChopper?style=social)](https://github.com/ylab-hi/DeepChopper/stargazers)
+# <img src="./documentation/logo.webp" alt="logo" height=100> **DeepChopper** [![social](https://img.shields.io/github/stars/ylab-hi/DeepChopper?style=social)](https://github.com/ylab-hi/DeepChopper/stargazers)
 
 <!--toc:start-->
 
