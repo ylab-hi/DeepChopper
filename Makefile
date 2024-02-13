@@ -4,7 +4,8 @@ ts := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # get current pwd
 current_dir = $(shell pwd)
-PANDA_CONFIG_PATH = $(current_dir)/configs
+DC_CONFIG_PATH = $(current_dir)/configs
+POETRY  = poetry@master
 
 .PHONY: help
 help: ## This help message
@@ -15,7 +16,7 @@ help: ## This help message
 
 .PHONY: train
 train: ## Train models
-	PANDA_CONFIG_PATH=$(PANDA_CONFIG_PATH) panda-train
+	DC_CONFIG_PATH=$(DC_CONFIG_PATH) panda-train
 
 ##############################################
 
@@ -37,7 +38,7 @@ install: dev-packages ## Install module into current virtualenv
 
 .PHONY: publish
 publish: ## Publish crate on Pypi
-	poetry run maturin publish
+	$(POETRY) run maturin publish
 
 .PHONY: clean
 clean: ## Clean up build artifacts
@@ -55,7 +56,7 @@ clean-logs: ## Clean logs
 
 .PHONY: dev-packages
 dev-packages: ## Install Python development packages for project
-	poetry install
+	$(POETRY)  install
 
 .PHONY: cargo-test
 cargo-test: ## Run cargo tests only
@@ -66,23 +67,23 @@ test: cargo-test dev-packages install quicktest ## Install rscannls module and r
 
 .PHONY: quicktest
 quicktest: ## Run tests on already installed hyperjson module
-	poetry run pytest tests -k "not slow"
+	$(POETRY)  run pytest tests -k "not slow"
 
 .PHONY: test-all
 test-all: ## Run all tests
-	poetry run pytest tests
+	$(POETRY)  run pytest tests
 
 .PHONY: bench
 bench: ## Run benchmarks
-	poetry run pytest benchmarks
+	$(POETRY)  run pytest benchmarks
 
 .PHONY: bench-compare
 bench-compare: nightly dev-packages install ## Run benchmarks and compare results with other JSON encoders
-	poetry run pytest benchmarks --compare
+	$(POETRY)  run pytest benchmarks --compare
 
 .PHONY: build-profile
 build-profile: ## Builds binary for profiling
-	cd profiling && poetry run cargo build --release
+	cd profiling && $(POETRY)  run cargo build --release
 
 # Setup instructions here:
 # https://gist.github.com/dlaehnemann/df31787c41bd50c0fe223df07cf6eb89

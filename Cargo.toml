@@ -14,23 +14,20 @@ anyhow = "1.0"
 walkdir = { version = "2.4" }
 rayon = { version = "1.8" }
 pyo3 = { version = "0.20.2", features = [
-    "abi3-py39",
+    "abi3-py310",
     "extension-module",
     "auto-initialize",
 ] }
-noodles-bam = "0.55.0"
 noodles-bgzf = "0.26.0"
 noodles-csi = "0.30.0"
 noodles-fasta = "0.32.0"
 noodles-fastq = "0.10.0"
-noodles-sam = "0.52.0"
 noodles-core = "0.14"
 bio = "1.5"
 needletail = "0.5"
 
 numpy = "0.20"
 ndarray = { version = "0.15", features = ["serde", "rayon"] }
-fast_image_resize = { version = "3.0.3" }
 num-traits = { version = "0.2" }
 serde = "1.0"
 serde_derive = "1.0"
