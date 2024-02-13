@@ -1,11 +1,11 @@
-# DeepChopper
+# <img src="https://raw.githubusercontent.com/ylab-hi/DeepChopper/main/documentation/logo2.webp" alt="logo" height=100> **DeepChopper** [![social](https://img.shields.io/github/stars/ylab-hi/DeepChopper?style=social)](https://github.com/ylab-hi/DeepChopper/stargazers)
 
 <!--toc:start-->
 
-- [DeepChopper](#deepchopper)
-  - [Feature](#feature)
-  - [🤜 Contribution](#%F0%9F%A4%9C-contribution)
-  <!--toc:end-->
+- [Feature](#feature)
+- [🤜 Contribution](#%F0%9F%A4%9C-contribution)
+
+<!--toc:end-->
 
 deep learning adapter chopper for ont direct-rna data
 
