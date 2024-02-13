@@ -1,15 +1,7 @@
 use anyhow::Result;
 use std::path::Path;
 
-use noodles_fasta as fasta;
-
 use needletail::{parse_fastx_file, FastxReader, Sequence};
-
-pub fn read_fa<P: AsRef<Path>>(fasta_path: P) -> Result<Vec<fasta::record::Record>> {
-    let mut reader = fasta::reader::Builder.build_from_path(fasta_path.as_ref())?;
-    let results: Vec<_> = reader.records().map(|record| record.unwrap()).collect();
-    Ok(results)
-}
 
 pub fn read_fx<P: AsRef<Path>>(path: P) -> Result<()> {
     let mut n_bases = 0;
@@ -26,7 +18,12 @@ pub fn read_fx<P: AsRef<Path>>(path: P) -> Result<()> {
         // `canonical_kmers` to draw the complemented sequences from.
         let rc = norm_seq.reverse_complement();
 
+        let qual = seqrec.qual().unwrap_or(b"");
+
         println!(">{}", String::from_utf8_lossy(seqrec.id()));
+        println!("seq len: {}", seqrec.num_bases());
+        println!("{}", String::from_utf8_lossy(qual));
+
         // now we keep track of the number of AAAAs (or TTTTs via
         // canonicalization) in the file; note we also get the position (i.0;
         // in the event there were `N`-containing kmers that were skipped)
@@ -54,39 +51,8 @@ mod tests {
     }
 
     #[test]
-    fn test_read_fa() {
-        let fasta_path = PathBuf::from("tests/data/test.fa");
-
-        // Call the read_fa function
-        let result = read_fa(fasta_path);
-
-        // Assert that the result is Ok
-        assert!(result.is_ok());
-
-        // Assert that the returned vector has the correct length
-        let records = result.unwrap();
-        assert_eq!(records.len(), 2);
-
-        // Assert that the first record has the correct name and sequence
-        let first_record = &records[0];
-        assert_eq!(first_record.name(), b"case1");
-        assert_eq!(
-            String::from_utf8_lossy(first_record.sequence().as_ref()),
-            "AATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
-        );
-
-        // Assert that the second record has the correct name and sequence
-        let second_record = &records[1];
-        assert_eq!(second_record.name(), b"case2");
-        assert_eq!(
-            String::from_utf8_lossy(second_record.sequence().as_ref()),
-            "CCTTTAAGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGTTTT"
-        );
-    }
-
-    #[test]
     fn test_fq() {
-        let fastq_path = PathBuf::from("tests/data/test.fq.gz");
-        let result = read_fx(fastq_path);
+        let fastq_path = PathBuf::from("tests/data/simple.fq");
+        let _result = read_fx(fastq_path);
     }
 }
