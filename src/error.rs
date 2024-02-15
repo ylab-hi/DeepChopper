@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 use pyo3::PyErr;
 use thiserror::Error;
 
@@ -20,8 +18,11 @@ pub enum EncodingError {
     #[error("The k-mer id is invalid")]
     InvalidKmerIndex,
 
-    #[error("The interval is invalid: {0} ")]
+    #[error("The interval is invalid: {0}")]
     InvalidInterval(String),
+
+    #[error("The sequence and quality scores have different lengths: {0}")]
+    NotSameLengthForQualityAndSequence(String),
 }
 
 impl From<EncodingError> for PyErr {
@@ -41,6 +42,12 @@ impl From<EncodingError> for PyErr {
                 "The interval is invalid: {:?}",
                 interval
             )),
+            NotSameLengthForQualityAndSequence(mes) => {
+                pyo3::exceptions::PyException::new_err(format!(
+                    "The sequence and quality scores have different lengths: {:?}",
+                    mes
+                ))
+            }
         }
     }
 }

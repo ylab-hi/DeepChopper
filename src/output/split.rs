@@ -1,8 +1,49 @@
+use anyhow::Result;
 use bstr::BStr;
 use rayon::prelude::*;
 use std::ops::Range;
 
-use crate::error::EncodingError;
+use crate::{error::EncodingError, fq_encode::RecordData};
+
+pub fn generate_records_by_remove_interval(
+    seq: &BStr,
+    id: &BStr,
+    qual: &BStr,
+    target: &[Range<usize>],
+) -> Result<Vec<RecordData>, EncodingError> {
+    let mut seqs = Vec::new();
+    let mut quals = Vec::new();
+
+    rayon::scope(|s| {
+        s.spawn(|_| {
+            seqs = remove_intervals_and_keep_left(seq, target).unwrap();
+        });
+        s.spawn(|_| {
+            quals = remove_intervals_and_keep_left(qual, target).unwrap();
+        });
+    });
+
+    // Ensure seqs and quals have the same length; otherwise, return an error or handle as needed
+    if seqs.len() != qual.len() {
+        return Err(EncodingError::NotSameLengthForQualityAndSequence(format!(
+            "seqs: {:?}, quals: {:?}",
+            seqs.len(),
+            quals.len()
+        )));
+    }
+
+    let ids: Vec<String> = (0..seqs.len()).map(|x| format!("{}{}", id, x)).collect();
+
+    let records = ids
+        .into_iter()
+        .zip(seqs.into_iter().zip(quals))
+        .map(|(id, (seq, qual))| {
+            RecordData::new(id.as_bytes().to_vec(), seq.to_vec(), qual.to_vec())
+        })
+        .collect();
+
+    Ok(records)
+}
 
 pub fn generate_unmaped_intervals(
     input: &[Range<usize>],
