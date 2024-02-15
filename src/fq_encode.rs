@@ -13,8 +13,7 @@ use crate::error::EncodingError;
 use crate::kmer::{generate_kmers_table, to_kmer_target_region};
 
 use crate::default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET};
-
-use crate::types::{Element, KmerTable, Matrix, Tensor};
+use crate::types::{Element, Id2KmerTable, Kmer2IdTable, Matrix, Tensor};
 
 // @462:528|738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8
 // CGTTGGTGGTGTTCAGTTGTGGCGGTTGCTGGTCAGTAACAGCCAAGATGCTGCGGAATCTGCTGGCTTACCGTCAGATTGGGCAGAGGACGATAAGCACTGCTTCCCGCAGGCATTTTAAAAATAAAGTTCCGGAGAAGCAAAACTGTTCCAGGAGGATGATGAAATTCCACTGTATCTAAAAGGGTAGGGTAGCTGATGCCCTCCTGTATAGAGCCACCATGATCTTACAGTTGGTGGAACAGCATATGCCATATATGAGCTGGCTGTGGCTTCATTTCCCAAGAAGCAGGAGTGACTTTCAGCTTTATCTCCAGCAATTGCTTGGTCAGTTTTTCATTCAGCTCTCTATGGACCAGTAATCTGATAAATAACCGAGCTCTTCTTTGGGGATCAATATTTATTGATTGTAGTAACTGCCACCAATAAAGCAGTCTTTACCATGAAAAAAAAAAAAAAAAATCCCCCTACCCCTCTCTCCCAACTTATCCATACACAACCTGCCCCTCCAACCTCTTTCTAAACCCTTGGCGCCTCGGAGGCGTTCAGCTGCTTCAAGATGAAGCTGAACATCTTCCTTCCCAGCCACTGGCTGCCAGAAACTCATTGAAGTGGACGATGAACGCAAACTTCTGCACTTTCTATGAGAAGCGTATGGCCACAGAAGTTGCTGCTGACGCTTTGGGTGAAGAATGGAAGGGTTATGTGGTCCGAATCAGTGGTGGGAACGACAAACAAGGTTTCCCCATGAAGCAGGGTGTCTTGACCCATGGCCGTGTCCGCCTGCTACTGAGTAAGGGGCATTCCTGTTACAGACCAAGGAGAACTGGAGAAAGAAAGAGAAAATCAGTTCGTGGTTGCATTGTGGATGCAATCTGAGCGTTCTCAACTTGGTTATTGTAAAAAGGAGAGAAGGATATTCCTGGACTGACTGATACTACAGTGCCTCGCCGCCTGGGCCCCAAAAGAGCTAGCAGAATCCGCAAACTTTTCAATCTCTCTAAAAAGAAGATGATGTCCGCCAGTATCGTTGTAAGAAAGCCCTAAAATAAAGAAGGTAAGAAACCTAGGACCAAAGCACCCAAGATTCAGCGTCTGTTACTCCACGTGTCCTGCAGCACAAACGGCGGCGTATTGCTCTGAAGAAGCAGCGTACCAAGAAAAATAAAAGAAGAGGCTGCAGAATATGCTAAACTTTTGGCCTAGAGAATGAAGGAGGCTAAGGAGAAGCGCCAGGAACAAATTGCGAAGAGACGCAGACTTTCCTCTCTGCGGGACTCTACTTCTAAGTCTGAATCCAGTCAGAAATAAGATTTTTTGAGTAACAAATAATAAGATCGGGACTCTGA
@@ -75,13 +74,18 @@ impl FqEncoderOption {
 #[derive(Debug, Builder, Default)]
 pub struct FqEncoder {
     pub option: FqEncoderOption,
-    pub kmer_table: KmerTable,
     pub max_width: usize,
+    pub kmer2id_table: Kmer2IdTable,
+    pub id2kmer_table: Id2KmerTable,
 }
 
 impl FqEncoder {
     pub fn new(option: FqEncoderOption) -> Self {
-        let kmer_table = generate_kmers_table(&option.bases, option.kmer_size);
+        let kmer2id_table = generate_kmers_table(&option.bases, option.kmer_size);
+        let id2kmer_table: Id2KmerTable = kmer2id_table
+            .iter()
+            .map(|(kmer, id)| (*id, kmer.clone()))
+            .collect();
 
         // rayon::ThreadPoolBuilder::new()
         //     .num_threads(1)
@@ -90,7 +94,8 @@ impl FqEncoder {
 
         Self {
             option,
-            kmer_table,
+            kmer2id_table,
+            id2kmer_table,
             ..Default::default()
         }
     }
@@ -212,7 +217,7 @@ impl FqEncoder {
             .par_iter()
             .map(|&s| {
                 *self
-                    .kmer_table
+                    .kmer2id_table
                     .get(s)
                     .context(format!("invalid kmer {}", String::from_utf8_lossy(s)))
                     .unwrap()
@@ -316,7 +321,7 @@ impl FqEncoder {
 mod tests {
     use ndarray::Array1;
 
-    use crate::kmer::to_original_targtet_region;
+    use crate::kmer::{kmerids_to_seq, to_original_targtet_region};
 
     use super::*;
 
@@ -370,11 +375,13 @@ mod tests {
             .vectorized_target(true)
             .build()
             .unwrap();
+
         let mut encoder = FqEncoder::new(option);
         let (_input, target) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
         let k = 3;
 
         let actual = 462..528;
+        // let actual_target_seq = _input.slice(s![0, 0, actual.clone()]);
 
         let kmer_target = to_kmer_target_region(&actual, k, None).unwrap();
         let expected_target = to_original_targtet_region(&kmer_target, k);
@@ -384,8 +391,15 @@ mod tests {
         let expected_vectorized_target = Array1::<Element>::from_elem(kmer_target.len(), 1);
 
         assert_eq!(
-            target.slice(s![0, 0, kmer_target.start..kmer_target.end]),
+            target.slice(s![0, 0, kmer_target.clone()]),
             expected_vectorized_target
         );
+
+        // construct sequence from list of kmerid
+        let actual_target_seq =
+            b"TCCCCCTACCCCTCTCTCCCAACTTATCCATACACAACCTGCCCCTCCAACCTCTTTCTAAACCCT";
+        let kmerids = _input.slice(s![0, 0, kmer_target]).to_vec();
+        let kmer_seq: Vec<u8> = kmerids_to_seq(&kmerids, encoder.id2kmer_table).unwrap();
+        assert_eq!(actual_target_seq, kmer_seq.as_slice());
     }
 }

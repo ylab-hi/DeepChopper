@@ -5,9 +5,26 @@ use std::ops::Range;
 
 use crate::{
     error::EncodingError,
-    types::{Element, KmerTable},
+    types::{Element, Id2KmerTable, Kmer2IdTable},
 };
 use anyhow::Result;
+
+pub fn kmerids_to_seq(
+    kmer_ids: &[Element],
+    id2kmer_table: Id2KmerTable,
+) -> Result<Vec<u8>, EncodingError> {
+    let result = kmer_ids
+        .par_iter()
+        .map(|&id| {
+            id2kmer_table
+                .get(&id)
+                .ok_or(EncodingError::InvalidKmerIndex)
+                .map(|kmer| kmer.as_ref())
+        })
+        .collect::<Result<Vec<_>, EncodingError>>()?;
+
+    Ok(kmers_to_seq(result))
+}
 
 pub fn to_original_targtet_region(kmer_target: &Range<usize>, k: usize) -> Range<usize> {
     // The start of the target region remains the same
@@ -82,7 +99,7 @@ pub fn kmers_to_seq(kmers: Vec<&[u8]>) -> Vec<u8> {
     sequence
 }
 
-pub fn generate_kmers_table(base: &[u8], k: u8) -> KmerTable {
+pub fn generate_kmers_table(base: &[u8], k: u8) -> Kmer2IdTable {
     generate_kmers(base, k)
         .into_par_iter()
         .enumerate()
@@ -146,7 +163,7 @@ mod tests {
     fn test_generate_kmers_table() {
         let base = b"ACGT";
         let k = 2;
-        let expected_table: KmerTable = [
+        let expected_table: Kmer2IdTable = [
             ("AA", 0),
             ("GC", 9),
             ("GT", 11),
@@ -177,7 +194,7 @@ mod tests {
 
         let base = b"";
         let k = 2;
-        let expected_table: KmerTable = HashMap::new();
+        let expected_table: Kmer2IdTable = HashMap::new();
         assert_eq!(generate_kmers_table(base, k), expected_table);
     }
 

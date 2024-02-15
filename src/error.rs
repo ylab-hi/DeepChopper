@@ -14,6 +14,9 @@ pub enum EncodingError {
 
     #[error("The target region is invalid")]
     TargetRegionInvalid,
+
+    #[error("The k-mer id is invalid")]
+    InvalidKmerIndex,
 }
 
 impl From<EncodingError> for PyErr {
@@ -28,6 +31,7 @@ impl From<EncodingError> for PyErr {
             TargetRegionInvalid => {
                 pyo3::exceptions::PyException::new_err("The target region is invalid")
             }
+            InvalidKmerIndex => pyo3::exceptions::PyException::new_err("The k-mer id is invalid"),
         }
     }
 }

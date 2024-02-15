@@ -1,7 +1,7 @@
 use crate::{
     default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET},
     fq_encode, kmer,
-    types::{Element, KmerTable},
+    types::{Element, Id2KmerTable, Kmer2IdTable},
 };
 use numpy::{IntoPyArray, PyArray3};
 use pyo3::prelude::*;
@@ -15,6 +15,15 @@ fn default(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add("KMER_SIZE", KMER_SIZE)?;
     m.add("VECTORIZED_TARGET", VECTORIZED_TARGET)?;
     Ok(())
+}
+
+#[pyfunction]
+fn kmerids_to_seq(kmer_ids: Vec<Element>, kmer2id_table: Id2KmerTable) -> PyResult<String> {
+    let result = kmer::kmerids_to_seq(&kmer_ids, kmer2id_table).map_err(|e| e.into());
+    match result {
+        Ok(r) => Ok(String::from_utf8_lossy(&r).to_string()),
+        Err(e) => Err(e),
+    }
 }
 
 #[pyfunction]
@@ -51,7 +60,7 @@ fn kmers_to_seq(kmers: Vec<String>) -> String {
 }
 
 #[pyfunction]
-fn generate_kmers_table(base: String, k: usize) -> KmerTable {
+fn generate_kmers_table(base: String, k: usize) -> Kmer2IdTable {
     let base = base.as_bytes();
     kmer::generate_kmers_table(base, k as u8)
 }
@@ -88,7 +97,7 @@ fn encode_fqs(
     let (input, target) = encoder.encoder_fqs(fq_path).unwrap();
 
     let kmer2id: HashMap<String, Element> = encoder
-        .kmer_table
+        .kmer2id_table
         .par_iter()
         .map(|(k, v)| (String::from_utf8_lossy(k).to_string(), *v))
         .collect();
@@ -113,6 +122,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(encode_fqs, m)?)?;
     m.add_function(wrap_pyfunction!(to_kmer_target_region, m)?)?;
     m.add_function(wrap_pyfunction!(to_original_targtet_region, m)?)?;
+    m.add_function(wrap_pyfunction!(kmerids_to_seq, m)?)?;
 
     let default_module = PyModule::new(_py, "default")?;
     default(_py, default_module)?;
