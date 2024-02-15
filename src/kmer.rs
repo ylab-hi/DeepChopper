@@ -1,10 +1,63 @@
 use itertools::Itertools;
 use needletail::kmer::Kmers;
-use std::collections::HashMap;
+use rayon::prelude::*;
+use std::{collections::HashMap, ops::Range};
 
-use crate::fq_encode::Element;
+use crate::{error::EncodingError, fq_encode::Element};
+use anyhow::Result;
 
 pub type KmerTable = HashMap<Vec<u8>, Element>;
+
+fn reverse_update_target_region(updated_target: &Range<usize>, k: usize) -> Range<usize> {
+    // The start of the target region remains the same
+    let original_start = updated_target.start;
+
+    // Attempt to reverse the end adjustment by adding k - 1, assuming the adjustment was due to k-mer calculation
+    let original_end = if updated_target.end > original_start {
+        updated_target.end + k - 1
+    } else {
+        updated_target.end
+    };
+
+    original_start..original_end
+}
+
+pub fn to_kmer_target_region(
+    original_target: &Range<usize>,
+    k: usize,
+    seq_len: Option<usize>,
+) -> Result<Range<usize>> {
+    if original_target.start >= original_target.end || k == 0 {
+        return Err(EncodingError::TargetRegionInvalid.into());
+    }
+
+    if let Some(seq_len) = seq_len {
+        // Ensure the target region is valid.
+        if original_target.end > seq_len {
+            return Err(EncodingError::TargetRegionInvalid.into());
+        }
+    }
+
+    // Calculate how many k-mers can be formed starting within the original target region.
+    let num_kmers_in_target = if original_target.end - original_target.start >= k {
+        original_target.end - original_target.start - k + 1
+    } else {
+        0
+    };
+
+    // The new target region starts at the same position as the original target region.
+    let new_start = original_target.start;
+
+    // The end of the new target region needs to be adjusted based on the number of k-mers.
+    // It is the start position of the last k-mer that can be formed within the original target region.
+    let new_end = if num_kmers_in_target > 0 {
+        new_start + num_kmers_in_target
+    } else {
+        original_target.end
+    };
+
+    Ok(new_start..new_end)
+}
 
 pub fn seq_to_kmers(seq: &[u8], k: u8) -> Kmers {
     Kmers::new(seq, k)
@@ -30,7 +83,7 @@ pub fn kmers_to_seq(kmers: Vec<&[u8]>) -> Vec<u8> {
 
 pub fn generate_kmers_table(base: &[u8], k: u8) -> KmerTable {
     generate_kmers(base, k)
-        .into_iter()
+        .into_par_iter()
         .enumerate()
         .map(|(id, kmer)| (kmer, id as Element))
         .collect()
@@ -48,6 +101,7 @@ pub fn generate_kmers(bases: &[u8], k: u8) -> Vec<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bio::utils::Interval;
 
     #[test]
     fn test_seq_to_kmers() {
@@ -132,5 +186,58 @@ mod tests {
         let kmers_as_bytes: Vec<&[u8]> = kmers.into_iter().collect();
         let result = kmers_to_seq(kmers_as_bytes);
         assert_eq!(seq.to_vec(), result);
+    }
+
+    #[test]
+    fn test_update_target_region() {
+        let original_target: Interval<usize> = (2..6).into(); // Target region [2, 6)
+        let k = 3; // K-mer size
+        let new_target_region = to_kmer_target_region(&original_target, k, None).unwrap();
+        assert_eq!(new_target_region, (2..4));
+    }
+
+    #[test]
+    fn test_update_target_region_valid() {
+        let original_target = Interval::new(0..10).unwrap();
+        let k = 3;
+        let seq_len = Some(20);
+
+        let result = to_kmer_target_region(&original_target, k, seq_len);
+
+        assert!(result.is_ok());
+        let new_target = result.unwrap();
+
+        assert_eq!(new_target.start, original_target.start);
+        assert_eq!(new_target.end, original_target.start + 8);
+    }
+
+    #[test]
+    fn test_update_target_region_invalid_start_greater_than_end() {
+        let original_target = Interval::new(10..10).unwrap();
+        let k = 3;
+        let seq_len = Some(20);
+
+        let result = to_kmer_target_region(&original_target, k, seq_len);
+        assert!(result.is_err());
+
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            EncodingError::TargetRegionInvalid.to_string()
+        );
+    }
+
+    #[test]
+    fn test_update_target_region_invalid_end_greater_than_seq_len() {
+        let original_target = Interval::new(0..25).unwrap();
+        let k = 3;
+        let seq_len = Some(20);
+
+        let result = to_kmer_target_region(&original_target, k, seq_len);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            EncodingError::TargetRegionInvalid.to_string()
+        );
     }
 }

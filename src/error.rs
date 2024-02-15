@@ -5,10 +5,15 @@ use thiserror::Error;
 pub enum EncodingError {
     #[error("An error occurred: {0}")]
     Generic(String),
+
     #[error("Another error occurred")]
     Another,
+
     #[error("The sequence is shorter than the k-mer size")]
     SeqShorterThanKmer,
+
+    #[error("The target region is invalid")]
+    TargetRegionInvalid,
 }
 
 impl From<EncodingError> for PyErr {
@@ -20,6 +25,9 @@ impl From<EncodingError> for PyErr {
             SeqShorterThanKmer => pyo3::exceptions::PyException::new_err(
                 "The sequence is shorter than the k-mer size",
             ),
+            TargetRegionInvalid => {
+                pyo3::exceptions::PyException::new_err("The target region is invalid")
+            }
         }
     }
 }

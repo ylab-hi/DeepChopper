@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use derive_builder::Builder;
+use std::ops::Range;
 use std::path::Path;
 
 use anyhow::Context;
@@ -85,7 +86,7 @@ impl FqEncoder {
         Self { option, kmer_table }
     }
 
-    fn parse_target_from_id(src: &[u8]) -> Result<Vec<Interval<usize>>> {
+    fn parse_target_from_id(src: &[u8]) -> Result<Vec<Range<usize>>> {
         // check empty input
         if src.is_empty() {
             return Ok(Vec::new());
@@ -95,21 +96,20 @@ impl FqEncoder {
         // removea content after |
         let number_part = src.split(|&c| c == b'|').next().unwrap();
 
-        Ok(number_part
+        number_part
             .par_split(|&c| c == b',')
             .map(|target| {
                 let mut parts = target.split(|&c| c == b':');
+
                 let start: usize =
-                    lexical::parse(parts.next().ok_or(anyhow!("parse number error")).unwrap())
-                        .unwrap();
+                    lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
+
                 let end: usize =
-                    lexical::parse(parts.next().ok_or(anyhow!("parse number error")).unwrap())
-                        .unwrap();
-                Interval::new(start..end)
-                    .context("failed to parse interval")
-                    .unwrap()
+                    lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
+
+                Ok(start..end)
             })
-            .collect::<Vec<_>>())
+            .collect::<Result<Vec<_>>>()
     }
 
     fn encode_target(&self, id: &[u8]) -> Result<Tensor> {
@@ -279,25 +279,22 @@ mod tests {
     #[test]
     fn test_parse_target_from_id() {
         // Test case 1: Valid input
-        let src = b"@462:528,100:120";
-        let expected = vec![
-            Interval::new(462..528).unwrap(),
-            Interval::new(100..120).unwrap(),
-        ];
+        let src = b"462:528,100:120";
+        let expected = vec![462..528, 100..120];
 
         assert_eq!(FqEncoder::parse_target_from_id(src).unwrap(), expected);
 
         // Test case 2: Empty input
         let src = b"";
-        let expected: Vec<Interval<usize>> = Vec::new();
+        let expected: Vec<Range<usize>> = Vec::new();
         assert_eq!(FqEncoder::parse_target_from_id(src).unwrap(), expected);
 
         // Test case 3: Invalid input (missing colon)
-        let src = b"@462528,100:120";
+        let src = b"462528,100:120";
         assert!(FqEncoder::parse_target_from_id(src).is_err());
 
         // Test case 4: Invalid input (invalid number)
-        let src = b"@462:528,100:abc";
+        let src = b"462:528,100:abc";
         assert!(FqEncoder::parse_target_from_id(src).is_err());
     }
 
