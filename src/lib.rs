@@ -3,4 +3,5 @@
 extern crate derive_builder;
 
 mod fq;
+mod kmer;
 mod python;
