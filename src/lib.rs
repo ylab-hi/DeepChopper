@@ -7,3 +7,4 @@ mod error;
 mod fq_encode;
 mod kmer;
 mod python;
+mod types;

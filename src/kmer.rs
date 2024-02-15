@@ -1,12 +1,13 @@
 use itertools::Itertools;
 use needletail::kmer::Kmers;
 use rayon::prelude::*;
-use std::{collections::HashMap, ops::Range};
+use std::ops::Range;
 
-use crate::{error::EncodingError, fq_encode::Element};
+use crate::{
+    error::EncodingError,
+    types::{Element, KmerTable},
+};
 use anyhow::Result;
-
-pub type KmerTable = HashMap<Vec<u8>, Element>;
 
 pub fn to_original_targtet_region(kmer_target: &Range<usize>, k: usize) -> Range<usize> {
     // The start of the target region remains the same
@@ -172,6 +173,8 @@ mod tests {
 
     #[test]
     fn test_generate_kmers_table_empty_base() {
+        use std::collections::HashMap;
+
         let base = b"";
         let k = 2;
         let expected_table: KmerTable = HashMap::new();

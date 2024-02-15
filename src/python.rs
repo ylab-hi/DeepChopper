@@ -1,7 +1,7 @@
 use crate::{
-    default::{self, QUAL_OFFSET},
-    fq_encode::{self, Element},
-    kmer,
+    default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET},
+    fq_encode, kmer,
+    types::{Element, KmerTable},
 };
 use numpy::{IntoPyArray, PyArray3};
 use pyo3::prelude::*;
@@ -9,12 +9,11 @@ use rayon::prelude::*;
 use std::{collections::HashMap, path::PathBuf};
 
 #[pymodule]
-#[allow(non_snake_case)]
-fn DEFAULT(_py: Python, m: &PyModule) -> PyResult<()> {
+fn default(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add("QUAL_OFFSET", QUAL_OFFSET)?;
-    m.add("BASES", default::BASES)?;
-    m.add("KMER_SIZE", default::KMER_SIZE)?;
-    m.add("VECTORIZED_TARGET", default::VECTORIZED_TARGET)?;
+    m.add("BASES", BASES)?;
+    m.add("KMER_SIZE", KMER_SIZE)?;
+    m.add("VECTORIZED_TARGET", VECTORIZED_TARGET)?;
     Ok(())
 }
 
@@ -52,7 +51,7 @@ fn kmers_to_seq(kmers: Vec<String>) -> String {
 }
 
 #[pyfunction]
-fn generate_kmers_table(base: String, k: usize) -> kmer::KmerTable {
+fn generate_kmers_table(base: String, k: usize) -> KmerTable {
     let base = base.as_bytes();
     kmer::generate_kmers_table(base, k as u8)
 }
@@ -115,8 +114,8 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(to_kmer_target_region, m)?)?;
     m.add_function(wrap_pyfunction!(to_original_targtet_region, m)?)?;
 
-    let default_module = PyModule::new(_py, "DEFAULT")?;
-    DEFAULT(_py, default_module)?;
+    let default_module = PyModule::new(_py, "default")?;
+    default(_py, default_module)?;
     m.add_submodule(default_module)?;
 
     Ok(())
