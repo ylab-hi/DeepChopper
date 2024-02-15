@@ -5,8 +5,8 @@ import pytest
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
 
-from panda.eval import evaluate
-from panda.train import train
+from deepchopper.eval import evaluate
+from deepchopper.train import train
 
 
 @pytest.mark.slow

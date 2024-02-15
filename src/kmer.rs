@@ -2,7 +2,9 @@ use itertools::Itertools;
 use needletail::kmer::Kmers;
 use std::collections::HashMap;
 
-pub type KmerTable = HashMap<Vec<u8>, usize>;
+use crate::fq_encode::Element;
+
+pub type KmerTable = HashMap<Vec<u8>, Element>;
 
 pub fn seq_to_kmers(seq: &[u8], k: u8) -> Kmers {
     Kmers::new(seq, k)
@@ -30,7 +32,7 @@ pub fn generate_kmers_table(base: &[u8], k: u8) -> KmerTable {
     generate_kmers(base, k)
         .into_iter()
         .enumerate()
-        .map(|(id, kmer)| (kmer, id))
+        .map(|(id, kmer)| (kmer, id as Element))
         .collect()
 }
 
@@ -76,7 +78,7 @@ mod tests {
     fn test_generate_kmers_table() {
         let base = b"ACGT";
         let k = 2;
-        let expected_table: HashMap<Vec<u8>, usize> = [
+        let expected_table: KmerTable = [
             ("AA", 0),
             ("GC", 9),
             ("GT", 11),
@@ -105,7 +107,7 @@ mod tests {
     fn test_generate_kmers_table_empty_base() {
         let base = b"";
         let k = 2;
-        let expected_table: HashMap<Vec<u8>, usize> = HashMap::new();
+        let expected_table: KmerTable = HashMap::new();
         assert_eq!(generate_kmers_table(base, k), expected_table);
     }
 

@@ -1,6 +1,15 @@
-from panda import sum_as_string
 
-def test_sum_as_string_add_2():
-    """Test sum_as_string function."""
-    result = sum_as_string(1, 2)
-    assert result == "3"
+from deepchopper import encode_fqs
+
+
+def test_encode_fqs():
+    data  = "tests/data/test.fq.gz"
+    k  = 3
+    bases = "ACGTN"
+    qual_offset = 33
+
+    inputs, target, kmer2idx = encode_fqs(data, k, bases, qual_offset)
+
+    print(inputs)
+    print(target)
+    print(kmer2idx)
