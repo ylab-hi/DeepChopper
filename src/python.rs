@@ -1,6 +1,6 @@
 use crate::{
     fq_encode::{self, Element},
-    kmer::{self, KmerTable},
+    kmer::{self},
 };
 use numpy::{IntoPyArray, PyArray3};
 use pyo3::prelude::*;
@@ -74,6 +74,8 @@ fn test_string() -> PyResult<String> {
 /// A Python module implemented in Rust.
 #[pymodule]
 fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
+    pyo3_log::init();
+
     m.add_function(wrap_pyfunction!(test_string, m)?)?;
     m.add_function(wrap_pyfunction!(seq_to_kmers, m)?)?;
     m.add_function(wrap_pyfunction!(kmers_to_seq, m)?)?;

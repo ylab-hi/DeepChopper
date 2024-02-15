@@ -18,6 +18,8 @@ pyo3 = { version = "0.20.2", features = [
     "extension-module",
     "auto-initialize",
 ] }
+
+pyo3-log = "0.9"
 noodles-bgzf = "0.26.0"
 noodles-csi = "0.30.0"
 noodles-fasta = "0.32.0"

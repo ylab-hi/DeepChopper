@@ -50,6 +50,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_seq_to_kmers() {
+        let seq1 = b"ATCGT";
+        let k = 2;
+        let kmers = seq_to_kmers(seq1, k);
+        assert_eq!(kmers.into_iter().count(), seq1.len() - k as usize + 1);
+
+        let seq2 = b"AT";
+        let k = 3;
+        let kmers = seq_to_kmers(seq2, k);
+        assert_eq!(kmers.into_iter().count(), 0);
+    }
+
+    #[test]
     fn test_generate_kmers() {
         // Test case 1: bases = ['A', 'C', 'G', 'T'], k = 2
         let bases1 = b"ACGT";

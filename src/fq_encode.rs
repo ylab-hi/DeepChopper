@@ -1,17 +1,17 @@
 use anyhow::{anyhow, Result};
 use derive_builder::Builder;
-use std::fmt::format;
 use std::path::Path;
 
 use anyhow::Context;
 use bio::utils::Interval; // 0-based, half-open interval [1, 10)
-use ndarray::{concatenate, s, stack, Axis, Zip};
+use ndarray::{concatenate, stack, Axis, Zip};
 
 use ndarray::{Array2, Array3};
 
 use needletail::{parse_fastx_file, Sequence};
 use rayon::prelude::*;
 
+use crate::error::EncodingError;
 use crate::kmer::{generate_kmers_table, KmerTable};
 
 // @462:528|738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8
@@ -26,11 +26,30 @@ pub type Tensor = Array3<Element>;
 pub const QUAL_OFFSET: u8 = 33;
 pub const BASES: &[u8] = b"ATCGN";
 
+#[derive(Debug)]
+pub struct RecordData {
+    id: Vec<u8>,
+    seq: Vec<u8>,
+    qual: Vec<u8>,
+}
+
+impl RecordData {
+    pub fn new(id: Vec<u8>, seq: Vec<u8>, qual: Vec<u8>) -> Self {
+        Self { id, seq, qual }
+    }
+}
+
+impl From<(Vec<u8>, Vec<u8>, Vec<u8>)> for RecordData {
+    fn from(data: (Vec<u8>, Vec<u8>, Vec<u8>)) -> Self {
+        Self::new(data.0, data.1, data.2)
+    }
+}
+
 #[derive(Debug, Builder, Default, Clone)]
 pub struct FqEncoderOption {
     #[builder(default = "3")]
     kmer_size: u8,
-    #[builder(default = "33")]
+    #[builder(default = "QUAL_OFFSET")]
     qual_offset: u8,
     #[builder(default = "BASES.to_vec()")]
     bases: Vec<u8>,
@@ -72,16 +91,12 @@ impl FqEncoder {
             return Ok(Vec::new());
         }
 
-        if src[0] == b'@' || src[0] == b'>' {
-            // remove the leading '@' character
-            let src = &src[1..];
-        }
         // @462:528,100:120|738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8
         // removea content after |
         let number_part = src.split(|&c| c == b'|').next().unwrap();
 
         Ok(number_part
-            .split(|&c| c == b',')
+            .par_split(|&c| c == b',')
             .map(|target| {
                 let mut parts = target.split(|&c| c == b':');
                 let start: usize =
@@ -97,9 +112,8 @@ impl FqEncoder {
             .collect::<Vec<_>>())
     }
 
-    fn encode_target(id: &[u8]) -> Result<Tensor> {
+    fn encode_target(&self, id: &[u8]) -> Result<Tensor> {
         let target = Self::parse_target_from_id(id).context("Failed to parse target from ID")?;
-
         let mut encoded_target = Tensor::zeros((1, target.len(), 2));
 
         // / Example of a parallel operation using Zip and par_apply from ndarray's parallel feature
@@ -123,7 +137,7 @@ impl FqEncoder {
         // input is quality of fastq
         // 1. convert the quality to a score
         // 2. return the score
-        qual.iter()
+        qual.par_iter()
             .map(|&q| {
                 // Convert ASCII to Phred score for Phred+33 encoding
                 q - offset
@@ -178,39 +192,57 @@ impl FqEncoder {
             .context("invalid matrix shape here")?;
 
         let encoded_input = stack![Axis(1), matrix_seq_id, matrix_qual];
-
-        let encoded_target = Self::encode_target(id)?;
+        let encoded_target = self.encode_target(id)?;
 
         Ok((encoded_input, encoded_target))
     }
 
-    pub fn encoder_fqs<P: AsRef<Path>>(&self, path: P) -> Result<(Tensor, Tensor)> {
-        let mut reader = parse_fastx_file(path.as_ref()).expect("valid path/file");
+    fn fetch_records<P: AsRef<Path>>(&self, path: P) -> Result<(Vec<RecordData>, usize)> {
+        let mut reader = parse_fastx_file(path.as_ref()).context("valid path/file")?;
         let mut records = Vec::new();
 
         let mut max_seq_len = 0;
 
         while let Some(record) = reader.next() {
-            let seqrec = record.expect("invalid record");
+            let seqrec = record.context("invalid record")?;
             let id = seqrec.id();
             let seq = seqrec.normalize(false);
-            let qual = seqrec.qual().expect("invalid qual");
+            let qual = seqrec.qual().context("invalid qual")?;
 
             let seq_len = seqrec.num_bases();
             let qual_len = qual.len();
+
+            if seq_len < self.option.kmer_size as usize {
+                continue;
+            }
+
             assert_eq!(seq_len, qual_len);
 
             if seq_len > max_seq_len {
                 max_seq_len = seq_len;
             }
-            records.push((id.to_vec(), seq.to_vec(), qual.to_vec()));
+            records.push((id.to_vec(), seq.to_vec(), qual.to_vec()).into());
+        }
+
+        Ok((records, max_seq_len))
+    }
+
+    pub fn encoder_fqs<P: AsRef<Path>>(&self, path: P) -> Result<(Tensor, Tensor)> {
+        let (records, max_seq_len) = self.fetch_records(path)?;
+
+        if max_seq_len < self.option.kmer_size as usize {
+            return Err(EncodingError::SeqShorterThanKmer.into());
         }
 
         let max_width = max_seq_len - self.option.kmer_size as usize + 1;
 
         let data = records
             .par_iter()
-            .map(|(id, seq, qual)| {
+            .map(|data| {
+                let id = data.id.as_ref();
+                let seq = data.seq.as_ref();
+                let qual = data.qual.as_ref();
+
                 self.encode_fq(id, seq, qual, max_width)
                     .context(format!(
                         "encode  fq read id {} error",
@@ -240,57 +272,9 @@ impl FqEncoder {
     }
 }
 
-pub fn read_fx<P: AsRef<Path>>(path: P) -> Result<()> {
-    let mut n_bases = 0;
-    let mut reader = parse_fastx_file(path.as_ref()).expect("valid path/file");
-
-    while let Some(record) = reader.next() {
-        let seqrec = record.expect("invalid record");
-        // keep track of the total number of bases
-        n_bases += seqrec.num_bases();
-        // normalize to make sure all the bases are consistently capitalized and
-        // that we remove the newlines since this is FASTA
-        let norm_seq = seqrec.normalize(false);
-        // we make a reverse complemented copy of the sequence first for
-        // `canonical_kmers` to draw the complemented sequences from.
-        let rc = norm_seq.reverse_complement();
-
-        let qual = seqrec.qual().unwrap_or(b"");
-
-        println!(">{}", String::from_utf8_lossy(seqrec.id()));
-        println!("seq len: {}", seqrec.num_bases());
-        println!("{}", String::from_utf8_lossy(qual));
-
-        // now we keep track of the number of AAAAs (or TTTTs via
-        // canonicalization) in the file; note we also get the position (i.0;
-        // in the event there were `N`-containing kmers that were skipped)
-        // and whether the sequence was complemented (i.2) in addition to
-        // the canonical kmer (i.1)
-        for kmer in norm_seq.kmers(3) {
-            println!("{}", String::from_utf8_lossy(kmer));
-        }
-    }
-
-    println!("Total bases: {}", n_bases);
-    Ok(())
-}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
-
-    #[test]
-    fn test_read_fx() {
-        let fasta_path = PathBuf::from("tests/data/test.fa");
-        let result = read_fx(fasta_path);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_fq() {
-        let fastq_path = PathBuf::from("tests/data/simple.fq");
-        let _result = read_fx(fastq_path);
-    }
 
     #[test]
     fn test_parse_target_from_id() {
@@ -324,7 +308,7 @@ mod tests {
             .build()
             .unwrap();
         let encoder = FqEncoder::new(option);
-        let (input, target) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+        let (_input, target) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
         assert_eq!(target[[0, 0, 0]], 462);
         assert_eq!(target[[0, 0, 1]], 528);
     }
