@@ -1,4 +1,5 @@
 use crate::{
+    default::{self, QUAL_OFFSET},
     fq_encode::{self, Element},
     kmer,
 };
@@ -6,6 +7,16 @@ use numpy::{IntoPyArray, PyArray3};
 use pyo3::prelude::*;
 use rayon::prelude::*;
 use std::{collections::HashMap, path::PathBuf};
+
+#[pymodule]
+#[allow(non_snake_case)]
+fn DEFAULT(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add("QUAL_OFFSET", QUAL_OFFSET)?;
+    m.add("BASES", default::BASES)?;
+    m.add("KMER_SIZE", default::KMER_SIZE)?;
+    m.add("VECTORIZED_TARGET", default::VECTORIZED_TARGET)?;
+    Ok(())
+}
 
 #[pyfunction]
 fn to_original_targtet_region(start: usize, end: usize, k: usize) -> (usize, usize) {
@@ -74,7 +85,7 @@ fn encode_fqs(
         .build()
         .unwrap();
 
-    let encoder = fq_encode::FqEncoder::new(option);
+    let mut encoder = fq_encode::FqEncoder::new(option);
     let (input, target) = encoder.encoder_fqs(fq_path).unwrap();
 
     let kmer2id: HashMap<String, Element> = encoder
@@ -103,5 +114,10 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(encode_fqs, m)?)?;
     m.add_function(wrap_pyfunction!(to_kmer_target_region, m)?)?;
     m.add_function(wrap_pyfunction!(to_original_targtet_region, m)?)?;
+
+    let default_module = PyModule::new(_py, "DEFAULT")?;
+    DEFAULT(_py, default_module)?;
+    m.add_submodule(default_module)?;
+
     Ok(())
 }

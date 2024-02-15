@@ -4,8 +4,7 @@ use std::ops::Range;
 use std::path::Path;
 
 use anyhow::Context;
-use bio::utils::Interval; // 0-based, half-open interval [1, 10)
-use ndarray::{concatenate, stack, Axis, Zip};
+use ndarray::{concatenate, s, stack, Axis, Zip};
 
 use ndarray::{Array2, Array3};
 
@@ -13,7 +12,9 @@ use needletail::{parse_fastx_file, Sequence};
 use rayon::prelude::*;
 
 use crate::error::EncodingError;
-use crate::kmer::{generate_kmers_table, KmerTable};
+use crate::kmer::{generate_kmers_table, to_kmer_target_region, KmerTable};
+
+use crate::default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET};
 
 // @462:528|738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8
 // CGTTGGTGGTGTTCAGTTGTGGCGGTTGCTGGTCAGTAACAGCCAAGATGCTGCGGAATCTGCTGGCTTACCGTCAGATTGGGCAGAGGACGATAAGCACTGCTTCCCGCAGGCATTTTAAAAATAAAGTTCCGGAGAAGCAAAACTGTTCCAGGAGGATGATGAAATTCCACTGTATCTAAAAGGGTAGGGTAGCTGATGCCCTCCTGTATAGAGCCACCATGATCTTACAGTTGGTGGAACAGCATATGCCATATATGAGCTGGCTGTGGCTTCATTTCCCAAGAAGCAGGAGTGACTTTCAGCTTTATCTCCAGCAATTGCTTGGTCAGTTTTTCATTCAGCTCTCTATGGACCAGTAATCTGATAAATAACCGAGCTCTTCTTTGGGGATCAATATTTATTGATTGTAGTAACTGCCACCAATAAAGCAGTCTTTACCATGAAAAAAAAAAAAAAAAATCCCCCTACCCCTCTCTCCCAACTTATCCATACACAACCTGCCCCTCCAACCTCTTTCTAAACCCTTGGCGCCTCGGAGGCGTTCAGCTGCTTCAAGATGAAGCTGAACATCTTCCTTCCCAGCCACTGGCTGCCAGAAACTCATTGAAGTGGACGATGAACGCAAACTTCTGCACTTTCTATGAGAAGCGTATGGCCACAGAAGTTGCTGCTGACGCTTTGGGTGAAGAATGGAAGGGTTATGTGGTCCGAATCAGTGGTGGGAACGACAAACAAGGTTTCCCCATGAAGCAGGGTGTCTTGACCCATGGCCGTGTCCGCCTGCTACTGAGTAAGGGGCATTCCTGTTACAGACCAAGGAGAACTGGAGAAAGAAAGAGAAAATCAGTTCGTGGTTGCATTGTGGATGCAATCTGAGCGTTCTCAACTTGGTTATTGTAAAAAGGAGAGAAGGATATTCCTGGACTGACTGATACTACAGTGCCTCGCCGCCTGGGCCCCAAAAGAGCTAGCAGAATCCGCAAACTTTTCAATCTCTCTAAAAAGAAGATGATGTCCGCCAGTATCGTTGTAAGAAAGCCCTAAAATAAAGAAGGTAAGAAACCTAGGACCAAAGCACCCAAGATTCAGCGTCTGTTACTCCACGTGTCCTGCAGCACAAACGGCGGCGTATTGCTCTGAAGAAGCAGCGTACCAAGAAAAATAAAAGAAGAGGCTGCAGAATATGCTAAACTTTTGGCCTAGAGAATGAAGGAGGCTAAGGAGAAGCGCCAGGAACAAATTGCGAAGAGACGCAGACTTTCCTCTCTGCGGGACTCTACTTCTAAGTCTGAATCCAGTCAGAAATAAGATTTTTTGAGTAACAAATAATAAGATCGGGACTCTGA
@@ -23,9 +24,6 @@ use crate::kmer::{generate_kmers_table, KmerTable};
 pub type Element = i64;
 pub type Matrix = Array2<Element>;
 pub type Tensor = Array3<Element>;
-
-pub const QUAL_OFFSET: u8 = 33;
-pub const BASES: &[u8] = b"ATCGN";
 
 #[derive(Debug)]
 pub struct RecordData {
@@ -48,22 +46,32 @@ impl From<(Vec<u8>, Vec<u8>, Vec<u8>)> for RecordData {
 
 #[derive(Debug, Builder, Default, Clone)]
 pub struct FqEncoderOption {
-    #[builder(default = "3")]
-    kmer_size: u8,
+    #[builder(default = "KMER_SIZE")]
+    pub kmer_size: u8,
     #[builder(default = "QUAL_OFFSET")]
-    qual_offset: u8,
+    pub qual_offset: u8,
     #[builder(default = "BASES.to_vec()")]
-    bases: Vec<u8>,
+    pub bases: Vec<u8>,
+    #[builder(default = "VECTORIZED_TARGET")]
+    pub vectorized_target: bool,
 }
 
 impl FqEncoderOption {
-    pub fn new(kmer_size: u8, qual_offset: Option<u8>, base: Option<&[u8]>) -> Self {
+    pub fn new(
+        kmer_size: u8,
+        qual_offset: Option<u8>,
+        base: Option<&[u8]>,
+        vectorized_target: Option<bool>,
+    ) -> Self {
         let base = base.unwrap_or(BASES);
         let qual_offset = qual_offset.unwrap_or(QUAL_OFFSET);
+        let vectorized_target = vectorized_target.unwrap_or(VECTORIZED_TARGET);
+
         Self {
             kmer_size,
             qual_offset,
             bases: base.to_vec(),
+            vectorized_target,
         }
     }
 }
@@ -72,6 +80,7 @@ impl FqEncoderOption {
 pub struct FqEncoder {
     pub option: FqEncoderOption,
     pub kmer_table: KmerTable,
+    pub max_width: usize,
 }
 
 impl FqEncoder {
@@ -83,7 +92,11 @@ impl FqEncoder {
         //     .build_global()
         //     .unwrap();
 
-        Self { option, kmer_table }
+        Self {
+            option,
+            kmer_table,
+            ..Default::default()
+        }
     }
 
     fn parse_target_from_id(src: &[u8]) -> Result<Vec<Range<usize>>> {
@@ -114,9 +127,36 @@ impl FqEncoder {
 
     fn encode_target(&self, id: &[u8]) -> Result<Tensor> {
         let target = Self::parse_target_from_id(id).context("Failed to parse target from ID")?;
+
+        assert!(self.max_width > 0, "max_width should be greater than 0");
+
+        if self.option.vectorized_target {
+            let mut encoded_target = Tensor::zeros((1, target.len(), self.max_width));
+            // Example of a parallel operation using Zip and par_apply from ndarray's parallel feature
+            encoded_target
+                .axis_iter_mut(Axis(0))
+                .into_par_iter()
+                .for_each(|mut subview| {
+                    Zip::from(subview.axis_iter_mut(Axis(0)))
+                        .and(&target)
+                        .for_each(|mut row, t| {
+                            let kmer_target =
+                                to_kmer_target_region(t, self.option.kmer_size as usize, None)
+                                    .context("failed to convert target to kmer region")
+                                    .unwrap();
+                            // Safe fill based on kmer_target, assuming it's within bounds
+                            if kmer_target.start < kmer_target.end && kmer_target.end <= row.len() {
+                                row.slice_mut(s![kmer_target.start..kmer_target.end])
+                                    .fill(1);
+                            }
+                        });
+                });
+            return Ok(encoded_target);
+        }
+
         let mut encoded_target = Tensor::zeros((1, target.len(), 2));
 
-        // / Example of a parallel operation using Zip and par_apply from ndarray's parallel feature
+        // Example of a parallel operation using Zip and par_apply from ndarray's parallel feature
         encoded_target
             .axis_iter_mut(Axis(0))
             .into_par_iter()
@@ -124,8 +164,12 @@ impl FqEncoder {
                 Zip::from(subview.axis_iter_mut(Axis(0)))
                     .and(&target)
                     .for_each(|mut row, t| {
-                        row[0] = t.start as Element;
-                        row[1] = t.end as Element;
+                        let kmer_target =
+                            to_kmer_target_region(t, self.option.kmer_size as usize, None)
+                                .context("failed to convert target to kmer region")
+                                .unwrap();
+                        row[0] = kmer_target.start as Element;
+                        row[1] = kmer_target.end as Element;
                     });
             });
 
@@ -197,7 +241,7 @@ impl FqEncoder {
         Ok((encoded_input, encoded_target))
     }
 
-    fn fetch_records<P: AsRef<Path>>(&self, path: P) -> Result<(Vec<RecordData>, usize)> {
+    fn fetch_records<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<RecordData>> {
         let mut reader = parse_fastx_file(path.as_ref()).context("valid path/file")?;
         let mut records = Vec::new();
 
@@ -221,20 +265,20 @@ impl FqEncoder {
             if seq_len > max_seq_len {
                 max_seq_len = seq_len;
             }
+
             records.push((id.to_vec(), seq.to_vec(), qual.to_vec()).into());
         }
-
-        Ok((records, max_seq_len))
-    }
-
-    pub fn encoder_fqs<P: AsRef<Path>>(&self, path: P) -> Result<(Tensor, Tensor)> {
-        let (records, max_seq_len) = self.fetch_records(path)?;
 
         if max_seq_len < self.option.kmer_size as usize {
             return Err(EncodingError::SeqShorterThanKmer.into());
         }
 
-        let max_width = max_seq_len - self.option.kmer_size as usize + 1;
+        self.max_width = max_seq_len - self.option.kmer_size as usize + 1;
+        Ok(records)
+    }
+
+    pub fn encoder_fqs<P: AsRef<Path>>(&mut self, path: P) -> Result<(Tensor, Tensor)> {
+        let records = self.fetch_records(path)?;
 
         let data = records
             .par_iter()
@@ -243,7 +287,7 @@ impl FqEncoder {
                 let seq = data.seq.as_ref();
                 let qual = data.qual.as_ref();
 
-                self.encode_fq(id, seq, qual, max_width)
+                self.encode_fq(id, seq, qual, self.max_width)
                     .context(format!(
                         "encode  fq read id {} error",
                         String::from_utf8_lossy(id)
@@ -274,6 +318,10 @@ impl FqEncoder {
 
 #[cfg(test)]
 mod tests {
+    use ndarray::Array1;
+
+    use crate::kmer::to_original_targtet_region;
+
     use super::*;
 
     #[test]
@@ -304,9 +352,44 @@ mod tests {
             .kmer_size(3)
             .build()
             .unwrap();
-        let encoder = FqEncoder::new(option);
+        let mut encoder = FqEncoder::new(option);
         let (_input, target) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
-        assert_eq!(target[[0, 0, 0]], 462);
-        assert_eq!(target[[0, 0, 1]], 528);
+        let k = 3;
+
+        let actual = 462..528;
+
+        let kmer_target = to_kmer_target_region(&actual, k, None).unwrap();
+        let expected_target = to_original_targtet_region(&kmer_target, k);
+
+        assert_eq!(expected_target, actual);
+
+        assert_eq!(target[[0, 0, 0]], kmer_target.start as Element);
+        assert_eq!(target[[0, 0, 1]], kmer_target.end as Element);
+    }
+
+    #[test]
+    fn test_encode_fqs_vectorized_target() {
+        let option = FqEncoderOptionBuilder::default()
+            .kmer_size(3)
+            .vectorized_target(true)
+            .build()
+            .unwrap();
+        let mut encoder = FqEncoder::new(option);
+        let (_input, target) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+        let k = 3;
+
+        let actual = 462..528;
+
+        let kmer_target = to_kmer_target_region(&actual, k, None).unwrap();
+        let expected_target = to_original_targtet_region(&kmer_target, k);
+
+        assert_eq!(expected_target, actual);
+
+        let expected_vectorized_target = Array1::<Element>::from_elem(kmer_target.len(), 1);
+
+        assert_eq!(
+            target.slice(s![0, 0, kmer_target.start..kmer_target.end]),
+            expected_vectorized_target
+        );
     }
 }
