@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use pyo3::PyErr;
 use thiserror::Error;
 
@@ -17,6 +19,9 @@ pub enum EncodingError {
 
     #[error("The k-mer id is invalid")]
     InvalidKmerIndex,
+
+    #[error("The interval is invalid: {0} ")]
+    InvalidInterval(String),
 }
 
 impl From<EncodingError> for PyErr {
@@ -32,6 +37,10 @@ impl From<EncodingError> for PyErr {
                 pyo3::exceptions::PyException::new_err("The target region is invalid")
             }
             InvalidKmerIndex => pyo3::exceptions::PyException::new_err("The k-mer id is invalid"),
+            InvalidInterval(interval) => pyo3::exceptions::PyException::new_err(format!(
+                "The interval is invalid: {:?}",
+                interval
+            )),
         }
     }
 }

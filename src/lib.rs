@@ -6,5 +6,6 @@ mod default;
 mod error;
 mod fq_encode;
 mod kmer;
+mod output;
 mod python;
 mod types;

@@ -20,11 +20,14 @@ pyo3 = { version = "0.20.2", features = [
 ] }
 
 pyo3-log = "0.9"
-noodles-bgzf = "0.26.0"
-noodles-csi = "0.30.0"
-noodles-fasta = "0.32.0"
-noodles-fastq = "0.10.0"
-noodles-core = "0.14"
+noodles = { version = "0.64.0", features = [
+    "bgzf",
+    "core",
+    "csi",
+    "fasta",
+    "fastq",
+] }
+
 bio = "1.5"
 needletail = "0.5"
 
@@ -39,3 +42,4 @@ bitvec = "1.0"
 itertools = "0.12.1"
 derive_builder = "0.20"
 lexical = "6.1"
+bstr = "1.9.0"
