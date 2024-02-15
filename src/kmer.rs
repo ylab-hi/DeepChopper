@@ -8,15 +8,15 @@ use anyhow::Result;
 
 pub type KmerTable = HashMap<Vec<u8>, Element>;
 
-fn reverse_update_target_region(updated_target: &Range<usize>, k: usize) -> Range<usize> {
+pub fn to_original_targtet_region(kmer_target: &Range<usize>, k: usize) -> Range<usize> {
     // The start of the target region remains the same
-    let original_start = updated_target.start;
+    let original_start = kmer_target.start;
 
     // Attempt to reverse the end adjustment by adding k - 1, assuming the adjustment was due to k-mer calculation
-    let original_end = if updated_target.end > original_start {
-        updated_target.end + k - 1
+    let original_end = if kmer_target.end > original_start {
+        kmer_target.end + k - 1
     } else {
-        updated_target.end
+        kmer_target.end
     };
 
     original_start..original_end
@@ -26,15 +26,15 @@ pub fn to_kmer_target_region(
     original_target: &Range<usize>,
     k: usize,
     seq_len: Option<usize>,
-) -> Result<Range<usize>> {
+) -> Result<Range<usize>, EncodingError> {
     if original_target.start >= original_target.end || k == 0 {
-        return Err(EncodingError::TargetRegionInvalid.into());
+        return Err(EncodingError::TargetRegionInvalid);
     }
 
     if let Some(seq_len) = seq_len {
         // Ensure the target region is valid.
         if original_target.end > seq_len {
-            return Err(EncodingError::TargetRegionInvalid.into());
+            return Err(EncodingError::TargetRegionInvalid);
         }
     }
 
@@ -239,5 +239,25 @@ mod tests {
             result.unwrap_err().to_string(),
             EncodingError::TargetRegionInvalid.to_string()
         );
+    }
+
+    #[test]
+    fn test_to_original_target_region() {
+        // Test case 1: kmer_target.end > original_start
+        let kmer_target = 2..5;
+        let k = 3;
+        let expected = 2..7;
+
+        assert_eq!(
+            to_kmer_target_region(&expected, k, None).unwrap(),
+            kmer_target
+        );
+        assert_eq!(to_original_targtet_region(&kmer_target, k), expected);
+
+        // Test case 3: kmer_target.end == original_start
+        let kmer_target = 5..5;
+        let k = 3;
+        let expected = 5..5;
+        assert_eq!(to_original_targtet_region(&kmer_target, k), expected);
     }
 }

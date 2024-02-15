@@ -1,11 +1,31 @@
 use crate::{
     fq_encode::{self, Element},
-    kmer::{self},
+    kmer,
 };
 use numpy::{IntoPyArray, PyArray3};
 use pyo3::prelude::*;
 use rayon::prelude::*;
 use std::{collections::HashMap, path::PathBuf};
+
+#[pyfunction]
+fn to_original_targtet_region(start: usize, end: usize, k: usize) -> (usize, usize) {
+    let original = kmer::to_original_targtet_region(&(start..end), k);
+    (original.start, original.end)
+}
+
+#[pyfunction]
+fn to_kmer_target_region(
+    start: usize,
+    end: usize,
+    k: usize,
+    seq_len: Option<usize>,
+) -> PyResult<(usize, usize)> {
+    let result = kmer::to_kmer_target_region(&(start..end), k, seq_len).map_err(|e| e.into());
+    match result {
+        Ok(r) => Ok((r.start, r.end)),
+        Err(e) => Err(e),
+    }
+}
 
 #[pyfunction]
 fn seq_to_kmers(seq: String, k: usize) -> Vec<String> {
@@ -75,12 +95,13 @@ fn test_string() -> PyResult<String> {
 #[pymodule]
 fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     pyo3_log::init();
-
     m.add_function(wrap_pyfunction!(test_string, m)?)?;
     m.add_function(wrap_pyfunction!(seq_to_kmers, m)?)?;
     m.add_function(wrap_pyfunction!(kmers_to_seq, m)?)?;
     m.add_function(wrap_pyfunction!(generate_kmers_table, m)?)?;
     m.add_function(wrap_pyfunction!(generate_kmers, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fqs, m)?)?;
+    m.add_function(wrap_pyfunction!(to_kmer_target_region, m)?)?;
+    m.add_function(wrap_pyfunction!(to_original_targtet_region, m)?)?;
     Ok(())
 }
