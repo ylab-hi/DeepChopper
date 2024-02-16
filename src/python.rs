@@ -170,7 +170,48 @@ fn generate_kmers(base: String, k: usize) -> Vec<String> {
 }
 
 #[pyfunction]
-fn encode_fqs(
+fn encode_fq_paths(
+    py: Python,
+    fq_paths: Vec<PathBuf>,
+    k: usize,
+    bases: String,
+    qual_offset: usize,
+    max_width: Option<usize>,
+    max_seq_len: Option<usize>,
+) -> (
+    &PyArray3<Element>,
+    &PyArray3<Element>,
+    &PyArray2<Element>,
+    HashMap<String, Element>,
+) {
+    let option = fq_encode::FqEncoderOptionBuilder::default()
+        .kmer_size(k as u8)
+        .bases(bases.as_bytes().to_vec())
+        .qual_offset(qual_offset as u8)
+        .max_width(max_width.unwrap_or(0))
+        .max_seq_len(max_seq_len.unwrap_or(0))
+        .build()
+        .unwrap();
+
+    let encoder = fq_encode::FqEncoder::new(option);
+    let ((input, target), qual) = encoder.encode_fq_paths(&fq_paths).unwrap();
+
+    let kmer2id: HashMap<String, Element> = encoder
+        .kmer2id_table
+        .par_iter()
+        .map(|(k, v)| (String::from_utf8_lossy(k).to_string(), *v))
+        .collect();
+
+    (
+        input.into_pyarray(py),
+        target.into_pyarray(py),
+        qual.into_pyarray(py),
+        kmer2id,
+    )
+}
+
+#[pyfunction]
+fn encode_fq_path(
     py: Python,
     fq_path: PathBuf,
     k: usize,
@@ -194,7 +235,7 @@ fn encode_fqs(
         .unwrap();
 
     let mut encoder = fq_encode::FqEncoder::new(option);
-    let (input, target, qual) = encoder.encoder_fqs(fq_path).unwrap();
+    let ((input, target), qual) = encoder.encode_fq_path(fq_path).unwrap();
 
     let kmer2id: HashMap<String, Element> = encoder
         .kmer2id_table
@@ -229,12 +270,13 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(kmers_to_seq, m)?)?;
     m.add_function(wrap_pyfunction!(generate_kmers_table, m)?)?;
     m.add_function(wrap_pyfunction!(generate_kmers, m)?)?;
-    m.add_function(wrap_pyfunction!(encode_fqs, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_fq_path, m)?)?;
     m.add_function(wrap_pyfunction!(to_kmer_target_region, m)?)?;
     m.add_function(wrap_pyfunction!(to_original_targtet_region, m)?)?;
     m.add_function(wrap_pyfunction!(kmerids_to_seq, m)?)?;
     m.add_function(wrap_pyfunction!(write_fq, m)?)?;
     m.add_function(wrap_pyfunction!(write_fq_parallel, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_fq_paths, m)?)?;
 
     m.add_class::<PyRecordData>()?;
 

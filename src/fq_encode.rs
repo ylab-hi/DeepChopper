@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use derive_builder::Builder;
 use std::ops::Range;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use ndarray::{concatenate, s, stack, Axis, Zip};
@@ -23,7 +23,7 @@ pub use record::*;
 // CGTTGGTGGTGTTCAGTTGTGGCGGTTGCTGGTCAGTAACAGCCAAGATGCTGCGGAATCTGCTGGCTTACCGTCAGATTGGGCAGAGGACGATAAGCACTGCTTCCCGCAGGCATTTTAAAAATAAAGTTCCGGAGAAGCAAAACTGTTCCAGGAGGATGATGAAATTCCACTGTATCTAAAAGGGTAGGGTAGCTGATGCCCTCCTGTATAGAGCCACCATGATCTTACAGTTGGTGGAACAGCATATGCCATATATGAGCTGGCTGTGGCTTCATTTCCCAAGAAGCAGGAGTGACTTTCAGCTTTATCTCCAGCAATTGCTTGGTCAGTTTTTCATTCAGCTCTCTATGGACCAGTAATCTGATAAATAACCGAGCTCTTCTTTGGGGATCAATATTTATTGATTGTAGTAACTGCCACCAATAAAGCAGTCTTTACCATGAAAAAAAAAAAAAAAAATCCCCCTACCCCTCTCTCCCAACTTATCCATACACAACCTGCCCCTCCAACCTCTTTCTAAACCCTTGGCGCCTCGGAGGCGTTCAGCTGCTTCAAGATGAAGCTGAACATCTTCCTTCCCAGCCACTGGCTGCCAGAAACTCATTGAAGTGGACGATGAACGCAAACTTCTGCACTTTCTATGAGAAGCGTATGGCCACAGAAGTTGCTGCTGACGCTTTGGGTGAAGAATGGAAGGGTTATGTGGTCCGAATCAGTGGTGGGAACGACAAACAAGGTTTCCCCATGAAGCAGGGTGTCTTGACCCATGGCCGTGTCCGCCTGCTACTGAGTAAGGGGCATTCCTGTTACAGACCAAGGAGAACTGGAGAAAGAAAGAGAAAATCAGTTCGTGGTTGCATTGTGGATGCAATCTGAGCGTTCTCAACTTGGTTATTGTAAAAAGGAGAGAAGGATATTCCTGGACTGACTGATACTACAGTGCCTCGCCGCCTGGGCCCCAAAAGAGCTAGCAGAATCCGCAAACTTTTCAATCTCTCTAAAAAGAAGATGATGTCCGCCAGTATCGTTGTAAGAAAGCCCTAAAATAAAGAAGGTAAGAAACCTAGGACCAAAGCACCCAAGATTCAGCGTCTGTTACTCCACGTGTCCTGCAGCACAAACGGCGGCGTATTGCTCTGAAGAAGCAGCGTACCAAGAAAAATAAAAGAAGAGGCTGCAGAATATGCTAAACTTTTGGCCTAGAGAATGAAGGAGGCTAAGGAGAAGCGCCAGGAACAAATTGCGAAGAGACGCAGACTTTCCTCTCTGCGGGACTCTACTTCTAAGTCTGAATCCAGTCAGAAATAAGATTTTTTGAGTAACAAATAATAAGATCGGGACTCTGA
 // +
 // 3A88;IMSJ872377DIJRSRRQRSSRSSSSSSSSGECCKLDIDDGLQRSRRRROSSPRRNOOSSEBCDEJSQKHHJSSSSSSSMMMPSSSSSRJ97677;<SSSSSRRSSSSSSSSSSSSJJKSSSSSSHFFBFGLBCBC<OPLMOP?KSIII6435@ESSSSKSSSSPSSSSD?22275@DB;(((478GIIJKMSIFEFKFA2-)&&''=ALPQQSSRSS,,;>SSSSSSSSSSSSOKGKOSSSSSSSQFLHGISSSSIGGHSSSSFFB.AGA0<AKLM9SSPLLMKMKLJJ..-02::<=0,+-)&&-:?BEFHNLIBA>>E89SSSSSASSQPSOPLMHG7788SSSCB==BCKLMPPPQQKIINRSSSSSSSSSSSSSSSSSPSRPOPPGGCH,,CEH1*%289<DACCRGGHISSSSSSSSQRQRSSSSSMQSRRRFFPPPPPPPPPPPPPPPPP--'.,,/42$))(('')'0314319HFF2104/)*+&#""33%%%(%%$##"""""""&..05%$((*(*36FSSSSSSS8794555HJI0///?SSSSSSSSSSSSSFD110AHKHKKJMJNOPS@;@@@HMQSSLMSOFC>546:<JNSIIIIKJJKSSSSSROO+(((--,1BLJKKSSSSSSSSSSSSSPKJLPSSSSSSSSSMFGPS22116559IIIISQQSSSSSSSSSSSSSQPMB651.13SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSCC>.1ABR+(96;>SSRSQPPPSSSSSSRQMQNQRSSSSSSSSSSMSSSSSMKICDSRQPIF>>>?CL0GHLNMC=<;DBCCBBBCDABBSSSSSRRSSQRMNPPROHGBCFBBBAGGGL@OEC>53038=JSSSROJGKIIHGDDFLOOOSSIBCENLNENFFSSSSNMLF@JSSSPPRQR;:989FLPDBA00//7>PSSSSSSMIHHIRSSJGGIKKPPRRSED;:;?JO=::EKIGBD'&),QQSSSN>S/0KJJIMNORLH@6679FCF5556OOORNNLRQSSPSIII>4HF6A?=AHHSSPOKSLSN-,-?EFMSRSQ;;;DIIGEEIJOSLFE@?*)+-<CD?CFDA999AK;HIFGMQSSSSSSOKCBDSSSOLJ43115AJJGKKLOOMMNLOQSSSSI1,1CCOSS11:IIMSSSSSSSSSSSSOQRRSNJHSSSSSL/../<DEKMLLGPNOA?>>MOSSLKSSSBBCJRRRQSSSSS>76654;<BSONKIKK.--+0,,51+)+450045-,.5OSSHED777SSEEEJSSSSKKIGOOSSSSIIHJSSSSSSLIJOQSSJMSS;EFAA5**)+-2556BBJOM
-#[derive(Debug, Builder, Default)]
+#[derive(Debug, Builder, Default, Clone)]
 pub struct FqEncoder {
     pub option: FqEncoderOption,
     pub kmer2id_table: Kmer2IdTable,
@@ -263,7 +263,10 @@ impl FqEncoder {
         Ok(records)
     }
 
-    pub fn encoder_fqs<P: AsRef<Path>>(&mut self, path: P) -> Result<(Tensor, Tensor, Matrix)> {
+    pub fn encode_fq_path<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+    ) -> Result<((Tensor, Tensor), Matrix)> {
         let records = self.fetch_records(path)?;
 
         let data = records
@@ -299,12 +302,43 @@ impl FqEncoder {
         )
         .context("Failed to stack targets")?;
 
-        let quals_tensor =
+        let quals_matrix =
             concatenate(Axis(0), &quals.iter().map(|a| a.view()).collect::<Vec<_>>())
                 .context("Failed to stack quals")?;
 
         // concatenate the encoded input and target
-        Ok((inputs_tensor, targets_tensor, quals_tensor))
+        Ok(((inputs_tensor, targets_tensor), quals_matrix))
+    }
+
+    pub fn encode_fq_paths(&self, paths: &[PathBuf]) -> Result<((Tensor, Tensor), Matrix)> {
+        let result = paths
+            .into_par_iter()
+            .map(|path| {
+                let mut encoder = self.clone();
+                encoder.encode_fq_path(path)
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        let (inputs, targets, quals): (Vec<Tensor>, Vec<Tensor>, Vec<Matrix>) =
+            Self::unpack_data_parallel(result);
+
+        let inputs_tensor = concatenate(
+            Axis(0),
+            &inputs.iter().map(|a| a.view()).collect::<Vec<_>>(),
+        )
+        .context("failed to stack inputs")?;
+
+        let targets_tensor = concatenate(
+            Axis(0),
+            &targets.iter().map(|a| a.view()).collect::<Vec<_>>(),
+        )
+        .context("failed to stack targets")?;
+
+        let quals_matrix =
+            concatenate(Axis(0), &quals.iter().map(|a| a.view()).collect::<Vec<_>>())
+                .context("Failed to stack quals")?;
+
+        Ok(((inputs_tensor, targets_tensor), quals_matrix))
     }
 }
 
@@ -345,7 +379,7 @@ mod tests {
             .build()
             .unwrap();
         let mut encoder = FqEncoder::new(option);
-        let (_input, target, _qual) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+        let ((_input, target), _qual) = encoder.encode_fq_path("tests/data/test.fq.gz").unwrap();
         let k = 3;
 
         let actual = 462..528;
@@ -368,7 +402,7 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let (_input, target, _qual) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+        let ((_input, target), _qual) = encoder.encode_fq_path("tests/data/test.fq.gz").unwrap();
 
         let k = 3;
         let actual = 462..528;
@@ -404,7 +438,7 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let (input, target, qual) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+        let ((input, target), qual) = encoder.encode_fq_path("tests/data/test.fq.gz").unwrap();
 
         assert_eq!(input.shape(), &[1, 2, 1347]);
         assert_eq!(target.shape(), &[1, 1, 1347]);
@@ -422,7 +456,7 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let (input, target, qual) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+        let ((input, target), qual) = encoder.encode_fq_path("tests/data/test.fq.gz").unwrap();
 
         assert_eq!(input.shape(), &[1, 2, 2000]);
         assert_eq!(target.shape(), &[1, 1, 2000]);
