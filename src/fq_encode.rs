@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use derive_builder::Builder;
+use std::fmt::Display;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
 
@@ -30,6 +31,12 @@ pub struct FqEncoder {
     pub option: FqEncoderOption,
     pub kmer2id_table: Kmer2IdTable,
     pub id2kmer_table: Id2KmerTable,
+}
+
+impl Display for FqEncoder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FqEncoder {{ option: {} }}", self.option)
+    }
 }
 
 impl FqEncoder {

@@ -1,3 +1,5 @@
+use std::fmt::{self, Display, Formatter};
+
 use crate::default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET};
 use derive_builder::Builder;
 
@@ -17,4 +19,14 @@ pub struct FqEncoderOption {
 
     #[builder(default = "0")]
     pub max_seq_len: usize, // control width of original qual matrix
+}
+
+impl Display for FqEncoderOption {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(
+            f,
+            "FqEncoderOption {{ kmer_size: {}, qual_offset: {}, bases: {:?}, vectorized_target: {}, max_width: {}, max_seq_len: {} }}",
+            self.kmer_size, self.qual_offset, self.bases, self.vectorized_target, self.max_width, self.max_seq_len
+        )
+    }
 }
