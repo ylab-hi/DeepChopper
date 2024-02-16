@@ -19,8 +19,8 @@ def encode_fq_path(
     bases: str,
     qual_offset: int,
     vectorized_target: bool,
-    max_width: int | None,
-    max_seq_len: int | None,
+    max_width: int | None = None,
+    max_seq_len: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, int]]: ...
 def encode_fq_paths(
     fq_paths: list[Path],
@@ -28,7 +28,7 @@ def encode_fq_paths(
     bases: str,
     qual_offset: int,
     vectorized_target: bool,
-    max_width: int | None,
-    max_seq_len: int | None,
+    max_width: int | None = None,
+    max_seq_len: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, int]]: ...
 def summary_record_len(path: Path) -> list[int]: ...
