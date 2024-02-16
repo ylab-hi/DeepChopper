@@ -493,4 +493,21 @@ mod tests {
         assert_eq!(target.shape(), &[1, 1, 2000]);
         assert_eq!(qual.shape(), &[1, 2000]);
     }
+    #[test]
+    fn test_encode_fqs_vectorized_target_with_large_max_width_for_large_size_fq() {
+        let option = FqEncoderOptionBuilder::default()
+            .kmer_size(3)
+            .vectorized_target(true)
+            .build()
+            .unwrap();
+
+        let mut encoder = FqEncoder::new(option);
+        let ((input, target), qual) = encoder
+            .encode_fq_path("tests/data/large_size.fq.gz")
+            .unwrap();
+
+        assert_eq!(input.shape(), &[25, 2, 4741]);
+        assert_eq!(target.shape(), &[25, 1, 4741]);
+        assert_eq!(qual.shape(), &[25, 4743]);
+    }
 }

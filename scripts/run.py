@@ -2,12 +2,20 @@ import sys
 from pathlib import Path
 from deepchopper import encode_fq_path
 
+from rich.logging import RichHandler
 import numpy as np
 import logging
 
 def main(file: Path):
 
+
+    FORMAT = "%(message)s"
+    logging.basicConfig(
+        level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+    )
+
     logging.basicConfig(level=logging.DEBUG)
+
     data  = file
     k  = 3
     bases = "ACGTN"

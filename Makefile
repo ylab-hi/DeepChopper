@@ -20,6 +20,10 @@ train: ## Train models
 
 ##############################################
 
+.PHONY: develop
+develop:
+	maturin develop
+
 .PHONY: build
 build: dev-packages ## Builds Rust code and Python modules
 	maturin build
@@ -60,7 +64,7 @@ dev-packages: ## Install Python development packages for project
 
 .PHONY: cargo-test
 cargo-test: ## Run cargo tests only
-	cargo test
+	cargo nextest run
 
 .PHONY: test
 test: cargo-test dev-packages install quicktest ## Install rscannls module and run tests
