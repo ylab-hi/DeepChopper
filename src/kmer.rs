@@ -7,21 +7,19 @@ use crate::{
     error::EncodingError,
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
+use anyhow::Error;
 use anyhow::Result;
 
-pub fn kmerids_to_seq(
-    kmer_ids: &[Element],
-    id2kmer_table: Id2KmerTable,
-) -> Result<Vec<u8>, EncodingError> {
+pub fn kmerids_to_seq(kmer_ids: &[Element], id2kmer_table: Id2KmerTable) -> Result<Vec<u8>> {
     let result = kmer_ids
         .par_iter()
         .map(|&id| {
             id2kmer_table
                 .get(&id)
-                .ok_or(EncodingError::InvalidKmerIndex)
+                .ok_or(Error::new(EncodingError::InvalidKmerIndex))
                 .map(|kmer| kmer.as_ref())
         })
-        .collect::<Result<Vec<_>, EncodingError>>()?;
+        .collect::<Result<Vec<_>>>()?;
 
     Ok(kmers_to_seq(result))
 }
@@ -44,15 +42,15 @@ pub fn to_kmer_target_region(
     original_target: &Range<usize>,
     k: usize,
     seq_len: Option<usize>,
-) -> Result<Range<usize>, EncodingError> {
+) -> Result<Range<usize>> {
     if original_target.start >= original_target.end || k == 0 {
-        return Err(EncodingError::TargetRegionInvalid);
+        return Err(Error::from(EncodingError::TargetRegionInvalid));
     }
 
     if let Some(seq_len) = seq_len {
         // Ensure the target region is valid.
         if original_target.end > seq_len {
-            return Err(EncodingError::TargetRegionInvalid);
+            return Err(Error::new(EncodingError::TargetRegionInvalid));
         }
     }
 

@@ -4,6 +4,7 @@ use crate::{
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
 use anyhow::Context;
+use anyhow::Result;
 use numpy::{IntoPyArray, PyArray2, PyArray3};
 use pyo3::prelude::*;
 use rayon::prelude::*;
@@ -19,7 +20,7 @@ fn default(_py: Python, m: &PyModule) -> PyResult<()> {
 }
 
 #[pyfunction]
-fn summary_record_len(path: PathBuf) -> PyResult<Vec<usize>> {
+fn summary_record_len(path: PathBuf) -> Result<Vec<usize>> {
     let result = fq_encode::summary_record_len(path)
         .context("failed to read fastq")
         .unwrap();
@@ -120,12 +121,10 @@ fn write_fq_parallel(
 }
 
 #[pyfunction]
-fn kmerids_to_seq(kmer_ids: Vec<Element>, kmer2id_table: Id2KmerTable) -> PyResult<String> {
-    let result = kmer::kmerids_to_seq(&kmer_ids, kmer2id_table).map_err(|e| e.into());
-    match result {
-        Ok(r) => Ok(String::from_utf8_lossy(&r).to_string()),
-        Err(e) => Err(e),
-    }
+fn kmerids_to_seq(kmer_ids: Vec<Element>, kmer2id_table: Id2KmerTable) -> Result<String> {
+    let result = kmer::kmerids_to_seq(&kmer_ids, kmer2id_table)
+        .map(|x| String::from_utf8_lossy(&x).to_string());
+    result
 }
 
 #[pyfunction]
@@ -140,12 +139,8 @@ fn to_kmer_target_region(
     end: usize,
     k: usize,
     seq_len: Option<usize>,
-) -> PyResult<(usize, usize)> {
-    let result = kmer::to_kmer_target_region(&(start..end), k, seq_len).map_err(|e| e.into());
-    match result {
-        Ok(r) => Ok((r.start, r.end)),
-        Err(e) => Err(e),
-    }
+) -> Result<(usize, usize)> {
+    kmer::to_kmer_target_region(&(start..end), k, seq_len).map(|r| (r.start, r.end))
 }
 
 #[pyfunction]
