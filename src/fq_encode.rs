@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
 use derive_builder::Builder;
-use itertools::Itertools;
 use std::fmt::Display;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
@@ -410,7 +409,9 @@ mod tests {
             .build()
             .unwrap();
         let mut encoder = FqEncoder::new(option);
-        let ((_input, target), _qual) = encoder.encode_fq_path("tests/data/test.fq.gz").unwrap();
+        let ((_input, target), _qual) = encoder
+            .encode_fq_path("tests/data/one_record.fq.gz")
+            .unwrap();
         let k = 3;
 
         let actual = 462..528;
@@ -433,7 +434,9 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let ((_input, target), _qual) = encoder.encode_fq_path("tests/data/test.fq.gz").unwrap();
+        let ((_input, target), _qual) = encoder
+            .encode_fq_path("tests/data/one_record.fq.gz")
+            .unwrap();
 
         let k = 3;
         let actual = 462..528;
@@ -469,7 +472,9 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let ((input, target), qual) = encoder.encode_fq_path("tests/data/test.fq.gz").unwrap();
+        let ((input, target), qual) = encoder
+            .encode_fq_path("tests/data/one_record.fq.gz")
+            .unwrap();
 
         assert_eq!(input.shape(), &[1, 2, 1347]);
         assert_eq!(target.shape(), &[1, 1, 1347]);
@@ -487,7 +492,9 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let ((input, target), qual) = encoder.encode_fq_path("tests/data/test.fq.gz").unwrap();
+        let ((input, target), qual) = encoder
+            .encode_fq_path("tests/data/one_record.fq.gz")
+            .unwrap();
 
         assert_eq!(input.shape(), &[1, 2, 2000]);
         assert_eq!(target.shape(), &[1, 1, 2000]);
@@ -503,7 +510,7 @@ mod tests {
 
         let mut encoder = FqEncoder::new(option);
         let ((input, target), qual) = encoder
-            .encode_fq_path("tests/data/large_size.fq.gz")
+            .encode_fq_path("tests/data/twenty_five_records.fq.gz")
             .unwrap();
 
         assert_eq!(input.shape(), &[25, 2, 4741]);
