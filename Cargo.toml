@@ -19,6 +19,7 @@ pyo3 = { version = "0.20.2", features = [
     "anyhow",
 ] }
 
+log = "0.4"
 pyo3-log = "0.9"
 noodles = { version = "0.64.0", features = [
     "bgzf",

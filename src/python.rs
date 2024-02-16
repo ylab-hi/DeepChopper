@@ -10,6 +10,16 @@ use pyo3::prelude::*;
 use rayon::prelude::*;
 use std::{collections::HashMap, path::PathBuf};
 
+use log::{debug, error, info, warn};
+
+#[pyfunction]
+fn test_log() {
+    debug!("debug Hello from Rust!");
+    info!("info Hello from Rust!");
+    warn!("warn Hello from Rust!");
+    error!("error Hello from Rust!");
+}
+
 #[pymodule]
 fn default(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add("QUAL_OFFSET", QUAL_OFFSET)?;
@@ -300,6 +310,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(encode_fq_paths, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_path, m)?)?;
     m.add_function(wrap_pyfunction!(summary_record_len, m)?)?;
+    m.add_function(wrap_pyfunction!(test_log, m)?)?;
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;
