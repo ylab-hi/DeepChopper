@@ -1,5 +1,4 @@
-
-from deepchopper import encode_fqs
+from deepchopper import encode_fq_path
 
 
 def test_encode_fqs():
@@ -8,8 +7,9 @@ def test_encode_fqs():
     bases = "ACGTN"
     qual_offset = 33
 
-    inputs, target, kmer2idx = encode_fqs(data, k, bases, qual_offset)
+    inputs, target, qual, kmer2idx = encode_fq_path(data, k, bases, qual_offset, True)
+    print(f"DBG-YYL[3]: test_rust.py:10: shape: {inputs.shape} inputs={inputs}")
+    print(f"DBG-YYL[3]: test_rust.py:11: shape: {target.shape} target={target}")
+    print(f"DBG-YYL[3]: test_rust.py:12: shape: {qual.shape} qual={qual}")
+    print(f"DBG-YYL[3]: test_rust.py:13: kmer2idx={kmer2idx}")
 
-    print(inputs)
-    print(target)
-    print(kmer2idx)

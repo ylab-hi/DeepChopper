@@ -67,19 +67,19 @@ test: cargo-test dev-packages install quicktest ## Install rscannls module and r
 
 .PHONY: quicktest
 quicktest: ## Run tests on already installed hyperjson module
-	$(POETRY)  run pytest tests -k "not slow"
+	$(POETRY)  run python -m pytest tests -k "not slow"
 
 .PHONY: test-all
 test-all: ## Run all tests
-	$(POETRY)  run pytest tests
+	$(POETRY)  run python -m pytest tests
 
 .PHONY: bench
 bench: ## Run benchmarks
-	$(POETRY)  run pytest benchmarks
+	$(POETRY)  run python -m pytest benchmarks
 
 .PHONY: bench-compare
 bench-compare: nightly dev-packages install ## Run benchmarks and compare results with other JSON encoders
-	$(POETRY)  run pytest benchmarks --compare
+	$(POETRY)  run python -m pytest benchmarks --compare
 
 .PHONY: build-profile
 build-profile: ## Builds binary for profiling

@@ -217,6 +217,7 @@ fn encode_fq_path(
     k: usize,
     bases: String,
     qual_offset: usize,
+    vectorized_target: bool,
     max_width: Option<usize>,
     max_seq_len: Option<usize>,
 ) -> (
@@ -231,6 +232,7 @@ fn encode_fq_path(
         .qual_offset(qual_offset as u8)
         .max_width(max_width.unwrap_or(0))
         .max_seq_len(max_seq_len.unwrap_or(0))
+        .vectorized_target(vectorized_target)
         .build()
         .unwrap();
 
