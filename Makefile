@@ -16,7 +16,7 @@ help: ## This help message
 
 .PHONY: train
 train: ## Train models
-	DC_CONFIG_PATH=$(DC_CONFIG_PATH) panda-train
+	DC_CONFIG_PATH=$(DC_CONFIG_PATH) deepchopper-train
 
 ##############################################
 
