@@ -8,11 +8,7 @@ use anyhow::Result;
 use numpy::{IntoPyArray, PyArray2, PyArray3};
 use pyo3::prelude::*;
 use rayon::prelude::*;
-use std::{
-    collections::HashMap,
-    fmt::{self, Display, Formatter},
-    path::PathBuf,
-};
+use std::{collections::HashMap, path::PathBuf};
 
 #[pymodule]
 fn default(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -23,41 +19,11 @@ fn default(_py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-#[pyclass(name = "FqEncoderOption")]
-struct PyFqEncoderOption(fq_encode::FqEncoderOption);
-impl From<fq_encode::FqEncoderOption> for PyFqEncoderOption {
-    fn from(option: fq_encode::FqEncoderOption) -> Self {
-        Self(option)
-    }
-}
-
-impl Display for PyFqEncoderOption {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 #[pymethods]
-impl PyFqEncoderOption {
+impl fq_encode::FqEncoder {
     #[new]
-    fn new(
-        kmer_size: usize,
-        qual_offset: usize,
-        bases: String,
-        vectorized_target: bool,
-        max_width: Option<usize>,
-        max_seq_len: Option<usize>,
-    ) -> Self {
-        fq_encode::FqEncoderOptionBuilder::default()
-            .kmer_size(kmer_size as u8)
-            .vectorized_target(vectorized_target)
-            .max_width(max_width.unwrap_or(0))
-            .max_seq_len(max_seq_len.unwrap_or(0))
-            .qual_offset(qual_offset as u8)
-            .bases(bases.as_bytes().to_vec())
-            .build()
-            .unwrap()
-            .into()
+    fn py_new(option: fq_encode::FqEncoderOption) -> Self {
+        fq_encode::FqEncoder::new(option)
     }
 }
 
@@ -336,7 +302,8 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(summary_record_len, m)?)?;
 
     m.add_class::<PyRecordData>()?;
-    m.add_class::<PyFqEncoderOption>()?;
+    m.add_class::<fq_encode::FqEncoderOption>()?;
+    m.add_class::<fq_encode::FqEncoder>()?;
 
     Ok(())
 }

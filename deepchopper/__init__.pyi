@@ -2,7 +2,39 @@ from pathlib import Path
 
 import numpy as np
 
-from deepchopper import RecordData
+class FqEncoder:
+    option: FqEncoderOption
+    kmer2id_table: dict[str, int]
+    id2kmer_table: dict[int, str]
+
+    def __init__(self, option: FqEncoderOption) -> None: ...
+
+class FqEncoderOption:
+    kmer_size: int
+    qual_offset: int
+    bases: list[int]
+    vectorized_target: bool
+    max_width: int
+    max_seq_len: int
+
+    def __init__(
+        self,
+        kmer_size: int,
+        qual_offset: int,
+        bases: list[int],
+        vectorized_target: bool,
+        max_width: int | None,
+        max_seq_len: int | None,
+    ) -> None: ...
+
+class RecordData:
+    def __init__(self, id: str, seq: str, qual: str) -> None: ...
+    def id(self) -> str: ...
+    def set_id(self, id: str) -> None: ...
+    def seq(self) -> str: ...
+    def set_seq(self, seq: str) -> None: ...
+    def qual(self) -> str: ...
+    def set_qual(self, qual: str) -> None: ...
 
 def seq_to_kmers(seq: str, k: int) -> list[str]: ...
 def kmers_to_seq(kmers: list[str]) -> str: ...
