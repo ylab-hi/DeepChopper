@@ -28,8 +28,14 @@ pub fn write_fq(records: &[RecordData], file_path: Option<PathBuf>) -> Result<()
     }
     Ok(())
 }
-pub fn write_fq_parallel(records: &[RecordData], file_path: PathBuf) -> Result<()> {
-    let worker_count = thread::available_parallelism().unwrap_or(NonZeroUsize::MIN);
+pub fn write_fq_parallel(
+    records: &[RecordData],
+    file_path: PathBuf,
+    threads: Option<usize>,
+) -> Result<()> {
+    let worker_count = NonZeroUsize::new(threads.unwrap_or(1))
+        .map(|count| count.min(thread::available_parallelism().unwrap()))
+        .unwrap();
 
     let sink = File::create(file_path)?;
     let encoder = bgzf::MultithreadedWriter::with_worker_count(worker_count, sink);

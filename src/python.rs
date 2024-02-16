@@ -1,8 +1,9 @@
 use crate::{
     default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET},
-    fq_encode, kmer,
+    fq_encode, kmer, output,
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
+use anyhow::Context;
 use numpy::{IntoPyArray, PyArray3};
 use pyo3::prelude::*;
 use rayon::prelude::*;
@@ -14,6 +15,100 @@ fn default(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add("BASES", BASES)?;
     m.add("KMER_SIZE", KMER_SIZE)?;
     m.add("VECTORIZED_TARGET", VECTORIZED_TARGET)?;
+    Ok(())
+}
+
+#[pyclass]
+struct PyRecordData(fq_encode::RecordData);
+
+impl From<fq_encode::RecordData> for PyRecordData {
+    fn from(data: fq_encode::RecordData) -> Self {
+        Self(data)
+    }
+}
+
+// Implement FromPyObject for PyRecordData
+impl<'source> FromPyObject<'source> for PyRecordData {
+    fn extract(obj: &'source PyAny) -> PyResult<Self> {
+        // Example extraction logic:
+        // Assuming Python objects are tuples of (id, seq, qual)
+        let (id, seq, qual): (&str, &str, &str) = obj.extract()?;
+        Ok(PyRecordData(fq_encode::RecordData {
+            id: id.into(),
+            seq: seq.into(),
+            qual: qual.into(),
+        }))
+    }
+}
+
+#[pymethods]
+impl PyRecordData {
+    #[new]
+    fn new(id: String, seq: String, qual: String) -> Self {
+        Self(fq_encode::RecordData {
+            id: id.into(),
+            seq: seq.into(),
+            qual: qual.into(),
+        })
+    }
+
+    #[getter]
+    fn id(&self) -> String {
+        self.0.id.to_string()
+    }
+
+    #[setter]
+    fn set_id(&mut self, id: String) {
+        self.0.id = id.into();
+    }
+
+    #[getter]
+    fn seq(&self) -> String {
+        self.0.seq.to_string()
+    }
+
+    #[setter]
+    fn set_seq(&mut self, seq: String) {
+        self.0.seq = seq.into();
+    }
+
+    #[getter]
+    fn qual(&self) -> String {
+        self.0.qual.to_string()
+    }
+    #[setter]
+    fn set_qual(&mut self, qual: String) {
+        self.0.qual = qual.into();
+    }
+}
+
+#[pyfunction]
+fn write_fq(records_data: Vec<PyRecordData>, file_path: Option<PathBuf>) -> PyResult<()> {
+    let records: Vec<fq_encode::RecordData> = records_data
+        .into_par_iter()
+        .map(|py_record| py_record.0)
+        .collect();
+
+    output::write_fq(&records, file_path)
+        .context("failed to write fastq")
+        .unwrap();
+    Ok(())
+}
+
+#[pyfunction]
+fn write_fq_parallel(
+    records_data: Vec<PyRecordData>,
+    file_path: PathBuf,
+    threads: usize,
+) -> PyResult<()> {
+    let records: Vec<fq_encode::RecordData> = records_data
+        .into_par_iter()
+        .map(|py_record| py_record.0)
+        .collect();
+
+    output::write_fq_parallel(&records, file_path, Some(threads))
+        .context("failed to write fastq")
+        .unwrap();
     Ok(())
 }
 
@@ -114,6 +209,11 @@ fn test_string() -> PyResult<String> {
 #[pymodule]
 fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     pyo3_log::init();
+
+    let default_module = PyModule::new(_py, "default")?;
+    default(_py, default_module)?;
+    m.add_submodule(default_module)?;
+
     m.add_function(wrap_pyfunction!(test_string, m)?)?;
     m.add_function(wrap_pyfunction!(seq_to_kmers, m)?)?;
     m.add_function(wrap_pyfunction!(kmers_to_seq, m)?)?;
@@ -123,10 +223,10 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(to_kmer_target_region, m)?)?;
     m.add_function(wrap_pyfunction!(to_original_targtet_region, m)?)?;
     m.add_function(wrap_pyfunction!(kmerids_to_seq, m)?)?;
+    m.add_function(wrap_pyfunction!(write_fq, m)?)?;
+    m.add_function(wrap_pyfunction!(write_fq_parallel, m)?)?;
 
-    let default_module = PyModule::new(_py, "default")?;
-    default(_py, default_module)?;
-    m.add_submodule(default_module)?;
+    m.add_class::<PyRecordData>()?;
 
     Ok(())
 }
