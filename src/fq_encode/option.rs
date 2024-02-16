@@ -11,4 +11,10 @@ pub struct FqEncoderOption {
     pub bases: Vec<u8>,
     #[builder(default = "VECTORIZED_TARGET")]
     pub vectorized_target: bool,
+
+    #[builder(default = "0")]
+    pub max_width: usize,
+
+    #[builder(default = "0")]
+    pub max_seq_len: usize,
 }

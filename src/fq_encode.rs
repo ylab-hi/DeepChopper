@@ -26,7 +26,6 @@ pub use record::*;
 #[derive(Debug, Builder, Default)]
 pub struct FqEncoder {
     pub option: FqEncoderOption,
-    pub max_width: usize,
     pub kmer2id_table: Kmer2IdTable,
     pub id2kmer_table: Id2KmerTable,
 }
@@ -36,6 +35,7 @@ impl FqEncoder {
         let kmer2id_table = generate_kmers_table(&option.bases, option.kmer_size);
         let id2kmer_table: Id2KmerTable = kmer2id_table
             .iter()
+            .par_bridge()
             .map(|(kmer, id)| (*id, kmer.clone()))
             .collect();
 
@@ -48,7 +48,6 @@ impl FqEncoder {
             option,
             kmer2id_table,
             id2kmer_table,
-            ..Default::default()
         }
     }
 
@@ -81,10 +80,14 @@ impl FqEncoder {
     fn encode_target(&self, id: &[u8]) -> Result<Tensor> {
         let target = Self::parse_target_from_id(id).context("Failed to parse target from ID")?;
 
-        assert!(self.max_width > 0, "max_width should be greater than 0");
+        assert!(
+            self.option.max_width > 0,
+            "max_width should be greater than 0"
+        );
 
         if self.option.vectorized_target {
-            let mut encoded_target = Tensor::zeros((1, target.len(), self.max_width));
+            let mut encoded_target = Tensor::zeros((1, target.len(), self.option.max_width));
+
             // Example of a parallel operation using Zip and par_apply from ndarray's parallel feature
             encoded_target
                 .axis_iter_mut(Axis(0))
@@ -129,21 +132,44 @@ impl FqEncoder {
         Ok(encoded_target)
     }
 
-    fn encode_qual(qual: &[u8], socre_offset: Option<u8>) -> Vec<u8> {
-        let offset = socre_offset.unwrap_or(33);
+    fn encode_qual(&self, qual: &[u8]) -> (Vec<Element>, Vec<Element>) {
         // input is quality of fastq
         // 1. convert the quality to a score
         // 2. return the score
-        qual.par_iter()
+        let encoded_qual: Vec<u8> = qual
+            .par_iter()
             .map(|&q| {
                 // Convert ASCII to Phred score for Phred+33 encoding
-                q - offset
+                q - self.option.qual_offset
             })
-            .collect()
+            .collect();
+
+        let encoded_kmer_qual: Vec<Element> = encoded_qual
+            .kmers(self.option.kmer_size)
+            .par_bridge()
+            .map(|q| {
+                let values = q.to_vec();
+                // get average value of the kmer
+                let mean = values.iter().sum::<u8>() / values.len() as u8;
+                mean as Element
+            })
+            .collect();
+
+        (
+            encoded_qual.into_par_iter().map(|x| x as Element).collect(),
+            encoded_kmer_qual,
+        )
     }
 
     fn encoder_seq<'a>(&self, seq: &'a [u8]) -> Vec<&'a [u8]> {
         seq.kmers(self.option.kmer_size).collect()
+    }
+    fn unpack_data_parallel(
+        data: Vec<((Tensor, Tensor), Tensor)>,
+    ) -> (Vec<Tensor>, Vec<Tensor>, Vec<Tensor>) {
+        let (packed_tensors, elements): (Vec<_>, Vec<_>) = data.into_par_iter().unzip();
+        let (tensors1, tensors2): (Vec<_>, Vec<_>) = packed_tensors.into_par_iter().unzip();
+        (tensors1, tensors2, elements)
     }
 
     pub fn encode_fq(
@@ -151,19 +177,17 @@ impl FqEncoder {
         id: &[u8],
         seq: &[u8],
         qual: &[u8],
-        max_width: usize,
-    ) -> Result<(Tensor, Tensor)> {
+    ) -> Result<((Tensor, Tensor), Tensor)> {
         // 1.encode the sequence
         // 2.encode the quality
 
         // normalize to make sure all the bases are consistently capitalized and
         // that we remove the newlines since this is FASTA
         // change unknwon base to 'N'
-        let _current_width = seq.len().saturating_sub(self.option.kmer_size as usize) + 1;
+        let current_width = seq.len().saturating_sub(self.option.kmer_size as usize) + 1;
+        assert!(self.option.max_width.ge(&current_width));
 
-        // all assign -1 as missing value
-        // let mut encoded_input = Tensor::from_elem((1, 2, max_width), -1);
-
+        // encode the sequence
         let encoded_seq = self.encoder_seq(seq);
         let mut encoded_seq_id = encoded_seq
             .par_iter()
@@ -175,30 +199,37 @@ impl FqEncoder {
                     .unwrap()
             })
             .collect::<Vec<_>>();
-        encoded_seq_id.resize(max_width, -1);
 
-        let matrix_seq_id = Matrix::from_shape_vec((1, max_width), encoded_seq_id)
+        assert_eq!(encoded_seq_id.len(), current_width);
+        encoded_seq_id.resize(self.option.max_width, -1);
+
+        let matrix_seq_id = Matrix::from_shape_vec((1, self.option.max_width), encoded_seq_id)
             .context("invalid matrix shape herre ")?;
 
-        let mut encoded_qual: Vec<_> = Self::encode_qual(qual, Some(33))
-            .iter()
-            .map(|x| *x as Element)
-            .collect();
-        encoded_qual.resize(max_width, -1);
-        let matrix_qual = Matrix::from_shape_vec((1, max_width), encoded_qual)
+        // encode the quality
+        let (mut encoded_qual, mut encoded_kmer_qual) = self.encode_qual(qual);
+        encoded_kmer_qual.resize(self.option.max_width, -1);
+
+        encoded_qual.resize(self.option.max_seq_len, -1);
+
+        let matrix_qual = Matrix::from_shape_vec((1, self.option.max_seq_len), encoded_qual)
             .context("invalid matrix shape here")?;
+        // add a new axis to the matrix to make it Tensor
+        let qual_tensor = matrix_qual.insert_axis(Axis(0));
 
-        let encoded_input = stack![Axis(1), matrix_seq_id, matrix_qual];
-        let encoded_target = self.encode_target(id)?;
+        let matrix_kmer_qual =
+            Matrix::from_shape_vec((1, self.option.max_width), encoded_kmer_qual)
+                .context("invalid matrix shape here")?;
+        // assemble the input and target
+        let input_tensor = stack![Axis(1), matrix_seq_id, matrix_kmer_qual];
+        let target_tensor = self.encode_target(id)?;
 
-        Ok((encoded_input, encoded_target))
+        Ok(((input_tensor, target_tensor), qual_tensor))
     }
 
     fn fetch_records<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<RecordData>> {
         let mut reader = parse_fastx_file(path.as_ref()).context("valid path/file")?;
         let mut records = Vec::new();
-
-        let mut max_seq_len = 0;
 
         while let Some(record) = reader.next() {
             let seqrec = record.context("invalid record")?;
@@ -215,22 +246,27 @@ impl FqEncoder {
 
             assert_eq!(seq_len, qual_len);
 
-            if seq_len > max_seq_len {
-                max_seq_len = seq_len;
+            if seq_len > self.option.max_seq_len {
+                self.option.max_seq_len = seq_len;
             }
 
             records.push((id.to_vec(), seq.to_vec(), qual.to_vec()).into());
         }
 
-        if max_seq_len < self.option.kmer_size as usize {
+        if self.option.max_seq_len < self.option.kmer_size as usize {
             return Err(EncodingError::SeqShorterThanKmer.into());
         }
 
-        self.max_width = max_seq_len - self.option.kmer_size as usize + 1;
+        let max_width = self.option.max_seq_len - self.option.kmer_size as usize + 1;
+
+        if max_width > self.option.max_width {
+            self.option.max_width = max_width;
+        }
+
         Ok(records)
     }
 
-    pub fn encoder_fqs<P: AsRef<Path>>(&mut self, path: P) -> Result<(Tensor, Tensor)> {
+    pub fn encoder_fqs<P: AsRef<Path>>(&mut self, path: P) -> Result<(Tensor, Tensor, Tensor)> {
         let records = self.fetch_records(path)?;
 
         let data = records
@@ -240,17 +276,19 @@ impl FqEncoder {
                 let seq = data.seq.as_ref();
                 let qual = data.qual.as_ref();
 
-                self.encode_fq(id, seq, qual, self.max_width)
+                self.encode_fq(id, seq, qual)
                     .context(format!(
                         "encode  fq read id {} error",
                         String::from_utf8_lossy(id)
                     ))
                     .unwrap()
             })
-            .collect::<Vec<(Tensor, Tensor)>>();
+            .collect::<Vec<((Tensor, Tensor), Tensor)>>();
 
         // Unzip the vector of tuples into two separate vectors
-        let (inputs, targets): (Vec<Tensor>, Vec<Tensor>) = data.into_iter().unzip();
+        // let (inputs, targets): (Vec<Tensor>, Vec<Tensor>) = data.into_iter().unzip();
+        let (inputs, targets, quals): (Vec<Tensor>, Vec<Tensor>, Vec<Tensor>) =
+            Self::unpack_data_parallel(data);
 
         // Here's the critical adjustment: Ensure inputs:a  list of (1, 2, shape) and targets a list of shaped (1, class, 2) and stack them
         let inputs_tensor = concatenate(
@@ -264,8 +302,12 @@ impl FqEncoder {
         )
         .context("Failed to stack targets")?;
 
+        let quals_tensor =
+            concatenate(Axis(0), &quals.iter().map(|a| a.view()).collect::<Vec<_>>())
+                .context("Failed to stack quals")?;
+
         // concatenate the encoded input and target
-        Ok((inputs_tensor, targets_tensor))
+        Ok((inputs_tensor, targets_tensor, quals_tensor))
     }
 }
 
@@ -306,7 +348,7 @@ mod tests {
             .build()
             .unwrap();
         let mut encoder = FqEncoder::new(option);
-        let (_input, target) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+        let (_input, target, _qual) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
         let k = 3;
 
         let actual = 462..528;
@@ -329,7 +371,10 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let (_input, target) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+        let (_input, target, _qual) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+
+        println!("quals {:?}", _qual);
+
         let k = 3;
 
         let actual = 462..528;

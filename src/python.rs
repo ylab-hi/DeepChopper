@@ -176,7 +176,10 @@ fn encode_fqs(
     k: usize,
     bases: String,
     qual_offset: usize,
+    max_width: Option<usize>,
+    max_seq_len: Option<usize>,
 ) -> (
+    &PyArray3<Element>,
     &PyArray3<Element>,
     &PyArray3<Element>,
     HashMap<String, Element>,
@@ -185,11 +188,13 @@ fn encode_fqs(
         .kmer_size(k as u8)
         .bases(bases.as_bytes().to_vec())
         .qual_offset(qual_offset as u8)
+        .max_width(max_width.unwrap_or(0))
+        .max_seq_len(max_seq_len.unwrap_or(0))
         .build()
         .unwrap();
 
     let mut encoder = fq_encode::FqEncoder::new(option);
-    let (input, target) = encoder.encoder_fqs(fq_path).unwrap();
+    let (input, target, qual) = encoder.encoder_fqs(fq_path).unwrap();
 
     let kmer2id: HashMap<String, Element> = encoder
         .kmer2id_table
@@ -197,7 +202,12 @@ fn encode_fqs(
         .map(|(k, v)| (String::from_utf8_lossy(k).to_string(), *v))
         .collect();
 
-    (input.into_pyarray(py), target.into_pyarray(py), kmer2id)
+    (
+        input.into_pyarray(py),
+        target.into_pyarray(py),
+        qual.into_pyarray(py),
+        kmer2id,
+    )
 }
 
 #[pyfunction]
