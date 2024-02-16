@@ -26,7 +26,8 @@ fn summary_record_len(path: PathBuf) -> Result<Vec<usize>> {
         .unwrap();
     Ok(result)
 }
-#[pyclass]
+
+#[pyclass(name = "RecordData")]
 struct PyRecordData(fq_encode::RecordData);
 
 impl From<fq_encode::RecordData> for PyRecordData {
@@ -121,10 +122,16 @@ fn write_fq_parallel(
 }
 
 #[pyfunction]
-fn kmerids_to_seq(kmer_ids: Vec<Element>, kmer2id_table: Id2KmerTable) -> Result<String> {
-    let result = kmer::kmerids_to_seq(&kmer_ids, kmer2id_table)
-        .map(|x| String::from_utf8_lossy(&x).to_string());
-    result
+fn kmerids_to_seq(
+    kmer_ids: Vec<Element>,
+    id2kmer_table: HashMap<Element, String>,
+) -> Result<String> {
+    // let kmer
+    let id2kmer_table: Id2KmerTable = id2kmer_table
+        .par_iter()
+        .map(|(k, v)| (*k, v.as_bytes().to_vec()))
+        .collect();
+    kmer::kmerids_to_seq(&kmer_ids, id2kmer_table).map(|x| String::from_utf8_lossy(&x).to_string())
 }
 
 #[pyfunction]
@@ -178,6 +185,7 @@ fn encode_fq_paths(
     k: usize,
     bases: String,
     qual_offset: usize,
+    vectorized_target: bool,
     max_width: Option<usize>,
     max_seq_len: Option<usize>,
 ) -> (
@@ -190,6 +198,7 @@ fn encode_fq_paths(
         .kmer_size(k as u8)
         .bases(bases.as_bytes().to_vec())
         .qual_offset(qual_offset as u8)
+        .vectorized_target(vectorized_target)
         .max_width(max_width.unwrap_or(0))
         .max_seq_len(max_seq_len.unwrap_or(0))
         .build()
@@ -281,6 +290,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(write_fq, m)?)?;
     m.add_function(wrap_pyfunction!(write_fq_parallel, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_paths, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_fq_path, m)?)?;
     m.add_function(wrap_pyfunction!(summary_record_len, m)?)?;
 
     m.add_class::<PyRecordData>()?;
