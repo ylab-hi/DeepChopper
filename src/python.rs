@@ -4,7 +4,7 @@ use crate::{
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
 use anyhow::Context;
-use numpy::{IntoPyArray, PyArray3};
+use numpy::{IntoPyArray, PyArray2, PyArray3};
 use pyo3::prelude::*;
 use rayon::prelude::*;
 use std::{collections::HashMap, path::PathBuf};
@@ -181,7 +181,7 @@ fn encode_fqs(
 ) -> (
     &PyArray3<Element>,
     &PyArray3<Element>,
-    &PyArray3<Element>,
+    &PyArray2<Element>,
     HashMap<String, Element>,
 ) {
     let option = fq_encode::FqEncoderOptionBuilder::default()

@@ -165,8 +165,8 @@ impl FqEncoder {
         seq.kmers(self.option.kmer_size).collect()
     }
     fn unpack_data_parallel(
-        data: Vec<((Tensor, Tensor), Tensor)>,
-    ) -> (Vec<Tensor>, Vec<Tensor>, Vec<Tensor>) {
+        data: Vec<((Tensor, Tensor), Matrix)>,
+    ) -> (Vec<Tensor>, Vec<Tensor>, Vec<Matrix>) {
         let (packed_tensors, elements): (Vec<_>, Vec<_>) = data.into_par_iter().unzip();
         let (tensors1, tensors2): (Vec<_>, Vec<_>) = packed_tensors.into_par_iter().unzip();
         (tensors1, tensors2, elements)
@@ -177,7 +177,7 @@ impl FqEncoder {
         id: &[u8],
         seq: &[u8],
         qual: &[u8],
-    ) -> Result<((Tensor, Tensor), Tensor)> {
+    ) -> Result<((Tensor, Tensor), Matrix)> {
         // 1.encode the sequence
         // 2.encode the quality
 
@@ -211,11 +211,8 @@ impl FqEncoder {
         encoded_kmer_qual.resize(self.option.max_width, -1);
 
         encoded_qual.resize(self.option.max_seq_len, -1);
-
         let matrix_qual = Matrix::from_shape_vec((1, self.option.max_seq_len), encoded_qual)
             .context("invalid matrix shape here")?;
-        // add a new axis to the matrix to make it Tensor
-        let qual_tensor = matrix_qual.insert_axis(Axis(0));
 
         let matrix_kmer_qual =
             Matrix::from_shape_vec((1, self.option.max_width), encoded_kmer_qual)
@@ -224,7 +221,7 @@ impl FqEncoder {
         let input_tensor = stack![Axis(1), matrix_seq_id, matrix_kmer_qual];
         let target_tensor = self.encode_target(id)?;
 
-        Ok(((input_tensor, target_tensor), qual_tensor))
+        Ok(((input_tensor, target_tensor), matrix_qual))
     }
 
     fn fetch_records<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<RecordData>> {
@@ -266,7 +263,7 @@ impl FqEncoder {
         Ok(records)
     }
 
-    pub fn encoder_fqs<P: AsRef<Path>>(&mut self, path: P) -> Result<(Tensor, Tensor, Tensor)> {
+    pub fn encoder_fqs<P: AsRef<Path>>(&mut self, path: P) -> Result<(Tensor, Tensor, Matrix)> {
         let records = self.fetch_records(path)?;
 
         let data = records
@@ -283,11 +280,11 @@ impl FqEncoder {
                     ))
                     .unwrap()
             })
-            .collect::<Vec<((Tensor, Tensor), Tensor)>>();
+            .collect::<Vec<((Tensor, Tensor), Matrix)>>();
 
         // Unzip the vector of tuples into two separate vectors
         // let (inputs, targets): (Vec<Tensor>, Vec<Tensor>) = data.into_iter().unzip();
-        let (inputs, targets, quals): (Vec<Tensor>, Vec<Tensor>, Vec<Tensor>) =
+        let (inputs, targets, quals): (Vec<Tensor>, Vec<Tensor>, Vec<Matrix>) =
             Self::unpack_data_parallel(data);
 
         // Here's the critical adjustment: Ensure inputs:a  list of (1, 2, shape) and targets a list of shaped (1, class, 2) and stack them
@@ -373,10 +370,7 @@ mod tests {
         let mut encoder = FqEncoder::new(option);
         let (_input, target, _qual) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
 
-        println!("quals {:?}", _qual);
-
         let k = 3;
-
         let actual = 462..528;
         // let actual_target_seq = _input.slice(s![0, 0, actual.clone()]);
 
@@ -398,5 +392,40 @@ mod tests {
         let kmerids = _input.slice(s![0, 0, kmer_target]).to_vec();
         let kmer_seq: Vec<u8> = kmerids_to_seq(&kmerids, encoder.id2kmer_table).unwrap();
         assert_eq!(actual_target_seq, kmer_seq.as_slice());
+    }
+
+    #[test]
+    fn test_encode_fqs_vectorized_target_with_small_max_width() {
+        let option = FqEncoderOptionBuilder::default()
+            .kmer_size(3)
+            .vectorized_target(true)
+            .max_width(100)
+            .build()
+            .unwrap();
+
+        let mut encoder = FqEncoder::new(option);
+        let (input, target, qual) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+
+        assert_eq!(input.shape(), &[1, 2, 1347]);
+        assert_eq!(target.shape(), &[1, 1, 1347]);
+        assert_eq!(qual.shape(), &[1, 1349]);
+    }
+
+    #[test]
+    fn test_encode_fqs_vectorized_target_with_large_max_width() {
+        let option = FqEncoderOptionBuilder::default()
+            .kmer_size(3)
+            .vectorized_target(true)
+            .max_width(2000)
+            .max_seq_len(2000)
+            .build()
+            .unwrap();
+
+        let mut encoder = FqEncoder::new(option);
+        let (input, target, qual) = encoder.encoder_fqs("tests/data/test.fq.gz").unwrap();
+
+        assert_eq!(input.shape(), &[1, 2, 2000]);
+        assert_eq!(target.shape(), &[1, 1, 2000]);
+        assert_eq!(qual.shape(), &[1, 2000]);
     }
 }

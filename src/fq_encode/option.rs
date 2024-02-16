@@ -13,8 +13,8 @@ pub struct FqEncoderOption {
     pub vectorized_target: bool,
 
     #[builder(default = "0")]
-    pub max_width: usize,
+    pub max_width: usize, // control width of input and target tensor
 
     #[builder(default = "0")]
-    pub max_seq_len: usize,
+    pub max_seq_len: usize, // control width of original qual matrix
 }
