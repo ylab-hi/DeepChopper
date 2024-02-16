@@ -17,6 +17,8 @@ def main(file: Path):
     print(f"qual shape: {qual.shape}")
     print(f"kmer2idx={kmer2idx}")
 
+    print("save to npz")
+
     np.savez("inputs.npz", inputs)
     np.savez("target.npz", target)
     np.savez("qual.npz", qual)

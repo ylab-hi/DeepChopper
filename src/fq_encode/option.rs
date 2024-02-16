@@ -31,6 +31,10 @@ pub struct FqEncoderOption {
     #[pyo3(get, set)]
     #[builder(default = "0")]
     pub max_seq_len: usize, // control width of original qual matrix
+
+    #[pyo3(get, set)]
+    #[builder(default = "2")]
+    pub threads: usize,
 }
 
 #[pymethods]
@@ -43,6 +47,7 @@ impl FqEncoderOption {
         vectorized_target: bool,
         max_width: Option<usize>,
         max_seq_len: Option<usize>,
+        threads: Option<usize>,
     ) -> Self {
         FqEncoderOptionBuilder::default()
             .kmer_size(kmer_size)
@@ -51,6 +56,7 @@ impl FqEncoderOption {
             .vectorized_target(vectorized_target)
             .max_width(max_width.unwrap_or(0))
             .max_seq_len(max_seq_len.unwrap_or(0))
+            .threads(threads.unwrap_or(2))
             .build()
             .expect("Failed to build FqEncoderOption from Python arguments.")
     }

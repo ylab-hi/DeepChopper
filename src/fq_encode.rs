@@ -14,6 +14,8 @@ use crate::error::EncodingError;
 use crate::kmer::{generate_kmers_table, to_kmer_target_region};
 use crate::types::{Element, Id2KmerTable, Kmer2IdTable, Matrix, Tensor};
 
+// use log::info;
+
 mod option;
 mod record;
 mod stat;
