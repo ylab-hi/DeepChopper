@@ -18,6 +18,13 @@ fn default(_py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+#[pyfunction]
+fn summary_record_len(path: PathBuf) -> PyResult<Vec<usize>> {
+    let result = fq_encode::summary_record_len(path)
+        .context("failed to read fastq")
+        .unwrap();
+    Ok(result)
+}
 #[pyclass]
 struct PyRecordData(fq_encode::RecordData);
 
@@ -279,6 +286,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(write_fq, m)?)?;
     m.add_function(wrap_pyfunction!(write_fq_parallel, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_paths, m)?)?;
+    m.add_function(wrap_pyfunction!(summary_record_len, m)?)?;
 
     m.add_class::<PyRecordData>()?;
 
