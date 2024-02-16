@@ -206,12 +206,12 @@ fn encode_fq_paths(
     vectorized_target: bool,
     max_width: Option<usize>,
     max_seq_len: Option<usize>,
-) -> (
+) -> Result<(
     &PyArray3<Element>,
     &PyArray3<Element>,
     &PyArray2<Element>,
     HashMap<String, Element>,
-) {
+)> {
     let option = fq_encode::FqEncoderOptionBuilder::default()
         .kmer_size(k as u8)
         .bases(bases.as_bytes().to_vec())
@@ -219,11 +219,10 @@ fn encode_fq_paths(
         .vectorized_target(vectorized_target)
         .max_width(max_width.unwrap_or(0))
         .max_seq_len(max_seq_len.unwrap_or(0))
-        .build()
-        .unwrap();
+        .build()?;
 
     let encoder = fq_encode::FqEncoder::new(option);
-    let ((input, target), qual) = encoder.encode_fq_paths(&fq_paths).unwrap();
+    let ((input, target), qual) = encoder.encode_fq_paths(&fq_paths)?;
 
     let kmer2id: HashMap<String, Element> = encoder
         .kmer2id_table
@@ -231,12 +230,12 @@ fn encode_fq_paths(
         .map(|(k, v)| (String::from_utf8_lossy(k).to_string(), *v))
         .collect();
 
-    (
+    Ok((
         input.into_pyarray(py),
         target.into_pyarray(py),
         qual.into_pyarray(py),
         kmer2id,
-    )
+    ))
 }
 
 #[pyfunction]
@@ -249,12 +248,12 @@ fn encode_fq_path(
     vectorized_target: bool,
     max_width: Option<usize>,
     max_seq_len: Option<usize>,
-) -> (
+) -> Result<(
     &PyArray3<Element>,
     &PyArray3<Element>,
     &PyArray2<Element>,
     HashMap<String, Element>,
-) {
+)> {
     let option = fq_encode::FqEncoderOptionBuilder::default()
         .kmer_size(k as u8)
         .bases(bases.as_bytes().to_vec())
@@ -262,11 +261,10 @@ fn encode_fq_path(
         .max_width(max_width.unwrap_or(0))
         .max_seq_len(max_seq_len.unwrap_or(0))
         .vectorized_target(vectorized_target)
-        .build()
-        .unwrap();
+        .build()?;
 
     let mut encoder = fq_encode::FqEncoder::new(option);
-    let ((input, target), qual) = encoder.encode_fq_path(fq_path).unwrap();
+    let ((input, target), qual) = encoder.encode_fq_path(fq_path)?;
 
     let kmer2id: HashMap<String, Element> = encoder
         .kmer2id_table
@@ -274,12 +272,12 @@ fn encode_fq_path(
         .map(|(k, v)| (String::from_utf8_lossy(k).to_string(), *v))
         .collect();
 
-    (
+    Ok((
         input.into_pyarray(py),
         target.into_pyarray(py),
         qual.into_pyarray(py),
         kmer2id,
-    )
+    ))
 }
 
 #[pyfunction]

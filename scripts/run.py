@@ -3,9 +3,11 @@ from pathlib import Path
 from deepchopper import encode_fq_path
 
 import numpy as np
-
+import logging
 
 def main(file: Path):
+
+    logging.basicConfig(level=logging.DEBUG)
     data  = file
     k  = 3
     bases = "ACGTN"

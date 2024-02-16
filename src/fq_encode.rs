@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use derive_builder::Builder;
+use itertools::Itertools;
 use std::fmt::Display;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
@@ -242,6 +243,7 @@ impl FqEncoder {
 
     fn fetch_records<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<RecordData>> {
         let mut reader = parse_fastx_file(path.as_ref()).context("valid path/file")?;
+        info!("fetching records from {}", path.as_ref().display());
         let mut records = Vec::new();
 
         while let Some(record) = reader.next() {
@@ -276,6 +278,7 @@ impl FqEncoder {
             self.option.max_width = max_width;
         }
 
+        info!("total records: {}", records.len());
         info!("max_seq_len: {}", self.option.max_seq_len);
         info!("max_width: {}", self.option.max_width);
 
@@ -288,21 +291,30 @@ impl FqEncoder {
     ) -> Result<((Tensor, Tensor), Matrix)> {
         let records = self.fetch_records(path)?;
 
-        let data = records
+        let data: Vec<((Tensor, Tensor), Matrix)> = records
             .par_iter()
-            .map(|data| {
+            .filter_map(|data| {
                 let id = data.id.as_ref();
                 let seq = data.seq.as_ref();
                 let qual = data.qual.as_ref();
-
-                self.encode_fq(id, seq, qual)
-                    .context(format!(
-                        "encode  fq read id {} error",
-                        String::from_utf8_lossy(id)
-                    ))
-                    .unwrap()
+                match self.encode_fq(id, seq, qual).context(format!(
+                    "encode fq read id {} error",
+                    String::from_utf8_lossy(id)
+                )) {
+                    Ok(result) => Some(result),
+                    Err(e) => {
+                        warn!(
+                            "encode fq read id {} error: {}",
+                            String::from_utf8_lossy(id),
+                            e
+                        );
+                        None
+                    }
+                }
             })
-            .collect::<Vec<((Tensor, Tensor), Matrix)>>();
+            .collect();
+
+        info!("encoded records: {}", data.len());
 
         // Unzip the vector of tuples into two separate vectors
         // let (inputs, targets): (Vec<Tensor>, Vec<Tensor>) = data.into_iter().unzip();
