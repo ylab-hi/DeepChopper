@@ -5,7 +5,7 @@ use std::ops::Range;
 
 use crate::{error::EncodingError, fq_encode::RecordData};
 
-pub fn generate_records_by_remove_interval(
+pub fn split_records_by_remove_interval(
     seq: &BStr,
     id: &BStr,
     qual: &BStr,
@@ -37,9 +37,7 @@ pub fn generate_records_by_remove_interval(
     let records = ids
         .into_iter()
         .zip(seqs.into_iter().zip(quals))
-        .map(|(id, (seq, qual))| {
-            RecordData::new(id.as_bytes().to_vec(), seq.to_vec(), qual.to_vec())
-        })
+        .map(|(id, (seq, qual))| RecordData::new(id.into(), seq.into(), qual.into()))
         .collect();
 
     Ok(records)
