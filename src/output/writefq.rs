@@ -26,6 +26,7 @@ pub fn write_fq(records: &[RecordData], file_path: Option<PathBuf>) -> Result<()
         );
         writer.write_record(&record)?;
     }
+
     Ok(())
 }
 pub fn write_fq_parallel(
@@ -104,7 +105,7 @@ mod tests {
         let file_path = file.path().to_path_buf();
 
         // Call the function being tested
-        write_fq_parallel(&records, file_path).unwrap();
+        write_fq_parallel(&records, file_path, None).unwrap();
 
         let decoder = bgzf::Reader::new(file.reopen().unwrap());
         let mut reader = fastq::Reader::new(decoder);
