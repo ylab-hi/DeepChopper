@@ -21,7 +21,7 @@ def encode(c, file: Path):
     clean(c)
     FORMAT = "%(message)s"
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format=FORMAT,
         handlers=[RichHandler()],
     )

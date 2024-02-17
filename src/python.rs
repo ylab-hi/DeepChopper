@@ -3,8 +3,8 @@ use crate::{
     fq_encode, kmer, output,
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
-use anyhow::Context;
 use anyhow::Result;
+use bstr::BString;
 use numpy::{IntoPyArray, PyArray2, PyArray3};
 use pyo3::prelude::*;
 use rayon::prelude::*;
@@ -104,6 +104,18 @@ impl PyRecordData {
     fn set_qual(&mut self, qual: String) {
         self.0.qual = qual.into();
     }
+}
+
+#[pyfunction]
+fn extract_records_by_ids(ids: Vec<String>, path: PathBuf) -> Result<Vec<PyRecordData>> {
+    let ids: Vec<BString> = ids.into_par_iter().map(|id| id.into()).collect();
+
+    output::extract_records_by_ids(&ids, path).map(|records| {
+        records
+            .into_par_iter()
+            .map(|record| record.into())
+            .collect()
+    })
 }
 
 #[pyfunction]
@@ -299,6 +311,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(encode_fq_path, m)?)?;
     m.add_function(wrap_pyfunction!(summary_record_len, m)?)?;
     m.add_function(wrap_pyfunction!(test_log, m)?)?;
+    m.add_function(wrap_pyfunction!(extract_records_by_ids, m)?)?;
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;
