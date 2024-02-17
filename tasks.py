@@ -32,9 +32,7 @@ def log(c, level="info"):
 
 @task
 def clean(c):
-    Path("inputs.npz").unlink(missing_ok=True)
-    Path("target.npz").unlink(missing_ok=True)
-    Path("qual.npz").unlink(missing_ok=True)
+    Path("data.npz").unlink(missing_ok=True)
     Path("kmer2idx.txt").unlink(missing_ok=True)
 
 
@@ -63,10 +61,7 @@ def encode(c, file: Path, level="info"):
     bases = "ACGTN"
     qual_offset = 33
     inputs, target, qual, kmer2idx = encode_fq_path(data, k, bases, qual_offset, True)
-
-    np.savez("inputs.npz", inputs)
-    np.savez("target.npz", target)
-    np.savez("qual.npz", qual)
+    np.savez("data.npz", inputs=inputs, target=target, qual=qual)
 
     with open("kmer2idx.txt", "w") as f:
         for kmer, idx in kmer2idx.items():
