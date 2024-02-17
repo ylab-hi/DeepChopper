@@ -61,6 +61,12 @@ def encode(c, file: Path, level="info"):
     bases = "ACGTN"
     qual_offset = 33
     inputs, target, qual, kmer2idx = encode_fq_path(data, k, bases, qual_offset, True)
+
+    logging.info(f"inputs.shape: {inputs.shape}")
+    logging.info(f"target.shape: {target.shape}")
+    logging.info(f"qual.shape: {qual.shape}")
+    logging.info(f"len(kmer2idx): {len(kmer2idx)}")
+
     np.savez("data.npz", inputs=inputs, target=target, qual=qual)
 
     with open("kmer2idx.txt", "w") as f:

@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import warnings
 from importlib.util import find_spec
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import torch
 
 from . import pylogger, rich_utils
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from omegaconf import DictConfig
 
 log = pylogger.RankedLogger(__name__, rank_zero_only=True)

@@ -306,7 +306,7 @@ impl FqEncoder {
                     String::from_utf8_lossy(id)
                 )) {
                     Ok(result) => Some(result),
-                    Err(e) => None,
+                    Err(_e) => None,
                 }
             })
             .collect();
