@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Error, Result};
 use bstr::BStr;
 use rayon::prelude::*;
 use std::ops::Range;
@@ -10,7 +10,7 @@ pub fn split_records_by_remove_interval(
     id: &BStr,
     qual: &BStr,
     target: &[Range<usize>],
-) -> Result<Vec<RecordData>, EncodingError> {
+) -> Result<Vec<RecordData>> {
     let mut seqs = Vec::new();
     let mut quals = Vec::new();
 
@@ -25,11 +25,13 @@ pub fn split_records_by_remove_interval(
 
     // Ensure seqs and quals have the same length; otherwise, return an error or handle as needed
     if seqs.len() != qual.len() {
-        return Err(EncodingError::NotSameLengthForQualityAndSequence(format!(
-            "seqs: {:?}, quals: {:?}",
-            seqs.len(),
-            quals.len()
-        )));
+        return Err(Error::new(
+            EncodingError::NotSameLengthForQualityAndSequence(format!(
+                "seqs: {:?}, quals: {:?}",
+                seqs.len(),
+                quals.len()
+            )),
+        ));
     }
 
     let ids: Vec<String> = (0..seqs.len()).map(|x| format!("{}{}", id, x)).collect();
@@ -80,7 +82,7 @@ pub fn generate_unmaped_intervals(
 pub fn remove_intervals_and_keep_left<'a>(
     seq: &'a [u8],
     intervals: &[Range<usize>],
-) -> Result<Vec<&'a BStr>, EncodingError> {
+) -> Result<Vec<&'a BStr>> {
     let mut intervals = intervals.to_vec();
     intervals.par_sort_by(|a: &Range<usize>, b: &Range<usize>| a.start.cmp(&b.start));
     let slected_intervals = generate_unmaped_intervals(&intervals, seq.len());
@@ -91,13 +93,15 @@ pub fn remove_intervals_and_keep_left<'a>(
             // Check if the interval is valid and starts after the current start point
             if interval.start < seq.len() {
                 // Add the segment before the current interval
-                let res = seq[interval.start..interval.end].as_ref();
-                Ok(res)
+                Ok(seq[interval.start..interval.end].as_ref())
             } else {
-                Err(EncodingError::InvalidInterval(format!("{:?}", interval)))
+                Err(Error::new(EncodingError::InvalidInterval(format!(
+                    "{:?}",
+                    interval
+                ))))
             }
         })
-        .collect::<Result<Vec<_>, EncodingError>>()
+        .collect::<Result<Vec<_>>>()
 }
 
 #[cfg(test)]

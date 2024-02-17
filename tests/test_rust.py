@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def test_encode_fqs():
-    data  = Path("tests/data/test.fq.gz")
+    data  = Path("tests/data/one_record.fq.gz")
     k  = 3
     bases = "ACGTN"
     qual_offset = 33

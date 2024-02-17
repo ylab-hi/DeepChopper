@@ -75,8 +75,7 @@ impl FqEncoder {
         let number_part = src
             .split(|&c| c == b'|')
             .next()
-            .context("Failed to get number part")
-            .unwrap();
+            .context("Failed to get number part")?;
 
         number_part
             .par_split(|&c| c == b',')
@@ -93,6 +92,10 @@ impl FqEncoder {
 
     fn encode_target(&self, id: &[u8]) -> Result<Tensor> {
         let target = Self::parse_target_from_id(id).context("Failed to parse target from ID")?;
+        let kmer_target = target
+            .par_iter()
+            .map(|range| to_kmer_target_region(range, self.option.kmer_size as usize, None))
+            .collect::<Result<Vec<Range<usize>>>>()?;
 
         assert!(
             self.option.max_width > 0,
@@ -108,16 +111,11 @@ impl FqEncoder {
                 .into_par_iter()
                 .for_each(|mut subview| {
                     Zip::from(subview.axis_iter_mut(Axis(0)))
-                        .and(&target)
+                        .and(&kmer_target)
                         .for_each(|mut row, t| {
-                            let kmer_target =
-                                to_kmer_target_region(t, self.option.kmer_size as usize, None)
-                                    .context("failed to convert target to kmer region")
-                                    .unwrap();
                             // Safe fill based on kmer_target, assuming it's within bounds
-                            if kmer_target.start < kmer_target.end && kmer_target.end <= row.len() {
-                                row.slice_mut(s![kmer_target.start..kmer_target.end])
-                                    .fill(1);
+                            if t.start < t.end && t.end <= row.len() {
+                                row.slice_mut(s![t.start..t.end]).fill(1);
                             }
                         });
                 });
@@ -126,20 +124,15 @@ impl FqEncoder {
 
         let mut encoded_target = Tensor::zeros((1, target.len(), 2));
 
-        // Example of a parallel operation using Zip and par_apply from ndarray's parallel feature
         encoded_target
             .axis_iter_mut(Axis(0))
             .into_par_iter()
             .for_each(|mut subview| {
                 Zip::from(subview.axis_iter_mut(Axis(0)))
-                    .and(&target)
+                    .and(&kmer_target)
                     .for_each(|mut row, t| {
-                        let kmer_target =
-                            to_kmer_target_region(t, self.option.kmer_size as usize, None)
-                                .context("failed to convert target to kmer region")
-                                .unwrap();
-                        row[0] = kmer_target.start as Element;
-                        row[1] = kmer_target.end as Element;
+                        row[0] = t.start as Element;
+                        row[1] = t.end as Element;
                     });
             });
 
@@ -205,16 +198,16 @@ impl FqEncoder {
 
         // encode the sequence
         let encoded_seq = self.encoder_seq(seq);
+
         let mut encoded_seq_id = encoded_seq
             .into_par_iter()
             .map(|s| {
-                *self
-                    .kmer2id_table
+                self.kmer2id_table
                     .get(s)
-                    .context(format!("invalid kmer {}", String::from_utf8_lossy(s)))
-                    .unwrap()
+                    .ok_or(anyhow!("invalid kmer"))
+                    .copied()
             })
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<Element>>>()?;
 
         assert_eq!(encoded_seq_id.len(), current_width);
         encoded_seq_id.resize(self.option.max_width, -1);

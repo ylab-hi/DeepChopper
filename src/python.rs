@@ -39,10 +39,7 @@ impl fq_encode::FqEncoder {
 
 #[pyfunction]
 fn summary_record_len(path: PathBuf) -> Result<Vec<usize>> {
-    let result = fq_encode::summary_record_len(path)
-        .context("failed to read fastq")
-        .unwrap();
-    Ok(result)
+    fq_encode::summary_record_len(path)
 }
 
 #[pyclass(name = "RecordData")]
@@ -110,16 +107,12 @@ impl PyRecordData {
 }
 
 #[pyfunction]
-fn write_fq(records_data: Vec<PyRecordData>, file_path: Option<PathBuf>) -> PyResult<()> {
+fn write_fq(records_data: Vec<PyRecordData>, file_path: Option<PathBuf>) -> Result<()> {
     let records: Vec<fq_encode::RecordData> = records_data
         .into_par_iter()
         .map(|py_record| py_record.0)
         .collect();
-
     output::write_fq(&records, file_path)
-        .context("failed to write fastq")
-        .unwrap();
-    Ok(())
 }
 
 #[pyfunction]
@@ -127,16 +120,13 @@ fn write_fq_parallel(
     records_data: Vec<PyRecordData>,
     file_path: PathBuf,
     threads: usize,
-) -> PyResult<()> {
+) -> Result<()> {
     let records: Vec<fq_encode::RecordData> = records_data
         .into_par_iter()
         .map(|py_record| py_record.0)
         .collect();
 
     output::write_fq_parallel(&records, file_path, Some(threads))
-        .context("failed to write fastq")
-        .unwrap();
-    Ok(())
 }
 
 #[pyfunction]
