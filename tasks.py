@@ -5,7 +5,28 @@ import numpy as np
 from invoke import task
 from rich.logging import RichHandler
 
+import deepchopper
 from deepchopper import encode_fq_path
+
+
+@task
+def log(c, level="info"):
+    FORMAT = "%(message)s"
+
+    if level == "info":
+        level = logging.INFO
+    elif level == "debug":
+        level = logging.DEBUG
+    elif level == "warning":
+        level = logging.WARNING
+    else:
+        level = logging.INFO
+    logging.basicConfig(
+        level=level,
+        format=FORMAT,
+        handlers=[RichHandler()],
+    )
+    deepchopper.test_log()
 
 
 @task
