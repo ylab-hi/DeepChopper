@@ -292,6 +292,11 @@ fn test_string() -> PyResult<String> {
 fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     pyo3_log::init();
 
+    // rayon::ThreadPoolBuilder::new()
+    //     .num_threads(1)
+    //     .build_global()
+    //     .unwrap();
+
     let default_module = PyModule::new(_py, "default")?;
     default(_py, default_module)?;
     m.add_submodule(default_module)?;

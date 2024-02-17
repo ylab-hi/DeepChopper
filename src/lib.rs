@@ -2,10 +2,10 @@
 
 extern crate derive_builder;
 
-mod default;
-mod error;
-mod fq_encode;
-mod kmer;
-mod output;
-mod python;
-mod types;
+pub mod default;
+pub mod error;
+pub mod fq_encode;
+pub mod kmer;
+pub mod output;
+pub mod python;
+pub mod types;
