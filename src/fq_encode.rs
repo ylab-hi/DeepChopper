@@ -97,11 +97,6 @@ impl FqEncoder {
             .map(|range| to_kmer_target_region(range, self.option.kmer_size as usize, None))
             .collect::<Result<Vec<Range<usize>>>>()?;
 
-        assert!(
-            self.option.max_width > 0,
-            "max_width should be greater than 0"
-        );
-
         if self.option.vectorized_target {
             let mut encoded_target = Tensor::zeros((1, target.len(), self.option.max_width));
 
@@ -194,7 +189,14 @@ impl FqEncoder {
         // that we remove the newlines since this is FASTA
         // change unknwon base to 'N'
         let current_width = seq.len().saturating_sub(self.option.kmer_size as usize) + 1;
-        assert!(self.option.max_width.ge(&current_width));
+
+        if current_width > self.option.max_width {
+            return Err(anyhow!(
+                "invalid current_width: {} > max_width: {}",
+                current_width,
+                self.option.max_width
+            ));
+        }
 
         // encode the sequence
         let encoded_seq = self.encoder_seq(seq);
@@ -209,7 +211,14 @@ impl FqEncoder {
             })
             .collect::<Result<Vec<Element>>>()?;
 
-        assert_eq!(encoded_seq_id.len(), current_width);
+        if encoded_seq_id.len() != current_width {
+            return Err(anyhow!(
+                "invalid encoded_seq_id length: {} != current_width: {}",
+                encoded_seq_id.len(),
+                current_width
+            ));
+        }
+
         encoded_seq_id.resize(self.option.max_width, -1);
 
         let matrix_seq_id = Matrix::from_shape_vec((1, self.option.max_width), encoded_seq_id)
@@ -251,7 +260,12 @@ impl FqEncoder {
                 continue;
             }
 
-            assert_eq!(seq_len, qual_len);
+            if seq_len != qual_len {
+                return Err(anyhow!(
+                    "record: id {} seq_len != qual_len",
+                    String::from_utf8_lossy(id)
+                ));
+            }
 
             if seq_len > self.option.max_seq_len {
                 self.option.max_seq_len = seq_len;
@@ -309,7 +323,6 @@ impl FqEncoder {
         info!("encoded records: {}", data.len());
 
         // Unzip the vector of tuples into two separate vectors
-        // let (inputs, targets): (Vec<Tensor>, Vec<Tensor>) = data.into_iter().unzip();
         let (inputs, targets, quals): (Vec<Tensor>, Vec<Tensor>, Vec<Matrix>) =
             Self::unpack_data_parallel(data);
 

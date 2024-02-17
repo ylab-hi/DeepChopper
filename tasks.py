@@ -21,6 +21,7 @@ def log(c, level="info"):
         level = logging.WARNING
     else:
         level = logging.INFO
+
     logging.basicConfig(
         level=level,
         format=FORMAT,
@@ -38,11 +39,21 @@ def clean(c):
 
 
 @task
-def encode(c, file: Path):
+def encode(c, file: Path, level="info"):
     clean(c)
+
+    if level == "info":
+        level = logging.INFO
+    elif level == "debug":
+        level = logging.DEBUG
+    elif level == "warning":
+        level = logging.WARNING
+    else:
+        level = logging.INFO
+
     FORMAT = "%(message)s"
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=level,
         format=FORMAT,
         handlers=[RichHandler()],
     )
