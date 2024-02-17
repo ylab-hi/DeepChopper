@@ -48,8 +48,7 @@ impl FqEncoder {
     pub fn new(option: FqEncoderOption) -> Self {
         let kmer2id_table = generate_kmers_table(&option.bases, option.kmer_size);
         let id2kmer_table: Id2KmerTable = kmer2id_table
-            .iter()
-            .par_bridge()
+            .par_iter()
             .map(|(kmer, id)| (*id, kmer.clone()))
             .collect();
 
@@ -73,19 +72,20 @@ impl FqEncoder {
 
         // @462:528,100:120|738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8
         // removea content after |
-        let number_part = src.split(|&c| c == b'|').next().unwrap();
+        let number_part = src
+            .split(|&c| c == b'|')
+            .next()
+            .context("Failed to get number part")
+            .unwrap();
 
         number_part
             .par_split(|&c| c == b',')
             .map(|target| {
                 let mut parts = target.split(|&c| c == b':');
-
                 let start: usize =
                     lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
-
                 let end: usize =
                     lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
-
                 Ok(start..end)
             })
             .collect::<Result<Vec<_>>>()
@@ -192,7 +192,7 @@ impl FqEncoder {
         seq: &[u8],
         qual: &[u8],
     ) -> Result<((Tensor, Tensor), Matrix)> {
-        info!("encoding fq read id {}", String::from_utf8_lossy(id));
+        debug!("encoding fq read id {}", String::from_utf8_lossy(id));
 
         // 1.encode the sequence
         // 2.encode the quality
@@ -206,8 +206,8 @@ impl FqEncoder {
         // encode the sequence
         let encoded_seq = self.encoder_seq(seq);
         let mut encoded_seq_id = encoded_seq
-            .par_iter()
-            .map(|&s| {
+            .into_par_iter()
+            .map(|s| {
                 *self
                     .kmer2id_table
                     .get(s)
@@ -291,7 +291,7 @@ impl FqEncoder {
         let records = self.fetch_records(path)?;
 
         let data: Vec<((Tensor, Tensor), Matrix)> = records
-            .par_iter()
+            .into_par_iter()
             .filter_map(|data| {
                 let id = data.id.as_ref();
                 let seq = data.seq.as_ref();

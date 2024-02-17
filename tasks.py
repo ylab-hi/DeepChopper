@@ -1,12 +1,11 @@
-import sys
-from pathlib import Path
-from deepchopper import encode_fq_path
-
-from rich.logging import RichHandler
-import numpy as np
 import logging
+from pathlib import Path
 
+import numpy as np
 from invoke import task
+from rich.logging import RichHandler
+
+from deepchopper import encode_fq_path
 
 
 @task
@@ -19,8 +18,13 @@ def clean(c):
 
 @task
 def encode(c, file: Path):
+    clean(c)
     FORMAT = "%(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])
+    logging.basicConfig(
+        level=logging.INFO,
+        format=FORMAT,
+        handlers=[RichHandler()],
+    )
 
     data = file
     k = 3
@@ -28,12 +32,6 @@ def encode(c, file: Path):
     qual_offset = 33
     inputs, target, qual, kmer2idx = encode_fq_path(data, k, bases, qual_offset, True)
 
-    print(f"inputs shape: {inputs.shape}")
-    print(f"target shape: {target.shape}")
-    print(f"qual shape: {qual.shape}")
-    print(f"kmer2idx={kmer2idx}")
-
-    print("save to npz")
     np.savez("inputs.npz", inputs)
     np.savez("target.npz", target)
     np.savez("qual.npz", qual)
