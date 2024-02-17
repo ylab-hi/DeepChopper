@@ -301,6 +301,9 @@ impl FqEncoder {
                 let id = data.id.as_ref();
                 let seq = data.seq.as_ref();
                 let qual = data.qual.as_ref();
+
+                println!("encoding record: {}", String::from_utf8_lossy(id));
+
                 match self.encode_fq(id, seq, qual).context(format!(
                     "encode fq read id {} error",
                     String::from_utf8_lossy(id)

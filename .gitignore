@@ -3,7 +3,6 @@
 /cpm_modules
 .DS_Store
 
-
 tags
 target/
 **/*.rs.bk
@@ -568,3 +567,8 @@ TSWLatexianTemp*
 # End of https://www.toptal.com/developers/gitignore/api/latex
 
 SRR8615225.fq.gz
+data.npz
+kmer2idx.txt
+
+
+

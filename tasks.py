@@ -44,7 +44,7 @@ def encode(c, file: Path, level="info"):
         level = logging.INFO
     elif level == "debug":
         level = logging.DEBUG
-    elif level == "warning":
+    elif level == "warn":
         level = logging.WARNING
     else:
         level = logging.INFO
