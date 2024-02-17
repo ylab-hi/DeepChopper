@@ -22,7 +22,7 @@ train: ## Train models
 
 .PHONY: develop
 develop:
-	maturin develop
+	maturin develop --release
 
 .PHONY: build
 build: dev-packages ## Builds Rust code and Python modules
