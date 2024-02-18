@@ -180,6 +180,7 @@ impl FqEncoder {
         seq: &[u8],
         qual: &[u8],
     ) -> Result<((Tensor, Tensor), Matrix)> {
+        println!("encoding record: {}", String::from_utf8_lossy(id));
         // 1.encode the sequence
         // 2.encode the quality
 
@@ -301,8 +302,6 @@ impl FqEncoder {
                 let id = data.id.as_ref();
                 let seq = data.seq.as_ref();
                 let qual = data.qual.as_ref();
-
-                println!("encoding record: {}", String::from_utf8_lossy(id));
 
                 match self.encode_fq(id, seq, qual).context(format!(
                     "encode fq read id {} error",

@@ -9,6 +9,9 @@ name = "deepchopper"
 crate-type = ["cdylib", "rlib"]
 
 # [profile.release]
+# debug = true
+
+# [profile.release]
 # debug = 0
 # strip = "symbols"
 # lto = true
