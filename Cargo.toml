@@ -8,20 +8,17 @@ edition = "2021"
 name = "deepchopper"
 crate-type = ["cdylib", "rlib"]
 
-# [profile.release]
-# debug = true
 
-# [profile.release]
-# debug = 0
-# strip = "symbols"
-# lto = true
-# opt-level = 3
-# codegen-units = 1
+[profile.release]
+debug = 0
+strip = "symbols"
+lto = true
+opt-level = 3
+codegen-units = 1
 
-# [profile.no-opt]
-# inherits = "dev"
-# opt-level = 0
-
+[profile.no-opt]
+inherits = "dev"
+opt-level = 0
 
 [dependencies]
 thiserror = "1.0"

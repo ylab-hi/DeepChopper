@@ -366,7 +366,6 @@ impl FqEncoder {
         let quals_matrix =
             concatenate(Axis(0), &quals.iter().map(|a| a.view()).collect::<Vec<_>>())
                 .context("Failed to stack quals")?;
-
         Ok(((inputs_tensor, targets_tensor), quals_matrix))
     }
 }
@@ -515,5 +514,31 @@ mod tests {
         assert_eq!(input.shape(), &[25, 2, 4741]);
         assert_eq!(target.shape(), &[25, 1, 4741]);
         assert_eq!(qual.shape(), &[25, 4743]);
+    }
+
+    #[test]
+    fn test_encode_fq_paths() {
+        let option = FqEncoderOptionBuilder::default()
+            .kmer_size(3)
+            .max_width(15000)
+            .max_seq_len(15000)
+            .vectorized_target(true)
+            .build()
+            .unwrap();
+
+        let encoder = FqEncoder::new(option);
+        let paths = vec![
+            "tests/data/twenty_five_records.fq.gz",
+            "tests/data/1000_records.fq.gz",
+        ]
+        .into_iter()
+        .map(PathBuf::from)
+        .collect::<Vec<_>>();
+
+        let ((inputs, targets), quals) = encoder.encode_fq_paths(&paths).unwrap();
+
+        assert_eq!(inputs.shape(), &[1025, 2, 15000]);
+        assert_eq!(targets.shape(), &[1025, 1, 15000]);
+        assert_eq!(quals.shape(), &[1025, 15000]);
     }
 }
