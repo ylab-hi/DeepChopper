@@ -1,13 +1,16 @@
 use anyhow::{anyhow, Result};
 use derive_builder::Builder;
+use noodles::fastq;
 use std::fmt::Display;
+use std::fs::File;
+use std::io::BufReader;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use ndarray::{concatenate, s, stack, Axis, Zip};
 
-use needletail::{parse_fastx_file, Sequence};
+use needletail::Sequence;
 use pyo3::prelude::*;
 use rayon::prelude::*;
 
@@ -242,18 +245,20 @@ impl FqEncoder {
     }
 
     fn fetch_records<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<RecordData>> {
-        let mut reader = parse_fastx_file(path.as_ref()).context("valid path/file")?;
-
         info!("fetching records from {}", path.as_ref().display());
-        let mut records = Vec::new();
+        let mut reader = File::open(path.as_ref())
+            .map(BufReader::new)
+            .map(fastq::Reader::new)?;
 
-        while let Some(record) = reader.next() {
-            let seqrec = record.context("invalid record")?;
-            let id = seqrec.id();
-            let seq = seqrec.normalize(false);
-            let qual = seqrec.qual().context("invalid qual")?;
+        let mut records: Vec<RecordData> = Vec::new();
+        let mut record = fastq::Record::default();
 
-            let seq_len = seqrec.num_bases();
+        while reader.read_record(&mut record)? > 0 {
+            let id = record.definition().name();
+            let seq = record.sequence();
+            let normalized_seq = seq.normalize(false);
+            let qual = record.quality_scores();
+            let seq_len = normalized_seq.len();
             let qual_len = qual.len();
 
             if seq_len < self.option.kmer_size as usize {
@@ -270,7 +275,6 @@ impl FqEncoder {
             if seq_len > self.option.max_seq_len {
                 self.option.max_seq_len = seq_len;
             }
-
             records.push((id.to_vec(), seq.to_vec(), qual.to_vec()).into());
         }
 
@@ -287,7 +291,6 @@ impl FqEncoder {
         info!("total records: {}", records.len());
         info!("max_seq_len: {}", self.option.max_seq_len);
         info!("max_width: {}", self.option.max_width);
-
         Ok(records)
     }
 
@@ -408,9 +411,7 @@ mod tests {
             .build()
             .unwrap();
         let mut encoder = FqEncoder::new(option);
-        let ((_input, target), _qual) = encoder
-            .encode_fq_path("tests/data/one_record.fq.gz")
-            .unwrap();
+        let ((_input, target), _qual) = encoder.encode_fq_path("tests/data/one_record.fq").unwrap();
         let k = 3;
 
         let actual = 462..528;
@@ -433,9 +434,7 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let ((_input, target), _qual) = encoder
-            .encode_fq_path("tests/data/one_record.fq.gz")
-            .unwrap();
+        let ((_input, target), _qual) = encoder.encode_fq_path("tests/data/one_record.fq").unwrap();
 
         let k = 3;
         let actual = 462..528;
@@ -471,9 +470,7 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let ((input, target), qual) = encoder
-            .encode_fq_path("tests/data/one_record.fq.gz")
-            .unwrap();
+        let ((input, target), qual) = encoder.encode_fq_path("tests/data/one_record.fq").unwrap();
 
         assert_eq!(input.shape(), &[1, 2, 1347]);
         assert_eq!(target.shape(), &[1, 1, 1347]);
@@ -491,9 +488,7 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let ((input, target), qual) = encoder
-            .encode_fq_path("tests/data/one_record.fq.gz")
-            .unwrap();
+        let ((input, target), qual) = encoder.encode_fq_path("tests/data/one_record.fq").unwrap();
 
         assert_eq!(input.shape(), &[1, 2, 2000]);
         assert_eq!(target.shape(), &[1, 1, 2000]);
@@ -509,7 +504,7 @@ mod tests {
 
         let mut encoder = FqEncoder::new(option);
         let ((input, target), qual) = encoder
-            .encode_fq_path("tests/data/twenty_five_records.fq.gz")
+            .encode_fq_path("tests/data/twenty_five_records.fq")
             .unwrap();
 
         assert_eq!(input.shape(), &[25, 2, 4741]);
@@ -529,8 +524,8 @@ mod tests {
 
         let encoder = FqEncoder::new(option);
         let paths = vec![
-            "tests/data/twenty_five_records.fq.gz",
-            "tests/data/1000_records.fq.gz",
+            "tests/data/twenty_five_records.fq",
+            "tests/data/1000_records.fq",
         ]
         .into_iter()
         .map(PathBuf::from)
