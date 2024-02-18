@@ -569,3 +569,4 @@ TSWLatexianTemp*
 SRR8615225.fq.gz
 data.npz
 kmer2idx.txt
+massif.out.*
