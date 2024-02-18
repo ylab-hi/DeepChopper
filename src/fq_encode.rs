@@ -243,6 +243,7 @@ impl FqEncoder {
 
     fn fetch_records<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<RecordData>> {
         let mut reader = parse_fastx_file(path.as_ref()).context("valid path/file")?;
+
         info!("fetching records from {}", path.as_ref().display());
         let mut records = Vec::new();
 
