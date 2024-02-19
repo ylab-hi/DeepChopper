@@ -36,7 +36,38 @@ def clean(c):
 
 
 @task
-def encode(c, file: Path, level="info"):
+def encode_parqut(c, file: Path, level="info"):
+    from deepchopper import encode_fq_path_to_parquet
+
+    if level == "info":
+        level = logging.INFO
+    elif level == "debug":
+        level = logging.DEBUG
+    elif level == "warn":
+        level = logging.WARNING
+    else:
+        level = logging.INFO
+
+    FORMAT = "%(message)s"
+    logging.basicConfig(
+        level=level,
+        format=FORMAT,
+        handlers=[RichHandler()],
+    )
+    data = Path(file)
+    k = 3
+    bases = "ACGTN"
+    qual_offset = 33
+
+    encode_fq_path_to_parquet(data, k, bases, qual_offset, vectorized_target=False)
+    # import pyarrow.parquet as pq
+    # df = pq.read_table(result_path)
+    # df_pd = df.to_pandas()
+    # assert df_pd.shape == (25, 5)
+
+
+@task
+def encode_tensor(c, file: Path, level="info"):
     clean(c)
 
     if level == "info":
@@ -59,6 +90,7 @@ def encode(c, file: Path, level="info"):
     k = 3
     bases = "ACGTN"
     qual_offset = 33
+
     inputs, target, qual, kmer2idx = encode_fq_path(data, k, bases, qual_offset, True)
 
     logging.info(f"inputs.shape: {inputs.shape}")
