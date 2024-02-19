@@ -48,6 +48,7 @@ def encode_one_fq_file(
     logging.info(f"len(kmer2idx): {len(kmer2idx)}")
 
     np.savez(fq_folder / f"{fq_name}_data.npz", inputs=inputs, target=target, qual=qual)
+
     with Path(fq_folder / f"{fq_name}_kmer2idx.txt").open("w") as f:
         for kmer, idx in kmer2idx.items():
             f.write(f"{kmer}\t{idx}\n")
@@ -71,7 +72,7 @@ def encode_fq_files_in_folder(data_folder: Path):
 
     if not data_folder.exists():
         msg = f"Folder {data_folder} does not exist."
-        raise FileNotFoundError(msg)
+        logging.error(msg)
 
     for fq_file in data_folder.glob("*.fq"):
         logging.info(f"Encoding {fq_file}")

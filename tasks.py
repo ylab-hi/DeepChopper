@@ -56,7 +56,7 @@ def encode(c, file: Path, level="info"):
         handlers=[RichHandler()],
     )
 
-    data = file
+    data = Path(file)
     k = 3
     bases = "ACGTN"
     qual_offset = 33
@@ -80,3 +80,13 @@ def encode_fqs(c, data_folder):
 
     data_folder = Path(data_folder)
     encode_fq_files_in_folder(data_folder)
+
+
+@task
+def convert_safe(c, file):
+    from deepchopper.utils import save_ndarray_to_safetensor
+
+    file = Path(file)
+    data = np.load(file)
+
+    save_ndarray_to_safetensor(data, file.with_suffix(".safetensors"))
