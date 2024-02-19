@@ -8,6 +8,19 @@ use arrow::record_batch::RecordBatch;
 use parquet::arrow::arrow_writer::ArrowWriter;
 use parquet::file::properties::WriterProperties;
 
+use derive_builder::Builder;
+
+use crate::types::Element;
+
+#[derive(Debug, Builder, Default)]
+pub struct ParquetData {
+    pub id: String,                // id
+    pub kmer_seq: Vec<String>,     // kmer_seq
+    pub kmer_qual: Vec<Element>,   // kmer_qual
+    pub kmer_target: Vec<Element>, // kmer_target
+    pub qual: Vec<Element>,        // qual
+}
+
 pub fn write_parquet<P: AsRef<Path>>(
     path: P,
     record_batch: RecordBatch,
@@ -19,15 +32,4 @@ pub fn write_parquet<P: AsRef<Path>>(
     writer.write(&record_batch)?;
     writer.close()?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_name() {
-        // tt();
-        // write_record().unwrap();
-    }
 }

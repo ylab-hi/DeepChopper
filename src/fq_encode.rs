@@ -23,6 +23,7 @@ use arrow::datatypes::{DataType, Field, Schema};
 
 use crate::error::EncodingError;
 use crate::kmer::{generate_kmers_table, to_kmer_target_region};
+use crate::output::{ParquetData, ParquetDataBuilder};
 use crate::types::{Element, Id2KmerTable, Kmer2IdTable, Matrix, Tensor};
 
 mod option;
@@ -473,18 +474,7 @@ impl FqEncoder {
 
         Ok(data)
     }
-    pub fn encode_fq_to_parquet(
-        &self,
-        id: &[u8],
-        seq: &[u8],
-        qual: &[u8],
-    ) -> Result<(
-        String,       // id
-        Vec<String>,  // kmer_seq
-        Vec<Element>, // kmer_qual
-        Vec<Element>, // kmer_target
-        Vec<Element>, // qual
-    )> {
+    pub fn encode_fq_to_parquet(&self, id: &[u8], seq: &[u8], qual: &[u8]) -> Result<ParquetData> {
         // println!("encoding record: {}", String::from_utf8_lossy(id));
         // 1.encode the sequence
         // 2.encode the quality
@@ -513,60 +503,21 @@ impl FqEncoder {
             .iter()
             .for_each(|x| (x.start..x.end).for_each(|i| encoded_target[i] = 1));
 
-        Ok((
-            String::from_utf8_lossy(id).to_string(),
-            encoded_seq_str,
-            encoded_kmer_qual,
-            encoded_target,
-            encoded_qual,
-        ))
+        let result = ParquetDataBuilder::default()
+            .id(String::from_utf8_lossy(id).to_string())
+            .kmer_seq(encoded_seq_str)
+            .kmer_qual(encoded_kmer_qual)
+            .kmer_target(encoded_target)
+            .qual(encoded_qual)
+            .build()
+            .context("Failed to build parquet data")?;
+        Ok(result)
     }
 
     pub fn encode_fq_path_to_parquet<P: AsRef<Path>>(
         &mut self,
         path: P,
     ) -> Result<(RecordBatch, Arc<Schema>)> {
-        let records = self.fetch_records(path)?;
-        let data: Vec<_> = records
-            .into_par_iter()
-            .filter_map(|data| {
-                let id = data.id.as_ref();
-                let seq = data.seq.as_ref();
-                let qual = data.qual.as_ref();
-                match self.encode_fq_to_parquet(id, seq, qual).context(format!(
-                    "encode fq read id {} error",
-                    String::from_utf8_lossy(id)
-                )) {
-                    Ok((id, kmer_seq, kmer_qual, kmer_target, qual)) => Some((
-                        vec![id],
-                        vec![kmer_seq],
-                        vec![kmer_qual],
-                        vec![kmer_target],
-                        vec![qual],
-                    )),
-                    Err(_e) => None,
-                }
-            })
-            .collect();
-
-        let (ids, kmer_seqs, kmer_quals, kmer_targets, quals): (
-            Vec<String>,
-            Vec<Vec<String>>,
-            Vec<Vec<Element>>,
-            Vec<Vec<Element>>,
-            Vec<Vec<Element>>,
-        ) = data
-            .into_iter()
-            .reduce(|mut acc, item| {
-                acc.0.extend(item.0);
-                acc.1.extend(item.1);
-                acc.2.extend(item.2);
-                acc.3.extend(item.3);
-                acc.4.extend(item.4);
-                acc
-            })
-            .unwrap_or_default();
-
         // Define the schema of the data (one column of integers)
         let schema = Arc::new(Schema::new(vec![
             Field::new("id", DataType::Utf8, false),
@@ -592,6 +543,24 @@ impl FqEncoder {
             ),
         ]));
 
+        let records = self.fetch_records(path)?;
+
+        let data: Vec<ParquetData> = records
+            .into_par_iter()
+            .filter_map(|data| {
+                let id = data.id.as_ref();
+                let seq = data.seq.as_ref();
+                let qual = data.qual.as_ref();
+                match self.encode_fq_to_parquet(id, seq, qual).context(format!(
+                    "encode fq read id {} error",
+                    String::from_utf8_lossy(id)
+                )) {
+                    Ok(result) => Some(result),
+                    Err(_e) => None,
+                }
+            })
+            .collect();
+
         // Create builders for each field
         let mut id_builder = StringBuilder::new();
         let mut kmer_seq_builder = ListBuilder::new(StringBuilder::new());
@@ -601,26 +570,26 @@ impl FqEncoder {
         // Repeat for other fields...
 
         // Populate builders
-        for (i, id) in ids.iter().enumerate() {
-            id_builder.append_value(id);
-            let seqs = &kmer_seqs[i];
+        for parquet_record in data.iter() {
+            id_builder.append_value(&parquet_record.id);
+            let seqs = &parquet_record.kmer_seq;
             for seq in seqs {
                 kmer_seq_builder.values().append_value(seq);
             }
             kmer_seq_builder.append(true); // Finish the current list item
 
             // Repeat for kmer_qual, tag, kmer_target, and qual with their respective data...
-            for qual in &quals[i] {
+            for qual in &parquet_record.qual {
                 qual_builder.values().append_value(*qual);
             }
             qual_builder.append(true);
 
-            for kmer_qual in &kmer_quals[i] {
+            for kmer_qual in &parquet_record.kmer_qual {
                 kmer_qual_builder.values().append_value(*kmer_qual);
             }
             kmer_qual_builder.append(true);
 
-            for kmer_target in &kmer_targets[i] {
+            for kmer_target in &parquet_record.kmer_target {
                 kmer_target_builder.values().append_value(*kmer_target);
             }
             kmer_target_builder.append(true);
@@ -956,7 +925,7 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_fq_for_parquet_with_large_max_width_for_large_size_fq() {
+    fn test_encode_fq_for_parquet() {
         let option = FqEncoderOptionBuilder::default()
             .kmer_size(3)
             .vectorized_target(true)
