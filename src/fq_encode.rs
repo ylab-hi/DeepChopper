@@ -109,7 +109,7 @@ impl FqEncoder {
             .collect::<Result<Vec<Range<usize>>>>()?;
 
         if self.option.vectorized_target {
-            let mut encoded_target = Tensor::zeros((1, target.len(), self.option.max_width));
+            let mut encoded_target = Tensor::zeros((1, target.len(), self.option.tensor_max_width));
 
             // Example of a parallel operation using Zip and par_apply from ndarray's parallel feature
             encoded_target
@@ -246,11 +246,11 @@ impl FqEncoder {
         // change unknwon base to 'N'
         let current_width = seq.len().saturating_sub(self.option.kmer_size as usize) + 1;
 
-        if current_width > self.option.max_width {
+        if current_width > self.option.tensor_max_width {
             return Err(anyhow!(
                 "invalid current_width: {} > max_width: {}",
                 current_width,
-                self.option.max_width
+                self.option.tensor_max_width
             ));
         }
 
@@ -275,21 +275,22 @@ impl FqEncoder {
             ));
         }
 
-        encoded_seq_id.resize(self.option.max_width, -1);
+        encoded_seq_id.resize(self.option.tensor_max_width, -1);
 
-        let matrix_seq_id = Matrix::from_shape_vec((1, self.option.max_width), encoded_seq_id)
-            .context("invalid matrix shape herre ")?;
+        let matrix_seq_id =
+            Matrix::from_shape_vec((1, self.option.tensor_max_width), encoded_seq_id)
+                .context("invalid matrix shape herre ")?;
 
         // encode the quality
         let (mut encoded_qual, mut encoded_kmer_qual) = self.encode_qual(qual);
-        encoded_kmer_qual.resize(self.option.max_width, -1);
+        encoded_kmer_qual.resize(self.option.tensor_max_width, -1);
 
-        encoded_qual.resize(self.option.max_seq_len, -1);
-        let matrix_qual = Matrix::from_shape_vec((1, self.option.max_seq_len), encoded_qual)
+        encoded_qual.resize(self.option.tensor_max_seq_len, -1);
+        let matrix_qual = Matrix::from_shape_vec((1, self.option.tensor_max_seq_len), encoded_qual)
             .context("invalid matrix shape here")?;
 
         let matrix_kmer_qual =
-            Matrix::from_shape_vec((1, self.option.max_width), encoded_kmer_qual)
+            Matrix::from_shape_vec((1, self.option.tensor_max_width), encoded_kmer_qual)
                 .context("invalid matrix shape here")?;
         // assemble the input and target
         let input_tensor = stack![Axis(1), matrix_seq_id, matrix_kmer_qual];
@@ -326,25 +327,25 @@ impl FqEncoder {
                 ));
             }
 
-            if seq_len > self.option.max_seq_len {
-                self.option.max_seq_len = seq_len;
+            if seq_len > self.option.tensor_max_seq_len {
+                self.option.tensor_max_seq_len = seq_len;
             }
             records.push((id.to_vec(), seq.to_vec(), qual.to_vec()).into());
         }
 
-        if self.option.max_seq_len < self.option.kmer_size as usize {
+        if self.option.tensor_max_seq_len < self.option.kmer_size as usize {
             return Err(EncodingError::SeqShorterThanKmer.into());
         }
 
-        let max_width = self.option.max_seq_len - self.option.kmer_size as usize + 1;
+        let max_width = self.option.tensor_max_seq_len - self.option.kmer_size as usize + 1;
 
-        if max_width > self.option.max_width {
-            self.option.max_width = max_width;
+        if max_width > self.option.tensor_max_width {
+            self.option.tensor_max_width = max_width;
         }
 
         info!("total records: {}", records.len());
-        info!("max_seq_len: {}", self.option.max_seq_len);
-        info!("max_width: {}", self.option.max_width);
+        info!("max_seq_len: {}", self.option.tensor_max_seq_len);
+        info!("max_width: {}", self.option.tensor_max_width);
         Ok(records)
     }
 
@@ -404,8 +405,8 @@ impl FqEncoder {
                 ));
             }
 
-            if seq_len > self.option.max_seq_len {
-                self.option.max_seq_len = seq_len;
+            if seq_len > self.option.tensor_max_seq_len {
+                self.option.tensor_max_seq_len = seq_len;
             }
 
             let encoed_result = self.encode_fq_to_tensor(id, seq, qual).context(format!(
@@ -415,13 +416,13 @@ impl FqEncoder {
             data.push(encoed_result);
         }
 
-        if self.option.max_seq_len < self.option.kmer_size as usize {
+        if self.option.tensor_max_seq_len < self.option.kmer_size as usize {
             return Err(EncodingError::SeqShorterThanKmer.into());
         }
 
         info!("total records: {}", record_num);
-        info!("max_seq_len: {}", self.option.max_seq_len);
-        info!("max_width: {}", self.option.max_width);
+        info!("max_seq_len: {}", self.option.tensor_max_seq_len);
+        info!("max_width: {}", self.option.tensor_max_width);
 
         // Unzip the vector of tuples into two separate vectors
         let (inputs, targets, quals): (Vec<Tensor>, Vec<Tensor>, Vec<Matrix>) =
@@ -567,33 +568,34 @@ impl FqEncoder {
         let mut kmer_qual_builder = ListBuilder::new(Int32Builder::new());
         let mut kmer_target_builder = ListBuilder::new(Int32Builder::new());
         let mut qual_builder = ListBuilder::new(Int32Builder::new());
-        // Repeat for other fields...
 
         // Populate builders
-        for parquet_record in data.iter() {
+        data.into_iter().for_each(|parquet_record| {
             id_builder.append_value(&parquet_record.id);
-            let seqs = &parquet_record.kmer_seq;
-            for seq in seqs {
+
+            parquet_record.kmer_seq.into_iter().for_each(|seq| {
                 kmer_seq_builder.values().append_value(seq);
-            }
+            });
             kmer_seq_builder.append(true); // Finish the current list item
 
-            // Repeat for kmer_qual, tag, kmer_target, and qual with their respective data...
-            for qual in &parquet_record.qual {
-                qual_builder.values().append_value(*qual);
-            }
+            parquet_record.qual.into_iter().for_each(|qual| {
+                qual_builder.values().append_value(qual);
+            });
             qual_builder.append(true);
 
-            for kmer_qual in &parquet_record.kmer_qual {
-                kmer_qual_builder.values().append_value(*kmer_qual);
-            }
+            parquet_record.kmer_qual.into_iter().for_each(|kmer_qual| {
+                kmer_qual_builder.values().append_value(kmer_qual);
+            });
             kmer_qual_builder.append(true);
 
-            for kmer_target in &parquet_record.kmer_target {
-                kmer_target_builder.values().append_value(*kmer_target);
-            }
+            parquet_record
+                .kmer_target
+                .into_iter()
+                .for_each(|kmer_target| {
+                    kmer_target_builder.values().append_value(kmer_target);
+                });
             kmer_target_builder.append(true);
-        }
+        });
 
         // Build arrays
         let id_array = Arc::new(id_builder.finish());
@@ -809,7 +811,7 @@ mod tests {
         let option = FqEncoderOptionBuilder::default()
             .kmer_size(3)
             .vectorized_target(true)
-            .max_width(100)
+            .tensor_max_width(100)
             .build()
             .unwrap();
 
@@ -828,8 +830,8 @@ mod tests {
         let option = FqEncoderOptionBuilder::default()
             .kmer_size(3)
             .vectorized_target(true)
-            .max_width(2000)
-            .max_seq_len(2000)
+            .tensor_max_width(2000)
+            .tensor_max_seq_len(2000)
             .build()
             .unwrap();
 
@@ -865,8 +867,8 @@ mod tests {
     fn test_encode_fq_paths() {
         let option = FqEncoderOptionBuilder::default()
             .kmer_size(3)
-            .max_width(15000)
-            .max_seq_len(15000)
+            .tensor_max_width(15000)
+            .tensor_max_seq_len(15000)
             .vectorized_target(true)
             .build()
             .unwrap();
@@ -892,8 +894,8 @@ mod tests {
         let option = FqEncoderOptionBuilder::default()
             .kmer_size(3)
             .vectorized_target(true)
-            .max_width(2000)
-            .max_seq_len(2000)
+            .tensor_max_width(2000)
+            .tensor_max_seq_len(2000)
             .build()
             .unwrap();
 
@@ -908,7 +910,7 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_fq_for_json_with_large_max_width_for_large_size_fq() {
+    fn test_encode_fq_for_json_for_large_size_fq() {
         let option = FqEncoderOptionBuilder::default()
             .kmer_size(3)
             .vectorized_target(true)

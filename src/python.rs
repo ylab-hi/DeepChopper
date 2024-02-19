@@ -220,8 +220,8 @@ fn encode_fq_paths(
         .bases(bases.as_bytes().to_vec())
         .qual_offset(qual_offset as u8)
         .vectorized_target(vectorized_target)
-        .max_width(max_width.unwrap_or(0))
-        .max_seq_len(max_seq_len.unwrap_or(0))
+        .tensor_max_width(max_width.unwrap_or(0))
+        .tensor_max_seq_len(max_seq_len.unwrap_or(0))
         .build()?;
 
     let encoder = fq_encode::FqEncoder::new(option);
@@ -262,8 +262,8 @@ fn encode_fq_path(
         .kmer_size(k as u8)
         .bases(bases.as_bytes().to_vec())
         .qual_offset(qual_offset as u8)
-        .max_width(max_width.unwrap_or(0))
-        .max_seq_len(max_seq_len.unwrap_or(0))
+        .tensor_max_width(max_width.unwrap_or(0))
+        .tensor_max_seq_len(max_seq_len.unwrap_or(0))
         .vectorized_target(vectorized_target)
         .build()?;
 

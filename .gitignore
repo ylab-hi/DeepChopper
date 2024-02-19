@@ -572,3 +572,4 @@ kmer2idx.txt
 massif.out.*
 task.slurm
 temp/
+test.parquet
