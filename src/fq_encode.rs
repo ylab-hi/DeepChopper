@@ -215,7 +215,7 @@ impl FqEncoder {
 
         if encoded_seq_id.len() != current_width {
             return Err(anyhow!(
-                "invalid encoded_seq_id length: {} != current_width: {}",
+                "invalid encoded_seq_id length: {} != current_width: {}, please make sure set max_width and max_seq_len",
                 encoded_seq_id.len(),
                 current_width
             ));
@@ -294,6 +294,105 @@ impl FqEncoder {
         Ok(records)
     }
 
+    /// Reads a fastq file from the given path and encodes the sequences and quality scores into tensors and matrices.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - A path to the fastq file to be read and encoded
+    ///
+    /// # Returns
+    ///
+    /// Returns a tuple containing:
+    /// * A tuple of two tensors: the encoded input sequences and the encoded target sequences
+    /// * A matrix containing the quality scores for each sequence
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// * Make sure set max_width and max_seq_len
+    /// * The file at the given path cannot be opened or read
+    /// * An error occurs while encoding the sequences or quality scores
+    /// * The sequence length is shorter than the specified kmer size
+    /// * The sequence length does not match the quality score length
+    ///
+    /// # Example
+    ///
+    ///
+    pub fn encode_fq_path_in_a_row<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+    ) -> Result<((Tensor, Tensor), Matrix)> {
+        let mut reader = File::open(path.as_ref())
+            .map(BufReader::new)
+            .map(fastq::Reader::new)?;
+
+        let mut record = fastq::Record::default();
+        let mut record_num = 0;
+
+        let mut data = Vec::new();
+        while reader.read_record(&mut record)? > 0 {
+            record_num += 1;
+            let id = record.definition().name();
+            let seq = record.sequence();
+            let normalized_seq = seq.normalize(false);
+            let qual = record.quality_scores();
+            let seq_len = normalized_seq.len();
+            let qual_len = qual.len();
+
+            if seq_len < self.option.kmer_size as usize {
+                continue;
+            }
+
+            if seq_len != qual_len {
+                return Err(anyhow!(
+                    "record: id {} seq_len != qual_len",
+                    String::from_utf8_lossy(id)
+                ));
+            }
+
+            if seq_len > self.option.max_seq_len {
+                self.option.max_seq_len = seq_len;
+            }
+
+            let encoed_result = self.encode_fq(id, seq, qual).context(format!(
+                "encode fq read id {} error",
+                String::from_utf8_lossy(id)
+            ))?;
+            data.push(encoed_result);
+        }
+
+        if self.option.max_seq_len < self.option.kmer_size as usize {
+            return Err(EncodingError::SeqShorterThanKmer.into());
+        }
+
+        info!("total records: {}", record_num);
+        info!("max_seq_len: {}", self.option.max_seq_len);
+        info!("max_width: {}", self.option.max_width);
+
+        // Unzip the vector of tuples into two separate vectors
+        let (inputs, targets, quals): (Vec<Tensor>, Vec<Tensor>, Vec<Matrix>) =
+            Self::unpack_data_parallel(data);
+
+        // Here's the critical adjustment: Ensure inputs:a  list of (1, 2, shape) and targets a list of shaped (1, class, 2) and stack them
+        let inputs_tensor = concatenate(
+            Axis(0),
+            &inputs.iter().map(|a| a.view()).collect::<Vec<_>>(),
+        )
+        .context("Failed to stack inputs")?;
+        let targets_tensor = concatenate(
+            Axis(0),
+            &targets.iter().map(|a| a.view()).collect::<Vec<_>>(),
+        )
+        .context("Failed to stack targets")?;
+
+        let quals_matrix =
+            concatenate(Axis(0), &quals.iter().map(|a| a.view()).collect::<Vec<_>>())
+                .context("Failed to stack quals")?;
+
+        // concatenate the encoded input and target
+        Ok(((inputs_tensor, targets_tensor), quals_matrix))
+    }
+
     pub fn encode_fq_path<P: AsRef<Path>>(
         &mut self,
         path: P,
@@ -343,14 +442,28 @@ impl FqEncoder {
         Ok(((inputs_tensor, targets_tensor), quals_matrix))
     }
 
-    pub fn encode_fq_paths(&self, paths: &[PathBuf]) -> Result<((Tensor, Tensor), Matrix)> {
-        let result = paths
-            .into_par_iter()
-            .map(|path| {
-                let mut encoder = self.clone();
-                encoder.encode_fq_path(path)
-            })
-            .collect::<Result<Vec<_>>>()?;
+    pub fn encode_fq_paths(
+        &self,
+        paths: &[PathBuf],
+        parallel_for_files: bool,
+    ) -> Result<((Tensor, Tensor), Matrix)> {
+        let result = if parallel_for_files {
+            paths
+                .into_par_iter()
+                .map(|path| {
+                    let mut encoder = self.clone();
+                    encoder.encode_fq_path(path)
+                })
+                .collect::<Result<Vec<_>>>()?
+        } else {
+            paths
+                .into_iter()
+                .map(|path| {
+                    let mut encoder = self.clone();
+                    encoder.encode_fq_path(path)
+                })
+                .collect::<Result<Vec<_>>>()?
+        };
 
         let (inputs, targets, quals): (Vec<Tensor>, Vec<Tensor>, Vec<Matrix>) =
             Self::unpack_data_parallel(result);
@@ -494,6 +607,7 @@ mod tests {
         assert_eq!(target.shape(), &[1, 1, 2000]);
         assert_eq!(qual.shape(), &[1, 2000]);
     }
+
     #[test]
     fn test_encode_fqs_vectorized_target_with_large_max_width_for_large_size_fq() {
         let option = FqEncoderOptionBuilder::default()
@@ -531,10 +645,30 @@ mod tests {
         .map(PathBuf::from)
         .collect::<Vec<_>>();
 
-        let ((inputs, targets), quals) = encoder.encode_fq_paths(&paths).unwrap();
+        let ((inputs, targets), quals) = encoder.encode_fq_paths(&paths, true).unwrap();
 
         assert_eq!(inputs.shape(), &[1025, 2, 15000]);
         assert_eq!(targets.shape(), &[1025, 1, 15000]);
         assert_eq!(quals.shape(), &[1025, 15000]);
+    }
+
+    #[test]
+    fn test_encode_fqs_in_a_row_vectorized_target_with_large_max_width() {
+        let option = FqEncoderOptionBuilder::default()
+            .kmer_size(3)
+            .vectorized_target(true)
+            .max_width(2000)
+            .max_seq_len(2000)
+            .build()
+            .unwrap();
+
+        let mut encoder = FqEncoder::new(option);
+        let ((input, target), qual) = encoder
+            .encode_fq_path_in_a_row("tests/data/one_record.fq")
+            .unwrap();
+
+        assert_eq!(input.shape(), &[1, 2, 2000]);
+        assert_eq!(target.shape(), &[1, 1, 2000]);
+        assert_eq!(qual.shape(), &[1, 2000]);
     }
 }

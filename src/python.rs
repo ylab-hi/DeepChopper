@@ -206,6 +206,7 @@ fn encode_fq_paths(
     bases: String,
     qual_offset: usize,
     vectorized_target: bool,
+    parallel_for_files: bool,
     max_width: Option<usize>,
     max_seq_len: Option<usize>,
 ) -> Result<(
@@ -224,7 +225,7 @@ fn encode_fq_paths(
         .build()?;
 
     let encoder = fq_encode::FqEncoder::new(option);
-    let ((input, target), qual) = encoder.encode_fq_paths(&fq_paths)?;
+    let ((input, target), qual) = encoder.encode_fq_paths(&fq_paths, parallel_for_files)?;
 
     let kmer2id: HashMap<String, Element> = encoder
         .kmer2id_table
