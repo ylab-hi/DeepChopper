@@ -60,6 +60,7 @@ def encode_fq_paths(
     bases: str,
     qual_offset: int,
     vectorized_target: bool,
+    parallel_for_files: bool,
     max_width: int | None = None,
     max_seq_len: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, int]]: ...
