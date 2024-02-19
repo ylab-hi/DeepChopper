@@ -66,6 +66,8 @@ hydra-optuna-sweeper = "^1.2.0"
 scipy = "1.11.3"
 transformers = "^4.37.2"
 safetensors = "^0.4.2"
+pyarrow = "^15.0.0"
+pandas = "^2.2.0"
 
 [[tool.poetry.source]]
 name = "pytorch"

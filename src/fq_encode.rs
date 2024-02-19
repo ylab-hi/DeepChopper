@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use arrow::record_batch::RecordBatch;
 use derive_builder::Builder;
 use noodles::fastq;
 use std::fmt::Display;
@@ -14,6 +15,11 @@ use needletail::Sequence;
 use pyo3::prelude::*;
 use rayon::prelude::*;
 use serde_json::json;
+
+use std::sync::Arc;
+
+use arrow::array::{Array, Int32Builder, ListBuilder, StringBuilder};
+use arrow::datatypes::{DataType, Field, Schema};
 
 use crate::error::EncodingError;
 use crate::kmer::{generate_kmers_table, to_kmer_target_region};
@@ -191,15 +197,6 @@ impl FqEncoder {
         // normalize to make sure all the bases are consistently capitalized and
         // that we remove the newlines since this is FASTA
         // change unknwon base to 'N'
-        let current_width = seq.len().saturating_sub(self.option.kmer_size as usize) + 1;
-
-        if current_width > self.option.max_width {
-            return Err(anyhow!(
-                "invalid current_width: {} > max_width: {}",
-                current_width,
-                self.option.max_width
-            ));
-        }
         // encode the sequence
         let encoded_seq = self.encoder_seq(seq);
 
@@ -233,7 +230,7 @@ impl FqEncoder {
         }))
     }
 
-    pub fn encode_fq(
+    pub fn encode_fq_to_tensor(
         &self,
         id: &[u8],
         seq: &[u8],
@@ -374,7 +371,7 @@ impl FqEncoder {
     /// # Example
     ///
     ///
-    pub fn encode_fq_path_in_a_row<P: AsRef<Path>>(
+    pub fn encode_fq_path_to_tensor_non_parallel<P: AsRef<Path>>(
         &mut self,
         path: P,
     ) -> Result<((Tensor, Tensor), Matrix)> {
@@ -410,7 +407,7 @@ impl FqEncoder {
                 self.option.max_seq_len = seq_len;
             }
 
-            let encoed_result = self.encode_fq(id, seq, qual).context(format!(
+            let encoed_result = self.encode_fq_to_tensor(id, seq, qual).context(format!(
                 "encode fq read id {} error",
                 String::from_utf8_lossy(id)
             ))?;
@@ -476,7 +473,182 @@ impl FqEncoder {
 
         Ok(data)
     }
-    pub fn encode_fq_path<P: AsRef<Path>>(
+    pub fn encode_fq_to_parquet(
+        &self,
+        id: &[u8],
+        seq: &[u8],
+        qual: &[u8],
+    ) -> Result<(
+        String,       // id
+        Vec<String>,  // kmer_seq
+        Vec<Element>, // kmer_qual
+        Vec<Element>, // kmer_target
+        Vec<Element>, // qual
+    )> {
+        // println!("encoding record: {}", String::from_utf8_lossy(id));
+        // 1.encode the sequence
+        // 2.encode the quality
+
+        // normalize to make sure all the bases are consistently capitalized and
+        // that we remove the newlines since this is FASTA
+        // change unknwon base to 'N'
+        // encode the sequence
+        let encoded_seq = self.encoder_seq(seq);
+        let encoded_seq_str: Vec<String> = encoded_seq
+            .into_par_iter()
+            .map(|x| String::from_utf8_lossy(x).to_string())
+            .collect();
+
+        // encode the quality
+        let (encoded_qual, encoded_kmer_qual) = self.encode_qual(qual);
+
+        let target = Self::parse_target_from_id(id).context("Failed to parse target from ID")?;
+        let kmer_target = target
+            .par_iter()
+            .map(|range| to_kmer_target_region(range, self.option.kmer_size as usize, None))
+            .collect::<Result<Vec<Range<usize>>>>()?;
+
+        let mut encoded_target = vec![0; encoded_seq_str.len()];
+        kmer_target
+            .iter()
+            .for_each(|x| (x.start..x.end).for_each(|i| encoded_target[i] = 1));
+
+        Ok((
+            String::from_utf8_lossy(id).to_string(),
+            encoded_seq_str,
+            encoded_kmer_qual,
+            encoded_target,
+            encoded_qual,
+        ))
+    }
+
+    pub fn encode_fq_path_to_parquet<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+    ) -> Result<(RecordBatch, Arc<Schema>)> {
+        let records = self.fetch_records(path)?;
+        let data: Vec<_> = records
+            .into_par_iter()
+            .filter_map(|data| {
+                let id = data.id.as_ref();
+                let seq = data.seq.as_ref();
+                let qual = data.qual.as_ref();
+                match self.encode_fq_to_parquet(id, seq, qual).context(format!(
+                    "encode fq read id {} error",
+                    String::from_utf8_lossy(id)
+                )) {
+                    Ok((id, kmer_seq, kmer_qual, kmer_target, qual)) => Some((
+                        vec![id],
+                        vec![kmer_seq],
+                        vec![kmer_qual],
+                        vec![kmer_target],
+                        vec![qual],
+                    )),
+                    Err(_e) => None,
+                }
+            })
+            .collect();
+
+        let (ids, kmer_seqs, kmer_quals, kmer_targets, quals): (
+            Vec<String>,
+            Vec<Vec<String>>,
+            Vec<Vec<Element>>,
+            Vec<Vec<Element>>,
+            Vec<Vec<Element>>,
+        ) = data
+            .into_iter()
+            .reduce(|mut acc, item| {
+                acc.0.extend(item.0);
+                acc.1.extend(item.1);
+                acc.2.extend(item.2);
+                acc.3.extend(item.3);
+                acc.4.extend(item.4);
+                acc
+            })
+            .unwrap_or_default();
+
+        // Define the schema of the data (one column of integers)
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("id", DataType::Utf8, false),
+            Field::new(
+                "kmer_seq",
+                DataType::List(Box::new(Field::new("item", DataType::Utf8, true)).into()),
+                false,
+            ),
+            Field::new(
+                "kmer_qual",
+                DataType::List(Box::new(Field::new("item", DataType::Int32, true)).into()),
+                false,
+            ),
+            Field::new(
+                "kmer_target",
+                DataType::List(Box::new(Field::new("item", DataType::Int32, true)).into()),
+                false,
+            ),
+            Field::new(
+                "qual",
+                DataType::List(Box::new(Field::new("item", DataType::Int32, true)).into()),
+                false,
+            ),
+        ]));
+
+        // Create builders for each field
+        let mut id_builder = StringBuilder::new();
+        let mut kmer_seq_builder = ListBuilder::new(StringBuilder::new());
+        let mut kmer_qual_builder = ListBuilder::new(Int32Builder::new());
+        let mut kmer_target_builder = ListBuilder::new(Int32Builder::new());
+        let mut qual_builder = ListBuilder::new(Int32Builder::new());
+        // Repeat for other fields...
+
+        // Populate builders
+        for (i, id) in ids.iter().enumerate() {
+            id_builder.append_value(id);
+            let seqs = &kmer_seqs[i];
+            for seq in seqs {
+                kmer_seq_builder.values().append_value(seq);
+            }
+            kmer_seq_builder.append(true); // Finish the current list item
+
+            // Repeat for kmer_qual, tag, kmer_target, and qual with their respective data...
+            for qual in &quals[i] {
+                qual_builder.values().append_value(*qual);
+            }
+            qual_builder.append(true);
+
+            for kmer_qual in &kmer_quals[i] {
+                kmer_qual_builder.values().append_value(*kmer_qual);
+            }
+            kmer_qual_builder.append(true);
+
+            for kmer_target in &kmer_targets[i] {
+                kmer_target_builder.values().append_value(*kmer_target);
+            }
+            kmer_target_builder.append(true);
+        }
+
+        // Build arrays
+        let id_array = Arc::new(id_builder.finish());
+        let kmer_seq_array = Arc::new(kmer_seq_builder.finish());
+        let kmer_qual_array = Arc::new(kmer_qual_builder.finish());
+        let qual_array = Arc::new(qual_builder.finish());
+        let kmer_target_array = Arc::new(kmer_target_builder.finish());
+
+        // Create a RecordBatch
+        let record_batch = RecordBatch::try_new(
+            schema.clone(),
+            vec![
+                id_array as Arc<dyn Array>,
+                kmer_seq_array as Arc<dyn Array>,
+                kmer_qual_array as Arc<dyn Array>,
+                kmer_target_array as Arc<dyn Array>,
+                qual_array as Arc<dyn Array>,
+            ],
+        )?;
+
+        Ok((record_batch, schema))
+    }
+
+    pub fn encode_fq_path_to_tensor<P: AsRef<Path>>(
         &mut self,
         path: P,
     ) -> Result<((Tensor, Tensor), Matrix)> {
@@ -489,7 +661,7 @@ impl FqEncoder {
                 let seq = data.seq.as_ref();
                 let qual = data.qual.as_ref();
 
-                match self.encode_fq(id, seq, qual).context(format!(
+                match self.encode_fq_to_tensor(id, seq, qual).context(format!(
                     "encode fq read id {} error",
                     String::from_utf8_lossy(id)
                 )) {
@@ -525,7 +697,7 @@ impl FqEncoder {
         Ok(((inputs_tensor, targets_tensor), quals_matrix))
     }
 
-    pub fn encode_fq_paths(
+    pub fn encode_fq_paths_to_tensor(
         &self,
         paths: &[PathBuf],
         parallel_for_files: bool,
@@ -535,15 +707,15 @@ impl FqEncoder {
                 .into_par_iter()
                 .map(|path| {
                     let mut encoder = self.clone();
-                    encoder.encode_fq_path(path)
+                    encoder.encode_fq_path_to_tensor(path)
                 })
                 .collect::<Result<Vec<_>>>()?
         } else {
             paths
-                .into_iter()
+                .iter()
                 .map(|path| {
                     let mut encoder = self.clone();
-                    encoder.encode_fq_path(path)
+                    encoder.encode_fq_path_to_tensor(path)
                 })
                 .collect::<Result<Vec<_>>>()?
         };
@@ -574,7 +746,10 @@ impl FqEncoder {
 mod tests {
     use ndarray::Array1;
 
-    use crate::kmer::{kmerids_to_seq, to_original_targtet_region};
+    use crate::{
+        kmer::{kmerids_to_seq, to_original_targtet_region},
+        output::{write_json, write_parquet},
+    };
 
     use super::*;
 
@@ -607,7 +782,9 @@ mod tests {
             .build()
             .unwrap();
         let mut encoder = FqEncoder::new(option);
-        let ((_input, target), _qual) = encoder.encode_fq_path("tests/data/one_record.fq").unwrap();
+        let ((_input, target), _qual) = encoder
+            .encode_fq_path_to_tensor("tests/data/one_record.fq")
+            .unwrap();
         let k = 3;
 
         let actual = 462..528;
@@ -630,7 +807,9 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let ((_input, target), _qual) = encoder.encode_fq_path("tests/data/one_record.fq").unwrap();
+        let ((_input, target), _qual) = encoder
+            .encode_fq_path_to_tensor("tests/data/one_record.fq")
+            .unwrap();
 
         let k = 3;
         let actual = 462..528;
@@ -666,7 +845,9 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let ((input, target), qual) = encoder.encode_fq_path("tests/data/one_record.fq").unwrap();
+        let ((input, target), qual) = encoder
+            .encode_fq_path_to_tensor("tests/data/one_record.fq")
+            .unwrap();
 
         assert_eq!(input.shape(), &[1, 2, 1347]);
         assert_eq!(target.shape(), &[1, 1, 1347]);
@@ -684,7 +865,9 @@ mod tests {
             .unwrap();
 
         let mut encoder = FqEncoder::new(option);
-        let ((input, target), qual) = encoder.encode_fq_path("tests/data/one_record.fq").unwrap();
+        let ((input, target), qual) = encoder
+            .encode_fq_path_to_tensor("tests/data/one_record.fq")
+            .unwrap();
 
         assert_eq!(input.shape(), &[1, 2, 2000]);
         assert_eq!(target.shape(), &[1, 1, 2000]);
@@ -701,7 +884,7 @@ mod tests {
 
         let mut encoder = FqEncoder::new(option);
         let ((input, target), qual) = encoder
-            .encode_fq_path("tests/data/twenty_five_records.fq")
+            .encode_fq_path_to_tensor("tests/data/twenty_five_records.fq")
             .unwrap();
 
         assert_eq!(input.shape(), &[25, 2, 4741]);
@@ -728,7 +911,7 @@ mod tests {
         .map(PathBuf::from)
         .collect::<Vec<_>>();
 
-        let ((inputs, targets), quals) = encoder.encode_fq_paths(&paths, true).unwrap();
+        let ((inputs, targets), quals) = encoder.encode_fq_paths_to_tensor(&paths, true).unwrap();
 
         assert_eq!(inputs.shape(), &[1025, 2, 15000]);
         assert_eq!(targets.shape(), &[1025, 1, 15000]);
@@ -747,7 +930,7 @@ mod tests {
 
         let mut encoder = FqEncoder::new(option);
         let ((input, target), qual) = encoder
-            .encode_fq_path_in_a_row("tests/data/one_record.fq")
+            .encode_fq_path_to_tensor_non_parallel("tests/data/one_record.fq")
             .unwrap();
 
         assert_eq!(input.shape(), &[1, 2, 2000]);
@@ -768,13 +951,22 @@ mod tests {
             .encode_fq_path_to_json("tests/data/one_record.fq")
             .unwrap();
 
-        use std::fs::File;
-        use std::io::{BufWriter, Write};
-        let output = File::create("test.json").unwrap();
-        let mut buf = BufWriter::new(output);
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        write_json(temp_file, result).unwrap();
+    }
 
-        result.into_iter().for_each(|record| {
-            buf.write_all(record.to_string().as_bytes()).unwrap();
-        });
+    #[test]
+    fn test_encode_fq_for_parquet_with_large_max_width_for_large_size_fq() {
+        let option = FqEncoderOptionBuilder::default()
+            .kmer_size(3)
+            .vectorized_target(true)
+            .build()
+            .unwrap();
+
+        let mut encoder = FqEncoder::new(option);
+        let (record_batch, scheme) = encoder
+            .encode_fq_path_to_parquet("tests/data/twenty_five_records.fq")
+            .unwrap();
+        write_parquet("test.parquet", record_batch, scheme).unwrap();
     }
 }

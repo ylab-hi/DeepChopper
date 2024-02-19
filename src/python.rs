@@ -225,7 +225,8 @@ fn encode_fq_paths(
         .build()?;
 
     let encoder = fq_encode::FqEncoder::new(option);
-    let ((input, target), qual) = encoder.encode_fq_paths(&fq_paths, parallel_for_files)?;
+    let ((input, target), qual) =
+        encoder.encode_fq_paths_to_tensor(&fq_paths, parallel_for_files)?;
 
     let kmer2id: HashMap<String, Element> = encoder
         .kmer2id_table
@@ -267,7 +268,7 @@ fn encode_fq_path(
         .build()?;
 
     let mut encoder = fq_encode::FqEncoder::new(option);
-    let ((input, target), qual) = encoder.encode_fq_path(fq_path)?;
+    let ((input, target), qual) = encoder.encode_fq_path_to_tensor(fq_path)?;
 
     let kmer2id: HashMap<String, Element> = encoder
         .kmer2id_table

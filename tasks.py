@@ -76,10 +76,10 @@ def encode(c, file: Path, level="info"):
 
 @task
 def encode_fqs(c, data_folder):
-    from deepchopper.data import encode_fq_files_in_folder
+    from deepchopper.data import encode_fq_files_in_folder_to_tensor
 
     data_folder = Path(data_folder)
-    encode_fq_files_in_folder(data_folder)
+    encode_fq_files_in_folder_to_tensor(data_folder)
 
 
 @task
@@ -90,3 +90,10 @@ def convert_safe(c, file):
     data = np.load(file)
 
     save_ndarray_to_safetensor(data, file.with_suffix(".safetensors"))
+
+
+@task
+def readq(c, file):
+    import pyarrow.parquet as pq
+
+    pq.read_table(file)

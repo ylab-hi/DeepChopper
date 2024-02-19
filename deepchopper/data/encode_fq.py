@@ -4,10 +4,8 @@ from pathlib import Path
 import numpy as np
 from rich.logging import RichHandler
 
-from ..deepchopper import encode_fq_path  # noqa:TID252
 
-
-def encode_one_fq_file(
+def encode_one_fq_file_to_tensor(
     fq_file: Path,
     kmer_size: int = 3,
     qual_offset: int = 33,
@@ -40,7 +38,9 @@ def encode_one_fq_file(
     """
     fq_name = fq_file.stem
     fq_folder = fq_file.parent
-    inputs, target, qual, kmer2idx = encode_fq_path(fq_file, kmer_size, bases, qual_offset, vectorized_target=True)
+    inputs, target, qual, kmer2idx = encode_fq_path_to_json(
+        fq_file, kmer_size, bases, qual_offset, vectorized_target=True
+    )
 
     logging.info(f"inputs.shape: {inputs.shape}")
     logging.info(f"target.shape: {target.shape}")
@@ -54,7 +54,7 @@ def encode_one_fq_file(
             f.write(f"{kmer}\t{idx}\n")
 
 
-def encode_fq_files_in_folder(data_folder: Path):
+def encode_fq_files_in_folder_to_tensor(data_folder: Path):
     """Encode all fastq files in a given folder.
 
     Args:
@@ -76,4 +76,4 @@ def encode_fq_files_in_folder(data_folder: Path):
 
     for fq_file in data_folder.glob("*.fq"):
         logging.info(f"Encoding {fq_file}")
-        encode_one_fq_file(fq_file)
+        encode_one_fq_file_to_tensor(fq_file)
