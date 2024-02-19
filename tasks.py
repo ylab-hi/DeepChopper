@@ -6,7 +6,6 @@ from invoke import task
 from rich.logging import RichHandler
 
 import deepchopper
-from deepchopper import encode_fq_path
 
 
 @task
@@ -96,4 +95,12 @@ def convert_safe(c, file):
 def readq(c, file):
     import pyarrow.parquet as pq
 
-    pq.read_table(file)
+    df = pq.read_table(file)
+
+    df.to_pandas()
+
+    # from pyarrow import json
+    import json
+
+    df_dict = df.to_pydict()
+    json.dump(df_dict, open("df.json", "w"))

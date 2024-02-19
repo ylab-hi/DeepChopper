@@ -1,6 +1,7 @@
 use crate::{
     default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET},
-    fq_encode, kmer, output,
+    fq_encode, kmer,
+    output::{self, write_parquet},
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
 use anyhow::Result;
@@ -199,7 +200,7 @@ fn generate_kmers(base: String, k: usize) -> Vec<String> {
 }
 
 #[pyfunction]
-fn encode_fq_paths(
+fn encode_fq_paths_to_tensor(
     py: Python,
     fq_paths: Vec<PathBuf>,
     k: usize,
@@ -243,7 +244,7 @@ fn encode_fq_paths(
 }
 
 #[pyfunction]
-fn encode_fq_path(
+fn encode_fq_path_to_tensor(
     py: Python,
     fq_path: PathBuf,
     k: usize,
@@ -285,6 +286,42 @@ fn encode_fq_path(
 }
 
 #[pyfunction]
+fn encode_fq_path_to_parquet(
+    fq_path: PathBuf,
+    k: usize,
+    bases: String,
+    qual_offset: usize,
+    vectorized_target: bool,
+    max_width: Option<usize>,
+    max_seq_len: Option<usize>,
+    result_path: Option<PathBuf>,
+) -> Result<()> {
+    let option = fq_encode::FqEncoderOptionBuilder::default()
+        .kmer_size(k as u8)
+        .bases(bases.as_bytes().to_vec())
+        .qual_offset(qual_offset as u8)
+        .tensor_max_width(max_width.unwrap_or(0))
+        .tensor_max_seq_len(max_seq_len.unwrap_or(0))
+        .vectorized_target(vectorized_target)
+        .build()?;
+
+    let mut encoder = fq_encode::FqEncoder::new(option);
+    let (record_batch, schema) = encoder.encode_fq_path_to_parquet(&fq_path)?;
+
+    // result file is fq_path with .parquet extension
+    let parquet_path = if let Some(path) = result_path {
+        if path.with_extension("parquet").exists() {
+            warn!("{} already exists, overwriting", path.display());
+        }
+        path.with_extension("parquet")
+    } else {
+        fq_path.with_extension("parquet")
+    };
+    write_parquet(parquet_path, record_batch, schema)?;
+    Ok(())
+}
+
+#[pyfunction]
 fn test_string() -> PyResult<String> {
     Ok("Hello from Rust!".to_string())
 }
@@ -308,14 +345,15 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(kmers_to_seq, m)?)?;
     m.add_function(wrap_pyfunction!(generate_kmers_table, m)?)?;
     m.add_function(wrap_pyfunction!(generate_kmers, m)?)?;
-    m.add_function(wrap_pyfunction!(encode_fq_path, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_fq_path_to_tensor, m)?)?;
     m.add_function(wrap_pyfunction!(to_kmer_target_region, m)?)?;
     m.add_function(wrap_pyfunction!(to_original_targtet_region, m)?)?;
     m.add_function(wrap_pyfunction!(kmerids_to_seq, m)?)?;
     m.add_function(wrap_pyfunction!(write_fq, m)?)?;
     m.add_function(wrap_pyfunction!(write_fq_parallel, m)?)?;
-    m.add_function(wrap_pyfunction!(encode_fq_paths, m)?)?;
-    m.add_function(wrap_pyfunction!(encode_fq_path, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_fq_paths_to_tensor, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_fq_path_to_tensor, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_fq_path_to_parquet, m)?)?;
     m.add_function(wrap_pyfunction!(summary_record_len, m)?)?;
     m.add_function(wrap_pyfunction!(test_log, m)?)?;
     m.add_function(wrap_pyfunction!(extract_records_by_ids, m)?)?;

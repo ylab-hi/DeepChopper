@@ -499,10 +499,19 @@ impl FqEncoder {
             .map(|range| to_kmer_target_region(range, self.option.kmer_size as usize, None))
             .collect::<Result<Vec<Range<usize>>>>()?;
 
-        let mut encoded_target = vec![0; encoded_seq_str.len()];
-        kmer_target
-            .iter()
-            .for_each(|x| (x.start..x.end).for_each(|i| encoded_target[i] = 1));
+        let encoded_target = if self.option.vectorized_target {
+            let mut encoded_target = vec![0; encoded_seq_str.len()];
+            kmer_target
+                .iter()
+                .for_each(|x| (x.start..x.end).for_each(|i| encoded_target[i] = 1));
+            encoded_target
+        } else {
+            kmer_target
+                .into_par_iter()
+                .map(|x| [x.start as Element, x.end as Element])
+                .flatten()
+                .collect()
+        };
 
         let result = ParquetDataBuilder::default()
             .id(String::from_utf8_lossy(id).to_string())
@@ -930,7 +939,7 @@ mod tests {
     fn test_encode_fq_for_parquet() {
         let option = FqEncoderOptionBuilder::default()
             .kmer_size(3)
-            .vectorized_target(true)
+            .vectorized_target(false)
             .build()
             .unwrap();
 
