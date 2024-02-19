@@ -71,7 +71,7 @@ def encode_fq_files_in_folder(data_folder: Path):
 
     if not data_folder.exists():
         msg = f"Folder {data_folder} does not exist."
-        raise FileNotFoundError(msg)
+        logging.error(msg)
 
     for fq_file in data_folder.glob("*.fq"):
         logging.info(f"Encoding {fq_file}")
