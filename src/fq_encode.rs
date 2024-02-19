@@ -13,6 +13,7 @@ use ndarray::{concatenate, s, stack, Axis, Zip};
 use needletail::Sequence;
 use pyo3::prelude::*;
 use rayon::prelude::*;
+use serde_json::json;
 
 use crate::error::EncodingError;
 use crate::kmer::{generate_kmers_table, to_kmer_target_region};
@@ -175,6 +176,41 @@ impl FqEncoder {
         let (packed_tensors, elements): (Vec<_>, Vec<_>) = data.into_par_iter().unzip();
         let (tensors1, tensors2): (Vec<_>, Vec<_>) = packed_tensors.into_par_iter().unzip();
         (tensors1, tensors2, elements)
+    }
+
+    pub fn encode_fq_to_json(
+        &self,
+        id: &[u8],
+        seq: &[u8],
+        qual: &[u8],
+    ) -> Result<serde_json::Value> {
+        // println!("encoding record: {}", String::from_utf8_lossy(id));
+        // 1.encode the sequence
+        // 2.encode the quality
+
+        // normalize to make sure all the bases are consistently capitalized and
+        // that we remove the newlines since this is FASTA
+        // change unknwon base to 'N'
+        let current_width = seq.len().saturating_sub(self.option.kmer_size as usize) + 1;
+
+        if current_width > self.option.max_width {
+            return Err(anyhow!(
+                "invalid current_width: {} > max_width: {}",
+                current_width,
+                self.option.max_width
+            ));
+        }
+        // encode the sequence
+        let encoded_seq = self.encoder_seq(seq);
+        // encode the quality
+        let (encoded_qual, encoded_kmer_qual) = self.encode_qual(qual);
+
+        Ok(json!({
+            "id": String::from_utf8_lossy(id),
+            "kmer_seq": encoded_seq,
+            "kmer_qual": encoded_kmer_qual,
+            "qual": encoded_qual,
+        }))
     }
 
     pub fn encode_fq(
@@ -393,6 +429,29 @@ impl FqEncoder {
         Ok(((inputs_tensor, targets_tensor), quals_matrix))
     }
 
+    pub fn encode_fq_path_to_json<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+        let records = self.fetch_records(path)?;
+        let data: Vec<serde_json::Value> = records
+            .into_par_iter()
+            .filter_map(|data| {
+                let id = data.id.as_ref();
+                let seq = data.seq.as_ref();
+                let qual = data.qual.as_ref();
+
+                match self.encode_fq_to_json(id, seq, qual).context(format!(
+                    "encode fq read id {} error",
+                    String::from_utf8_lossy(id)
+                )) {
+                    Ok(result) => Some(result),
+                    Err(_e) => None,
+                }
+            })
+            .collect();
+
+        info!("encoded records: {}", data.len());
+
+        Ok(())
+    }
     pub fn encode_fq_path<P: AsRef<Path>>(
         &mut self,
         path: P,
