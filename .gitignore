@@ -571,3 +571,4 @@ data.npz
 kmer2idx.txt
 massif.out.*
 task.slurm
+temp/

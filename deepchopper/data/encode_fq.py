@@ -62,7 +62,7 @@ def encode_fq_files_in_folder(data_folder: Path):
     Raises:
         FileNotFoundError: If the specified data_folder does not exist.
     """
-    FORMAT = "(message)s"
+    FORMAT = "%(message)s"
     logging.basicConfig(
         level=logging.INFO,
         format=FORMAT,
