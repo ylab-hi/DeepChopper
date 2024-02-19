@@ -183,7 +183,7 @@ impl FqEncoder {
         seq: &[u8],
         qual: &[u8],
     ) -> Result<((Tensor, Tensor), Matrix)> {
-        println!("encoding record: {}", String::from_utf8_lossy(id));
+        // println!("encoding record: {}", String::from_utf8_lossy(id));
         // 1.encode the sequence
         // 2.encode the quality
 

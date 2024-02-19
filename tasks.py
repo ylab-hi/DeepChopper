@@ -72,3 +72,11 @@ def encode(c, file: Path, level="info"):
     with open("kmer2idx.txt", "w") as f:
         for kmer, idx in kmer2idx.items():
             f.write(f"{kmer}\t{idx}\n")
+
+
+@task
+def encode_fqs(c, data_folder):
+    from deepchopper.data import encode_fq_files_in_folder
+
+    data_folder = Path(data_folder)
+    encode_fq_files_in_folder(data_folder)
