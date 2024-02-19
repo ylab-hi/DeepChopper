@@ -202,13 +202,33 @@ impl FqEncoder {
         }
         // encode the sequence
         let encoded_seq = self.encoder_seq(seq);
+
+        let encoded_seq_str: Vec<String> = encoded_seq
+            .into_par_iter()
+            .map(|x| String::from_utf8_lossy(x).to_string())
+            .collect();
+
         // encode the quality
         let (encoded_qual, encoded_kmer_qual) = self.encode_qual(qual);
 
+        let target = Self::parse_target_from_id(id).context("Failed to parse target from ID")?;
+        let kmer_target = target
+            .par_iter()
+            .map(|range| to_kmer_target_region(range, self.option.kmer_size as usize, None))
+            .collect::<Result<Vec<Range<usize>>>>()?;
+
+        let mut encoded_target = vec![0; encoded_seq_str.len()];
+
+        kmer_target
+            .iter()
+            .for_each(|x| (x.start..x.end).for_each(|i| encoded_target[i] = 1));
+
         Ok(json!({
             "id": String::from_utf8_lossy(id),
-            "kmer_seq": encoded_seq,
+            "kmer_seq": encoded_seq_str,
             "kmer_qual": encoded_kmer_qual,
+            "tag": encoded_target,
+            "kmer_target": kmer_target,
             "qual": encoded_qual,
         }))
     }
@@ -429,8 +449,12 @@ impl FqEncoder {
         Ok(((inputs_tensor, targets_tensor), quals_matrix))
     }
 
-    pub fn encode_fq_path_to_json<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+    pub fn encode_fq_path_to_json<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+    ) -> Result<Vec<serde_json::Value>> {
         let records = self.fetch_records(path)?;
+
         let data: Vec<serde_json::Value> = records
             .into_par_iter()
             .filter_map(|data| {
@@ -450,7 +474,7 @@ impl FqEncoder {
 
         info!("encoded records: {}", data.len());
 
-        Ok(())
+        Ok(data)
     }
     pub fn encode_fq_path<P: AsRef<Path>>(
         &mut self,
@@ -729,5 +753,28 @@ mod tests {
         assert_eq!(input.shape(), &[1, 2, 2000]);
         assert_eq!(target.shape(), &[1, 1, 2000]);
         assert_eq!(qual.shape(), &[1, 2000]);
+    }
+
+    #[test]
+    fn test_encode_fq_for_json_with_large_max_width_for_large_size_fq() {
+        let option = FqEncoderOptionBuilder::default()
+            .kmer_size(3)
+            .vectorized_target(true)
+            .build()
+            .unwrap();
+
+        let mut encoder = FqEncoder::new(option);
+        let result = encoder
+            .encode_fq_path_to_json("tests/data/one_record.fq")
+            .unwrap();
+
+        use std::fs::File;
+        use std::io::{BufWriter, Write};
+        let output = File::create("test.json").unwrap();
+        let mut buf = BufWriter::new(output);
+
+        result.into_iter().for_each(|record| {
+            buf.write_all(record.to_string().as_bytes()).unwrap();
+        });
     }
 }
