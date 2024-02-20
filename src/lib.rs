@@ -1,7 +1,3 @@
-#![feature(portable_simd)]
-
-extern crate derive_builder;
-
 pub mod default;
 pub mod error;
 pub mod fq_encode;
