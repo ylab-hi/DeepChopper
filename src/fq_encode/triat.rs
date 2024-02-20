@@ -128,21 +128,14 @@ pub trait Encoder {
         overlap: bool,
     ) -> Result<Vec<&'a [u8]>> {
         if overlap {
-            return Ok(seq.kmers(kmer_size).collect());
+            return Ok(seq.par_windows(kmer_size as usize).collect());
         }
 
-        let mut seq_kmers = Vec::new();
-        let mut start_pos = 0;
-        if start_pos + kmer_size as usize > seq.len() {
+        if kmer_size as usize > seq.len() {
             return Err(anyhow!("kmer_size is larger than seq length"));
         }
 
-        while start_pos + kmer_size as usize <= seq.len() {
-            seq_kmers.push(&seq[start_pos..start_pos + kmer_size as usize]);
-            start_pos += 1;
-        }
-
-        Ok(seq_kmers)
+        Ok(seq.par_chunks(kmer_size as usize).collect())
     }
 }
 

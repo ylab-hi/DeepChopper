@@ -85,14 +85,6 @@ impl TensorEncoder {
             .map(|(kmer, id)| (*id, kmer.clone()))
             .collect();
 
-        // TensorEncoderBuilder::default()
-        //     .option(option)
-        //     .tensor_max_width(tensor_max_width)
-        //     .tensor_max_seq_len(tensor_max_seq_len)
-        //     .kmer2id_table(kmer2id_table)
-        //     .id2kmer_table(id2kmer_table)
-        //     .build();
-
         // Construct and return the TensorEncoder instance
         Ok(TensorEncoder {
             option,

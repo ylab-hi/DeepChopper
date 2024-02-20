@@ -7,6 +7,7 @@ use crate::{
 };
 use anyhow::Result;
 use bstr::BString;
+use needletail::Sequence;
 use numpy::{IntoPyArray, PyArray2, PyArray3};
 use pyo3::prelude::*;
 use rayon::prelude::*;
@@ -193,8 +194,10 @@ fn to_kmer_target_region(
 }
 
 #[pyfunction]
-fn seq_to_kmers(seq: String, k: usize) -> Vec<String> {
-    kmer::seq_to_kmers(seq.as_bytes(), k as u8)
+fn seq_to_kmers(seq: String, k: usize, overlap: bool) -> Vec<String> {
+    let normalized_seq = seq.as_bytes().normalize(false);
+    kmer::seq_to_kmers(&normalized_seq, k, overlap)
+        .par_iter()
         .map(|s| String::from_utf8_lossy(s).to_string())
         .collect()
 }
@@ -218,6 +221,11 @@ fn generate_kmers(base: String, k: usize) -> Vec<String> {
         .into_iter()
         .map(|s| String::from_utf8_lossy(&s).to_string())
         .collect()
+}
+
+#[pyfunction]
+fn normalize_seq(seq: String, iupac: bool) -> String {
+    String::from_utf8_lossy(&seq.as_bytes().normalize(iupac)).to_string()
 }
 
 #[pyfunction]
@@ -411,6 +419,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     default(_py, default_module)?;
     m.add_submodule(default_module)?;
 
+    m.add_function(wrap_pyfunction!(normalize_seq, m)?)?;
     m.add_function(wrap_pyfunction!(seq_to_kmers, m)?)?;
     m.add_function(wrap_pyfunction!(kmers_to_seq, m)?)?;
     m.add_function(wrap_pyfunction!(generate_kmers_table, m)?)?;

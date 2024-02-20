@@ -1,5 +1,4 @@
 use itertools::Itertools;
-use needletail::kmer::Kmers;
 use rayon::prelude::*;
 use std::ops::Range;
 
@@ -75,8 +74,12 @@ pub fn to_kmer_target_region(
     Ok(new_start..new_end)
 }
 
-pub fn seq_to_kmers(seq: &[u8], k: u8) -> Kmers {
-    Kmers::new(seq, k)
+pub fn seq_to_kmers(seq: &[u8], k: usize, overlap: bool) -> Vec<&[u8]> {
+    if overlap {
+        seq.par_windows(k).collect()
+    } else {
+        seq.par_chunks(k).collect()
+    }
 }
 
 pub fn kmers_to_seq(kmers: Vec<&[u8]>) -> Vec<u8> {
@@ -123,13 +126,14 @@ mod tests {
     fn test_seq_to_kmers() {
         let seq1 = b"ATCGT";
         let k = 2;
-        let kmers = seq_to_kmers(seq1, k);
-        assert_eq!(kmers.into_iter().count(), seq1.len() - k as usize + 1);
+        let kmers = seq_to_kmers(seq1, k, true);
+        assert_eq!(kmers.len(), seq1.len() - k + 1);
 
         let seq2 = b"AT";
         let k = 3;
-        let kmers = seq_to_kmers(seq2, k);
-        assert_eq!(kmers.into_iter().count(), 0);
+        let kmers = seq_to_kmers(seq2, k, true);
+        println!("{:?}", kmers);
+        assert_eq!(kmers.len(), 0);
     }
 
     #[test]
@@ -200,7 +204,7 @@ mod tests {
     fn test_construct_seq_from_kmers() {
         let k = 3;
         let seq = b"AAACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT";
-        let kmers = seq_to_kmers(seq, k);
+        let kmers = seq_to_kmers(seq, k, true);
         let kmers_as_bytes: Vec<&[u8]> = kmers.into_iter().collect();
         let result = kmers_to_seq(kmers_as_bytes);
         assert_eq!(seq.to_vec(), result);
