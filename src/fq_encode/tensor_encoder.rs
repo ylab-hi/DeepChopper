@@ -370,7 +370,6 @@ impl Encoder for TensorEncoder {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
 
     use ndarray::Array1;
 

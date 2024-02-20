@@ -26,7 +26,7 @@ fn test_log() {
 #[pymodule]
 fn default(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add("QUAL_OFFSET", QUAL_OFFSET)?;
-    m.add("BASES", BASES)?;
+    m.add("BASES", String::from_utf8_lossy(BASES))?;
     m.add("KMER_SIZE", KMER_SIZE)?;
     m.add("VECTORIZED_TARGET", VECTORIZED_TARGET)?;
     Ok(())

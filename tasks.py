@@ -138,3 +138,11 @@ def readq(c, file):
     import json
     df_dict = df.to_pydict()
     json.dump(df_dict, open("df.json", "w"))
+
+
+
+@task 
+def test(c, file=None):
+    from datasets import load_dataset
+    dataset = load_dataset("tests/data/test_input.parquet")
+
