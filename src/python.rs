@@ -1,6 +1,8 @@
 use crate::{
     default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET},
-    fq_encode, kmer,
+    fq_encode,
+    fq_encode::Encoder,
+    kmer,
     output::{self, write_parquet},
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
@@ -31,10 +33,30 @@ fn default(_py: Python, m: &PyModule) -> PyResult<()> {
 }
 
 #[pymethods]
-impl fq_encode::FqEncoder {
+impl fq_encode::TensorEncoder {
+    #[new]
+    fn py_new(
+        option: fq_encode::FqEncoderOption,
+        tensor_max_width: Option<usize>,
+        tensor_max_seq_len: Option<usize>,
+    ) -> Self {
+        fq_encode::TensorEncoder::new(option, tensor_max_width, tensor_max_seq_len)
+    }
+}
+
+#[pymethods]
+impl fq_encode::JsonEncoder {
     #[new]
     fn py_new(option: fq_encode::FqEncoderOption) -> Self {
-        fq_encode::FqEncoder::new(option)
+        fq_encode::JsonEncoder::new(option)
+    }
+}
+
+#[pymethods]
+impl fq_encode::ParquetEncoder {
+    #[new]
+    fn py_new(option: fq_encode::FqEncoderOption) -> Self {
+        fq_encode::ParquetEncoder::new(option)
     }
 }
 
@@ -221,13 +243,15 @@ fn encode_fq_paths_to_tensor(
         .bases(bases.as_bytes().to_vec())
         .qual_offset(qual_offset as u8)
         .vectorized_target(vectorized_target)
+        .build()?;
+
+    let mut encoder = fq_encode::TensorEncoderBuilder::default()
+        .option(option)
         .tensor_max_width(max_width.unwrap_or(0))
         .tensor_max_seq_len(max_seq_len.unwrap_or(0))
         .build()?;
 
-    let encoder = fq_encode::FqEncoder::new(option);
-    let ((input, target), qual) =
-        encoder.encode_fq_paths_to_tensor(&fq_paths, parallel_for_files)?;
+    let ((input, target), qual) = encoder.encode_multiple(&fq_paths, parallel_for_files)?;
 
     let kmer2id: HashMap<String, Element> = encoder
         .kmer2id_table
@@ -263,13 +287,16 @@ fn encode_fq_path_to_tensor(
         .kmer_size(k as u8)
         .bases(bases.as_bytes().to_vec())
         .qual_offset(qual_offset as u8)
-        .tensor_max_width(max_width.unwrap_or(0))
-        .tensor_max_seq_len(max_seq_len.unwrap_or(0))
         .vectorized_target(vectorized_target)
         .build()?;
 
-    let mut encoder = fq_encode::FqEncoder::new(option);
-    let ((input, target), qual) = encoder.encode_fq_path_to_tensor(fq_path)?;
+    let mut encoder = fq_encode::TensorEncoderBuilder::default()
+        .option(option)
+        .tensor_max_width(max_width.unwrap_or(0))
+        .tensor_max_seq_len(max_seq_len.unwrap_or(0))
+        .build()?;
+
+    let ((input, target), qual) = encoder.encode(fq_path)?;
 
     let kmer2id: HashMap<String, Element> = encoder
         .kmer2id_table
@@ -292,21 +319,19 @@ fn encode_fq_path_to_parquet(
     bases: String,
     qual_offset: usize,
     vectorized_target: bool,
-    max_width: Option<usize>,
-    max_seq_len: Option<usize>,
     result_path: Option<PathBuf>,
 ) -> Result<()> {
     let option = fq_encode::FqEncoderOptionBuilder::default()
         .kmer_size(k as u8)
         .bases(bases.as_bytes().to_vec())
         .qual_offset(qual_offset as u8)
-        .tensor_max_width(max_width.unwrap_or(0))
-        .tensor_max_seq_len(max_seq_len.unwrap_or(0))
         .vectorized_target(vectorized_target)
         .build()?;
 
-    let mut encoder = fq_encode::FqEncoder::new(option);
-    let (record_batch, schema) = encoder.encode_fq_path_to_parquet(&fq_path)?;
+    let mut encoder = fq_encode::ParquetEncoderBuilder::default()
+        .option(option)
+        .build()?;
+    let (record_batch, schema) = encoder.encode(&fq_path)?;
 
     // result file is fq_path with .parquet extension
     let parquet_path = if let Some(path) = result_path {
@@ -319,11 +344,6 @@ fn encode_fq_path_to_parquet(
     };
     write_parquet(parquet_path, record_batch, schema)?;
     Ok(())
-}
-
-#[pyfunction]
-fn test_string() -> PyResult<String> {
-    Ok("Hello from Rust!".to_string())
 }
 
 /// A Python module implemented in Rust.
@@ -340,7 +360,6 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     default(_py, default_module)?;
     m.add_submodule(default_module)?;
 
-    m.add_function(wrap_pyfunction!(test_string, m)?)?;
     m.add_function(wrap_pyfunction!(seq_to_kmers, m)?)?;
     m.add_function(wrap_pyfunction!(kmers_to_seq, m)?)?;
     m.add_function(wrap_pyfunction!(generate_kmers_table, m)?)?;
@@ -360,7 +379,9 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;
-    m.add_class::<fq_encode::FqEncoder>()?;
+    m.add_class::<fq_encode::TensorEncoder>()?;
+    m.add_class::<fq_encode::JsonEncoder>()?;
+    m.add_class::<fq_encode::ParquetEncoder>()?;
 
     Ok(())
 }
