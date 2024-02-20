@@ -129,10 +129,12 @@ def readq(c, file):
 
     df = pq.read_table(file)
 
-    df.to_pandas()
+    df_pd = df.to_pandas()
+    print(df_pd.shape)
+    print(df_pd.head())
 
-    # from pyarrow import json
+
+    from pyarrow import json
     import json
-
     df_dict = df.to_pydict()
     json.dump(df_dict, open("df.json", "w"))
