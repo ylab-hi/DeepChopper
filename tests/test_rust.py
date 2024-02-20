@@ -15,7 +15,7 @@ def test_encode_fqs_to_parquet(tmp_path):
 
     df = pq.read_table(result_path)
     df_pd = df.to_pandas()
-    assert df_pd.shape == (25, 5)
+    assert df_pd.shape == (25, 4)
 
 
 

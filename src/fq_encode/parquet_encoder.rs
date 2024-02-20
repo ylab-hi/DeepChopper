@@ -48,7 +48,27 @@ impl Encoder for ParquetEncoder {
     type RecordOutput = Result<ParquetData>;
     type EncodeOutput = Result<(RecordBatch, Arc<Schema>)>;
 
-    fn encode_target(&self, id: &[u8], kmer_seq_len: Option<usize>) -> Self::TargetOutput {
+    fn encode_qual(
+        &self,
+        qual: &[u8],
+        _kmer_size: u8,
+        qual_offset: u8,
+    ) -> (Vec<Element>, Vec<Element>) {
+        // input is quality of fastq
+        // 1. convert the quality to a score
+        // 2. return the score
+        let encoded_qual: Vec<Element> = qual
+            .par_iter()
+            .map(|&q| {
+                // Convert ASCII to Phred score for Phred+33 encoding
+                (q - qual_offset) as Element
+            })
+            .collect();
+        let empty: Vec<Element> = vec![];
+        (encoded_qual, empty)
+    }
+
+    fn encode_target(&self, id: &[u8], _kmer_seq_len: Option<usize>) -> Self::TargetOutput {
         let target = Self::parse_target_from_id(id).context("Failed to parse target from ID")?;
         let result = target
             .into_par_iter()
@@ -59,12 +79,6 @@ impl Encoder for ParquetEncoder {
     }
 
     fn encode_record(&self, id: &[u8], seq: &[u8], qual: &[u8]) -> Self::RecordOutput {
-        // let encoded_seq = self.encoder_seq(seq, self.option.kmer_size);
-        // let encoded_seq_str: Vec<String> = encoded_seq
-        //     .into_par_iter()
-        //     .map(|x| String::from_utf8_lossy(x).to_string())
-        //     .collect();
-
         // encode the quality
         let (encoded_qual, _encoded_kmer_qual) =
             self.encode_qual(qual, self.option.kmer_size, self.option.qual_offset);

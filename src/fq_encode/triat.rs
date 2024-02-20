@@ -69,7 +69,7 @@ pub trait Encoder {
             let seq_len = normalized_seq.len();
             let qual_len = qual.len();
 
-            if seq_len < kmer_size as usize {
+            if kmer_size > 0 && seq_len < kmer_size as usize {
                 continue;
             }
 

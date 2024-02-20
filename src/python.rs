@@ -356,7 +356,7 @@ fn encode_fq_path_to_parquet(
     result_path: Option<PathBuf>,
 ) -> Result<()> {
     let option = fq_encode::FqEncoderOptionBuilder::default()
-        .kmer_size(k as u8)
+        .kmer_size(0)
         .bases(bases.as_bytes().to_vec())
         .qual_offset(qual_offset as u8)
         .vectorized_target(vectorized_target)
