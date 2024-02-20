@@ -26,6 +26,7 @@ use rayon::prelude::*;
 
 #[pyclass]
 #[derive(Debug, Builder, Default, Clone)]
+#[builder(build_fn(skip))] // Specify custom build function
 pub struct TensorEncoder {
     pub option: FqEncoderOption,
 
@@ -58,7 +59,50 @@ fn unpack_data_parallel(
     (tensors1, tensors2, elements)
 }
 
+impl TensorEncoderBuilder {
+    pub fn build(&self) -> Result<TensorEncoder> {
+        let option = self.option.clone().unwrap_or_default();
+        Ok(TensorEncoder::new(
+            option,
+            self.tensor_max_width,
+            self.tensor_max_seq_len,
+        ))
+    }
+}
+
 impl TensorEncoder {
+    pub fn build_custom(&self) -> Result<TensorEncoder> {
+        println!("building custom TensorEncoder");
+        // Extract values from builder, handling defaults and unwrapping Options
+        let option = self.option.clone();
+        let tensor_max_width = self.tensor_max_width;
+        let tensor_max_seq_len = self.tensor_max_seq_len;
+
+        // Your existing logic to initialize kmer2id_table and id2kmer_table
+        let kmer2id_table = generate_kmers_table(&option.bases, option.kmer_size);
+        let id2kmer_table: Id2KmerTable = kmer2id_table
+            .par_iter()
+            .map(|(kmer, id)| (*id, kmer.clone()))
+            .collect();
+
+        // TensorEncoderBuilder::default()
+        //     .option(option)
+        //     .tensor_max_width(tensor_max_width)
+        //     .tensor_max_seq_len(tensor_max_seq_len)
+        //     .kmer2id_table(kmer2id_table)
+        //     .id2kmer_table(id2kmer_table)
+        //     .build();
+
+        // Construct and return the TensorEncoder instance
+        Ok(TensorEncoder {
+            option,
+            tensor_max_width,
+            tensor_max_seq_len,
+            kmer2id_table,
+            id2kmer_table,
+        })
+    }
+
     pub fn new(
         option: FqEncoderOption,
         max_width: Option<usize>,
@@ -441,7 +485,7 @@ mod tests {
         let mut encoder = TensorEncoderBuilder::default()
             .option(option)
             .tensor_max_width(2000)
-            .tensor_max_width(2000)
+            .tensor_max_seq_len(2000)
             .build()
             .unwrap();
 
@@ -463,9 +507,11 @@ mod tests {
         let mut tensor_encoder = TensorEncoderBuilder::default()
             .option(option)
             .tensor_max_width(2000)
-            .tensor_max_width(2000)
+            .tensor_max_seq_len(2000)
             .build()
             .unwrap();
+
+        println!("{:?}", tensor_encoder);
 
         let ((input, target), qual) = tensor_encoder.encode("tests/data/one_record.fq").unwrap();
         assert_eq!(input.shape(), &[1, 2, 2000]);
@@ -484,7 +530,7 @@ mod tests {
         let mut encoder = TensorEncoderBuilder::default()
             .option(option)
             .tensor_max_width(15000)
-            .tensor_max_width(15000)
+            .tensor_max_seq_len(15000)
             .build()
             .unwrap();
 
@@ -515,6 +561,7 @@ mod tests {
             .option(option)
             .build()
             .unwrap();
+
         let ((input, target), qual) = encoder.encode("tests/data/twenty_five_records.fq").unwrap();
 
         assert_eq!(input.shape(), &[25, 2, 4741]);
