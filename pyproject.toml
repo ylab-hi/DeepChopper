@@ -104,6 +104,36 @@ changelog = "https://github.com/ylab-hi/DeepChopper/README.md"
 target-version = "py310"
 line-length = 120
 fix = true
+exclude = [
+    "tests/*",
+    "scripts/*",
+    "docs/conf.py",
+
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "tasks.py",
+]
+
+[tool.ruff.lint]
 fixable = ["ALL"]
 select = [
     "ANN",
@@ -157,6 +187,7 @@ select = [
     # "CPY",
     "COM",
 ]
+
 ignore = [
     "E501",
     "D203",
@@ -189,35 +220,6 @@ ignore = [
     'Q003',
     'W191',
 ]
-exclude = [
-    "tests/*",
-    "scripts/*",
-    "docs/conf.py",
-
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-
-]
-
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
@@ -229,20 +231,20 @@ indent-style = "space"
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
 
-[tool.ruff.flake8-bugbear]
+[tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["typer.Argument", "typer.Option"]
 
-[tool.ruff.flake8-annotations]
+[tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "deepchopper/data/mnist_datamodule.py" = ["ARG002", "PLR0913", "D205", "D402"]
 "deepchopper/models/mnist_module.py" = ["ARG002", "A002"]
 "deepchopper/utils/pylogger.py" = ["D205", "PLR5501", "SIM114"]
 "deepchopper/models/components/simple_dense_net.py" = ["ARG002", "PLR0913"]
 "deepchopper/eval.py" = ["S101"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = 'google'
 
 [tool.coverage.paths]
