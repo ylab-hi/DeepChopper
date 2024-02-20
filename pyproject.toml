@@ -82,7 +82,7 @@ priority = "primary"
 
 [[tool.poetry.source]]
 name = "pytorch-cu121"
-url = "https://download.pytorch.org/whl/cu121"
+url = "https://download.pytorch.org/whl/cu118"
 priority = "explicit"
 
 
