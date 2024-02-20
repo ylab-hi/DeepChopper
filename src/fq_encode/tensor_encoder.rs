@@ -245,7 +245,7 @@ impl Encoder for TensorEncoder {
         }
 
         // encode the sequence
-        let encoded_seq = self.encoder_seq(seq, self.option.kmer_size);
+        let encoded_seq = self.encoder_seq(seq, self.option.kmer_size, true)?;
 
         let mut encoded_seq_id = encoded_seq
             .into_par_iter()

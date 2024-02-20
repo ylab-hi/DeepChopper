@@ -76,7 +76,7 @@ impl Encoder for JsonEncoder {
         // that we remove the newlines since this is FASTA
         // change unknwon base to 'N'
         // encode the sequence
-        let encoded_seq = self.encoder_seq(seq, self.option.kmer_size);
+        let encoded_seq = self.encoder_seq(seq, self.option.kmer_size, true)?;
 
         let encoded_seq_str: Vec<String> = encoded_seq
             .into_par_iter()
