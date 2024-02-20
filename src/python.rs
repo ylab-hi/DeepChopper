@@ -388,9 +388,16 @@ fn encode_fq_paths_to_parquet(
     qual_offset: usize,
     vectorized_target: bool,
 ) -> Result<()> {
-    fq_path.into_par_iter().for_each(|path| {
-        encode_fq_path_to_parquet(path, k, bases.clone(), qual_offset, vectorized_target, None)
-            .unwrap();
+    fq_path.iter().for_each(|path| {
+        encode_fq_path_to_parquet(
+            path.clone(),
+            k,
+            bases.clone(),
+            qual_offset,
+            vectorized_target,
+            None,
+        )
+        .unwrap();
     });
     Ok(())
 }

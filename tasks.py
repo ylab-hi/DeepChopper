@@ -107,10 +107,10 @@ def encode_tensor(c, file: Path, level="info"):
 
 @task
 def encode_fqs(c, data_folder):
-    from deepchopper.data import encode_fq_files_in_folder_to_tensor
+    from deepchopper.data import encode_fq_files_in_folder_to_parquet
 
     data_folder = Path(data_folder)
-    encode_fq_files_in_folder_to_tensor(data_folder)
+    encode_fq_files_in_folder_to_parquet(data_folder)
 
 
 @task
