@@ -1,6 +1,6 @@
 use bstr::BString;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RecordData {
     pub id: BString,
     pub seq: BString,
