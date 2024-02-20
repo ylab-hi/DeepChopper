@@ -1,9 +1,8 @@
 use crate::{
     default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET},
-    fq_encode,
-    fq_encode::Encoder,
+    fq_encode::{self, Encoder},
     kmer,
-    output::{self, write_parquet},
+    output::{self, write_json, write_parquet},
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
 use anyhow::Result;
@@ -313,6 +312,41 @@ fn encode_fq_path_to_tensor(
 }
 
 #[pyfunction]
+fn encode_fq_path_to_json(
+    fq_path: PathBuf,
+    k: usize,
+    bases: String,
+    qual_offset: usize,
+    vectorized_target: bool,
+    result_path: Option<PathBuf>,
+) -> Result<()> {
+    let option = fq_encode::FqEncoderOptionBuilder::default()
+        .kmer_size(k as u8)
+        .bases(bases.as_bytes().to_vec())
+        .qual_offset(qual_offset as u8)
+        .vectorized_target(vectorized_target)
+        .build()?;
+
+    let mut encoder = fq_encode::JsonEncoderBuilder::default()
+        .option(option)
+        .build()?;
+
+    let result = encoder.encode(&fq_path)?;
+
+    // result file is fq_path with .parquet extension
+    let json_path = if let Some(path) = result_path {
+        if path.with_extension("json").exists() {
+            warn!("{} already exists, overwriting", path.display());
+        }
+        path.with_extension("json")
+    } else {
+        fq_path.with_extension("json")
+    };
+    write_json(json_path, result)?;
+    Ok(())
+}
+
+#[pyfunction]
 fn encode_fq_path_to_parquet(
     fq_path: PathBuf,
     k: usize,
@@ -346,15 +380,25 @@ fn encode_fq_path_to_parquet(
     Ok(())
 }
 
+#[pyfunction]
+fn encode_fq_paths_to_parquet(
+    fq_path: Vec<PathBuf>,
+    k: usize,
+    bases: String,
+    qual_offset: usize,
+    vectorized_target: bool,
+) -> Result<()> {
+    fq_path.into_par_iter().for_each(|path| {
+        encode_fq_path_to_parquet(path, k, bases.clone(), qual_offset, vectorized_target, None)
+            .unwrap();
+    });
+    Ok(())
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     pyo3_log::init();
-
-    // rayon::ThreadPoolBuilder::new()
-    //     .num_threads(1)
-    //     .build_global()
-    //     .unwrap();
 
     let default_module = PyModule::new(_py, "default")?;
     default(_py, default_module)?;
@@ -373,6 +417,8 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(encode_fq_paths_to_tensor, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_path_to_tensor, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_path_to_parquet, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_fq_paths_to_parquet, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_fq_path_to_json, m)?)?;
     m.add_function(wrap_pyfunction!(summary_record_len, m)?)?;
     m.add_function(wrap_pyfunction!(test_log, m)?)?;
     m.add_function(wrap_pyfunction!(extract_records_by_ids, m)?)?;
