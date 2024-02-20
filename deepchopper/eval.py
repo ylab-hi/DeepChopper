@@ -82,7 +82,9 @@ def evaluate(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
     return metric_dict, object_dict
 
 
-@hydra.main(version_base="1.3", config_path=os.getenv("DC_CONFIG_PATH", "configs"), config_name="eval.yaml")
+@hydra.main(
+    version_base="1.3", config_path=os.getenv("DC_CONFIG_PATH", "configs"), config_name="eval.yaml"
+)
 def main(cfg: DictConfig) -> None:
     """Main entry point for evaluation.
 

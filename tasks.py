@@ -141,8 +141,7 @@ def readq(c, file):
 
 
 
-@task 
+@task
 def test(c, file=None):
     from datasets import load_dataset
     dataset = load_dataset("tests/data/test_input.parquet")
-
