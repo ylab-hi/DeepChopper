@@ -1,7 +1,7 @@
 use crate::{
     default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET},
     fq_encode::{self, Encoder},
-    kmer,
+    kmer::{self, vertorize_target},
     output::{self, write_json, write_parquet},
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
@@ -432,6 +432,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     default(_py, default_module)?;
     m.add_submodule(default_module)?;
 
+    m.add_function(wrap_pyfunction!(vertorize_target, m)?)?;
     m.add_function(wrap_pyfunction!(normalize_seq, m)?)?;
     m.add_function(wrap_pyfunction!(seq_to_kmers, m)?)?;
     m.add_function(wrap_pyfunction!(kmers_to_seq, m)?)?;

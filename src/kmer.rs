@@ -10,6 +10,20 @@ use anyhow::anyhow;
 use anyhow::Error;
 use anyhow::Result;
 
+#[pyfunction]
+pub fn vertorize_target(start: usize, end: usize) -> Result<Vec<usize>> {
+    if start >= end {
+        return Err(Error::from(EncodingError::TargetRegionInvalid));
+    }
+
+    let mut result = vec![0; end];
+
+    for i in start..end {
+        result[i] = 1;
+    }
+    Ok(result)
+}
+
 pub fn kmerids_to_seq(kmer_ids: &[Element], id2kmer_table: Id2KmerTable) -> Result<Vec<u8>> {
     let result = kmer_ids
         .par_iter()
@@ -347,5 +361,21 @@ mod tests {
         assert_eq!(result.len(), seq.len() / kmer_size);
         assert_eq!(result[0], (&b"ATCG"[..], (0, 4)));
         assert_eq!(result[1], (&b"ATCG"[..], (4, 8)));
+    }
+
+    #[test]
+    fn test_vertorize_target_valid() {
+        let start = 3;
+        let end = 5;
+        let result = vertorize_target(start, end).unwrap();
+        assert_eq!(result, vec![0, 0, 0, 1, 1]);
+    }
+
+    #[test]
+    fn test_vertorize_target_invalid() {
+        let start = 5;
+        let end = 0;
+        let result = vertorize_target(start, end);
+        assert!(result.is_err());
     }
 }
