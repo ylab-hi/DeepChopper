@@ -144,4 +144,6 @@ def readq(c, file):
 @task
 def test(c, file=None):
     from datasets import load_dataset
-    dataset = load_dataset("tests/data/test_input.parquet")
+    data_files = {"train": "tests/data/test_input.parquet"}
+    dataset = load_dataset("parquet", data_files=data_files)
+    print(dataset)
