@@ -194,6 +194,19 @@ fn to_kmer_target_region(
 }
 
 #[pyfunction]
+fn seq_to_kmers_and_offset(
+    seq: String,
+    kmer_size: usize,
+    overlap: bool,
+) -> Result<Vec<(String, (usize, usize))>> {
+    let result = kmer::seq_to_kmers_and_offset(seq.as_bytes(), kmer_size, overlap)?;
+    Ok(result
+        .par_iter()
+        .map(|(s, (start, end))| (String::from_utf8_lossy(s).to_string(), (*start, *end)))
+        .collect())
+}
+
+#[pyfunction]
 fn seq_to_kmers(seq: String, k: usize, overlap: bool) -> Vec<String> {
     let normalized_seq = seq.as_bytes().normalize(false);
     kmer::seq_to_kmers(&normalized_seq, k, overlap)
@@ -203,9 +216,9 @@ fn seq_to_kmers(seq: String, k: usize, overlap: bool) -> Vec<String> {
 }
 
 #[pyfunction]
-fn kmers_to_seq(kmers: Vec<String>) -> String {
+fn kmers_to_seq(kmers: Vec<String>) -> Result<String> {
     let kmers_as_bytes: Vec<&[u8]> = kmers.par_iter().map(|s| s.as_bytes()).collect();
-    String::from_utf8_lossy(&kmer::kmers_to_seq(kmers_as_bytes)).to_string()
+    Ok(String::from_utf8_lossy(&kmer::kmers_to_seq(kmers_as_bytes)?).to_string())
 }
 
 #[pyfunction]
@@ -422,6 +435,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(normalize_seq, m)?)?;
     m.add_function(wrap_pyfunction!(seq_to_kmers, m)?)?;
     m.add_function(wrap_pyfunction!(kmers_to_seq, m)?)?;
+    m.add_function(wrap_pyfunction!(seq_to_kmers_and_offset, m)?)?;
     m.add_function(wrap_pyfunction!(generate_kmers_table, m)?)?;
     m.add_function(wrap_pyfunction!(generate_kmers, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_path_to_tensor, m)?)?;

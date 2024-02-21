@@ -102,6 +102,7 @@ pynvim = "^0.5.0"
 invoke = "^2.2.0"
 patchelf = { version = "^0.17.2.1", markers = "sys_platform == 'linux'" }
 ipykernel = "^6.29.2"
+jupyter = "^1.0.0"
 
 
 [project.urls]

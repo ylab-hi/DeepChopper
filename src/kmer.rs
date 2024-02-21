@@ -6,6 +6,7 @@ use crate::{
     error::EncodingError,
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
+use anyhow::anyhow;
 use anyhow::Error;
 use anyhow::Result;
 
@@ -15,12 +16,12 @@ pub fn kmerids_to_seq(kmer_ids: &[Element], id2kmer_table: Id2KmerTable) -> Resu
         .map(|&id| {
             id2kmer_table
                 .get(&id)
-                .ok_or(Error::new(EncodingError::InvalidKmerIndex))
+                .ok_or(Error::new(EncodingError::InvalidKmerId))
                 .map(|kmer| kmer.as_ref())
         })
         .collect::<Result<Vec<_>>>()?;
 
-    Ok(kmers_to_seq(result))
+    kmers_to_seq(result)
 }
 
 pub fn to_original_targtet_region(kmer_target: &Range<usize>, k: usize) -> Range<usize> {
@@ -82,22 +83,64 @@ pub fn seq_to_kmers(seq: &[u8], k: usize, overlap: bool) -> Vec<&[u8]> {
     }
 }
 
-pub fn kmers_to_seq(kmers: Vec<&[u8]>) -> Vec<u8> {
+pub fn kmers_to_seq(kmers: Vec<&[u8]>) -> Result<Vec<u8>> {
     if kmers.is_empty() {
-        return Vec::new();
+        return Ok(Vec::new());
     }
-    // Initialize the sequence with the first k-mer
-    let mut sequence = kmers[0].to_vec();
+    let mut res = kmers[0].to_vec();
     // Iterate over the k-mers, starting from the second one
-    for kmer in kmers.into_iter().skip(1) {
-        // Assuming the k-mers are correctly ordered and overlap by k-1,
-        // append only the last character of each subsequent k-mer to the sequence.
-        if let Some(&last_char) = kmer.last() {
-            sequence.push(last_char);
-        }
+    let reset: Result<Vec<u8>> = kmers
+        .into_par_iter()
+        .skip(1)
+        .map(|kmer| {
+            // Assuming the k-mers are correctly ordered and overlap by k-1,
+            // append only the last character of each subsequent k-mer to the sequence.
+            kmer.last().ok_or(anyhow!("Invalid kmer")).copied()
+        })
+        .collect();
+
+    let reset = reset?;
+
+    res.extend(reset);
+    Ok(res)
+}
+
+pub fn seq_to_kmers_and_offset(
+    seq: &[u8],
+    kmer_size: usize,
+    overlap: bool,
+) -> Result<Vec<(&[u8], (usize, usize))>> {
+    // Check for invalid kmer_size
+    if kmer_size == 0 || kmer_size > seq.len() {
+        return Err(EncodingError::SeqShorterThanKmer.into());
     }
 
-    sequence
+    if seq.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    if overlap {
+        // Overlapping case: use .windows() with step of 1 (default behavior of .windows())
+        Ok(seq
+            .par_windows(kmer_size)
+            .enumerate()
+            .map(|(i, kmer)| (kmer, (i, i + kmer_size)))
+            .collect())
+    } else {
+        // Non-overlapping case: iterate with steps of kmer_size
+        Ok(seq
+            .par_chunks(kmer_size)
+            .enumerate()
+            .filter_map(|(i, chunk)| {
+                if chunk.len() == kmer_size {
+                    Some((chunk, (i * kmer_size, i * kmer_size + kmer_size)))
+                } else {
+                    // ignore the last chunk if it's shorter than kmer_size
+                    None
+                }
+            })
+            .collect())
+    }
 }
 
 pub fn generate_kmers_table(base: &[u8], k: u8) -> Kmer2IdTable {
@@ -206,7 +249,7 @@ mod tests {
         let seq = b"AAACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT";
         let kmers = seq_to_kmers(seq, k, true);
         let kmers_as_bytes: Vec<&[u8]> = kmers.into_iter().collect();
-        let result = kmers_to_seq(kmers_as_bytes);
+        let result = kmers_to_seq(kmers_as_bytes).unwrap();
         assert_eq!(seq.to_vec(), result);
     }
 
@@ -281,5 +324,28 @@ mod tests {
         let k = 3;
         let expected = 5..5;
         assert_eq!(to_original_targtet_region(&kmer_target, k), expected);
+    }
+
+    #[test]
+    fn test_seq_to_kmers_and_offset_overlap() {
+        let seq = b"ATCGATCGATCG";
+        let kmer_size = 4;
+        let overlap = true;
+        let result = seq_to_kmers_and_offset(seq, kmer_size, overlap).unwrap();
+        assert_eq!(result.len(), seq.len() - kmer_size + 1);
+        assert_eq!(result[0], (&b"ATCG"[..], (0, 4)));
+        assert_eq!(result[1], (&b"TCGA"[..], (1, 5)));
+        assert_eq!(result[result.len() - 1], (&b"ATCG"[..], (8, 12)));
+    }
+
+    #[test]
+    fn test_seq_to_kmers_and_offset_non_overlap() {
+        let seq = b"ATCGATCGATCG";
+        let kmer_size = 4;
+        let overlap = false;
+        let result = seq_to_kmers_and_offset(seq, kmer_size, overlap).unwrap();
+        assert_eq!(result.len(), seq.len() / kmer_size);
+        assert_eq!(result[0], (&b"ATCG"[..], (0, 4)));
+        assert_eq!(result[1], (&b"ATCG"[..], (4, 8)));
     }
 }

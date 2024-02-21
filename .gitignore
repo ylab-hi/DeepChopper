@@ -573,3 +573,4 @@ massif.out.*
 task.slurm
 temp/
 test.parquet
+.virtual_documents
