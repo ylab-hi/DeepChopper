@@ -207,6 +207,11 @@ fn seq_to_kmers_and_offset(
 }
 
 #[pyfunction]
+fn splite_qual_by_offsets(target: Vec<usize>, offsets: Vec<(usize, usize)>) -> Result<Vec<usize>> {
+    kmer::splite_qual_by_offsets(&target, &offsets)
+}
+
+#[pyfunction]
 fn seq_to_kmers(seq: String, k: usize, overlap: bool) -> Vec<String> {
     let normalized_seq = seq.as_bytes().normalize(false);
     kmer::seq_to_kmers(&normalized_seq, k, overlap)
@@ -432,6 +437,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     default(_py, default_module)?;
     m.add_submodule(default_module)?;
 
+    m.add_function(wrap_pyfunction!(splite_qual_by_offsets, m)?)?;
     m.add_function(wrap_pyfunction!(vertorize_target, m)?)?;
     m.add_function(wrap_pyfunction!(normalize_seq, m)?)?;
     m.add_function(wrap_pyfunction!(seq_to_kmers, m)?)?;

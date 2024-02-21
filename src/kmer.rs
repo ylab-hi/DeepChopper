@@ -9,6 +9,22 @@ use crate::{
 use anyhow::anyhow;
 use anyhow::Error;
 use anyhow::Result;
+use pyo3::prelude::*;
+
+pub fn splite_qual_by_offsets(target: &[usize], offsets: &[(usize, usize)]) -> Result<Vec<usize>> {
+    let res: Vec<usize> = offsets
+        .par_iter()
+        .map(|(start, end)| {
+            if start == end {
+                // Special token
+                0
+            } else {
+                (*start..*end).map(|i| target[i]).sum::<usize>() / (end - start)
+            }
+        })
+        .collect();
+    Ok(res)
+}
 
 #[pyfunction]
 pub fn vertorize_target(start: usize, end: usize) -> Result<Vec<usize>> {
@@ -17,10 +33,11 @@ pub fn vertorize_target(start: usize, end: usize) -> Result<Vec<usize>> {
     }
 
     let mut result = vec![0; end];
-
-    for i in start..end {
-        result[i] = 1;
-    }
+    result
+        .par_iter_mut()
+        .take(end)
+        .skip(start)
+        .for_each(|x| *x = 1);
     Ok(result)
 }
 
