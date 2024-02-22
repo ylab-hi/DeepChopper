@@ -574,3 +574,5 @@ task.slurm
 temp/
 test.parquet
 .virtual_documents
+checkpoints
+wandb
