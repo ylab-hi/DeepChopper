@@ -28,7 +28,7 @@ thiserror = "1.0"
 anyhow = "1.0"
 walkdir = { version = "2.4" }
 rayon = { version = "1.8" }
-pyo3 = { version = "0.20.2", features = [
+pyo3 = { version = "0.20.3", features = [
     "abi3-py310",
     "extension-module",
     "anyhow",
@@ -37,12 +37,13 @@ pyo3 = { version = "0.20.2", features = [
 ctrlc = "3.4"
 log = "0.4"
 pyo3-log = "0.9"
-noodles = { version = "0.64.0", features = [
+noodles = { version = "0.65.0", features = [
     "bgzf",
     "core",
     "csi",
     "fasta",
     "fastq",
+    "bam",
 ] }
 
 bio = "1.5"
@@ -60,7 +61,7 @@ bitvec = "1.0"
 itertools = "0.12.1"
 derive_builder = "0.20"
 lexical = "6.1"
-bstr = "1.9.0"
+bstr = "1.9.1"
 
 # binaries
 clap = { version = "4.5.1", features = ["derive"] }

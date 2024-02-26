@@ -48,7 +48,10 @@ env = { DC_CONFIG_PATH = "${POE_PWD}/configs" }
 
 [tool.poetry.dependencies]
 python = "^3.10, <3.12"
-torch = { version = "^2.1.2", source = "PyPI", markers = "extra!='cuda'" }
+torch = [
+    { version = "^2.2.0+cu118", source = "pytorch", markers = "sys_platform == 'linux'" },
+    { version = "^2.2.0", source = "PyPI", markers = "sys_platform == 'darwin'" },
+]
 lightning = "^2.1.2"
 torchmetrics = "^1.2.0"
 rich = "^13.7.0"
@@ -67,24 +70,34 @@ seqeval = "^1.2.2"
 tokenizers = "^0.15.2"
 
 
-[tool.poetry.group.remote]
-optional = true
-
-# poetry install -E cuda --with remote # to get GPU version
-[tool.poetry.group.remote.dependencies]
-torch = { version = "^2.1.2", source = "pytorch-cu121", markers = "extra=='cuda'" }
-
-[tool.poetry.extras]
-cuda = []
+[[tool.poetry.source]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu118"
+priority = "explicit"
 
 [[tool.poetry.source]]
 name = "PyPI"
 priority = "primary"
 
-[[tool.poetry.source]]
-name = "pytorch-cu121"
-url = "https://download.pytorch.org/whl/cu118"
-priority = "explicit"
+
+# [tool.poetry.group.remote]
+# optional = true
+
+# # poetry install -E cuda --with remote # to get GPU version
+# [tool.poetry.group.remote.dependencies]
+# torch = { version = "^2.2.0", source = "pytorch-cu118", markers = "extra=='cuda'" }
+
+# [tool.poetry.extras]
+# cuda = []
+
+# [[tool.poetry.source]]
+# name = "PyPI"
+# priority = "primary"
+
+# [[tool.poetry.source]]
+# name = "pytorch-cu118"
+# url = "https://download.pytorch.org/whl/cu118"
+# priority = "explicit"
 
 
 [tool.poetry.group.dev.dependencies]

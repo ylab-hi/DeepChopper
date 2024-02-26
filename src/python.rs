@@ -3,6 +3,7 @@ use crate::{
     fq_encode::{self, Encoder},
     kmer::{self, vertorize_target},
     output::{self, write_json, write_parquet},
+    stat,
     types::{Element, Id2KmerTable, Kmer2IdTable},
 };
 use anyhow::Result;
@@ -61,8 +62,13 @@ impl fq_encode::ParquetEncoder {
 }
 
 #[pyfunction]
-fn summary_record_len(path: PathBuf) -> Result<Vec<usize>> {
-    fq_encode::summary_record_len(path)
+fn summary_fx_record_len(path: PathBuf) -> Result<Vec<usize>> {
+    stat::summary_fx_record_len(path)
+}
+
+#[pyfunction]
+fn summar_bam_record_len(path: PathBuf) -> Result<Vec<usize>> {
+    stat::summar_bam_record_len(path)
 }
 
 #[pyclass(name = "RecordData")]
@@ -456,7 +462,8 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(encode_fq_path_to_parquet, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_paths_to_parquet, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_path_to_json, m)?)?;
-    m.add_function(wrap_pyfunction!(summary_record_len, m)?)?;
+    m.add_function(wrap_pyfunction!(summary_fx_record_len, m)?)?;
+    m.add_function(wrap_pyfunction!(summar_bam_record_len, m)?)?;
     m.add_function(wrap_pyfunction!(test_log, m)?)?;
     m.add_function(wrap_pyfunction!(extract_records_by_ids, m)?)?;
 

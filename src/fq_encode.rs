@@ -2,7 +2,6 @@ mod json_encoder;
 mod option;
 mod parquet_encoder;
 mod record;
-mod stat;
 mod tensor_encoder;
 mod triat;
 
@@ -10,7 +9,6 @@ pub use json_encoder::*;
 pub use option::*;
 pub use parquet_encoder::*;
 pub use record::*;
-pub use stat::*;
 pub use tensor_encoder::*;
 pub use triat::*;
 
