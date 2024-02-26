@@ -67,8 +67,8 @@ fn summary_fx_record_len(path: PathBuf) -> Result<Vec<usize>> {
 }
 
 #[pyfunction]
-fn summar_bam_record_len(path: PathBuf) -> Result<Vec<usize>> {
-    stat::summar_bam_record_len(path)
+fn summary_bam_record_len(path: PathBuf) -> Result<Vec<usize>> {
+    stat::summary_bam_record_len(path)
 }
 
 #[pyclass(name = "RecordData")]
@@ -463,7 +463,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(encode_fq_paths_to_parquet, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_path_to_json, m)?)?;
     m.add_function(wrap_pyfunction!(summary_fx_record_len, m)?)?;
-    m.add_function(wrap_pyfunction!(summar_bam_record_len, m)?)?;
+    m.add_function(wrap_pyfunction!(summary_bam_record_len, m)?)?;
     m.add_function(wrap_pyfunction!(test_log, m)?)?;
     m.add_function(wrap_pyfunction!(extract_records_by_ids, m)?)?;
 

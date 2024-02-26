@@ -153,3 +153,14 @@ def test(c, file=None):
     print(f"train_dataset: {train_dataset}")
     print(f"val_dataset: {val_dataset}")
     print(f"test_dataset: {test_dataset}")
+
+
+@task
+def summary(c, file):
+    import deepchopper
+    import numpy as np
+    file = Path(file)
+    len_list = deepchopper.summary_bam_record_len(file)
+    print(f"len_list: {len_list}")
+    np.save(file.with_suffix(".npy"), len_list)
+
