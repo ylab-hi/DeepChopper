@@ -163,4 +163,3 @@ def summary(c, file):
     len_list = deepchopper.summary_bam_record_len(file)
     print(f"len_list: {len_list}")
     np.save(file.with_suffix(".npy"), len_list)
-

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use anyhow::{anyhow, Context};
-use log::info;
+use log::{info, warn};
 use needletail::Sequence;
 use noodles::fastq;
 use rayon::prelude::*;
@@ -58,30 +58,35 @@ pub trait Encoder {
             .map(BufReader::new)
             .map(fastq::Reader::new)?;
 
-        let mut records: Vec<RecordData> = Vec::new();
-        let mut record = fastq::Record::default();
+        let records: Vec<RecordData> = reader
+            .records()
+            .par_bridge()
+            .filter_map(|res| {
+                let record = res.unwrap();
 
-        while reader.read_record(&mut record)? > 0 {
-            let id = record.definition().name();
-            let seq = record.sequence();
-            let normalized_seq = seq.normalize(false);
-            let qual = record.quality_scores();
-            let seq_len = normalized_seq.len();
-            let qual_len = qual.len();
+                let id = record.definition().name();
+                let seq = record.sequence();
+                let normalized_seq = seq.normalize(false);
+                let qual = record.quality_scores();
+                let seq_len = normalized_seq.len();
+                let qual_len = qual.len();
 
-            if kmer_size > 0 && seq_len < kmer_size as usize {
-                continue;
-            }
+                if kmer_size > 0 && seq_len < kmer_size as usize {
+                    return None::<RecordData>;
+                }
 
-            if seq_len != qual_len {
-                return Err(anyhow!(
-                    "record: id {} seq_len != qual_len",
-                    String::from_utf8_lossy(id)
-                ));
-            }
+                if seq_len != qual_len {
+                    // NOTE: it seems like log mes does not work well with rayon paralllel iterator  <02-26-24, Yangyang Li>
+                    // warn!(
+                    //     "record: id {} seq_len != qual_len",
+                    //     String::from_utf8_lossy(id)
+                    // );
+                    return None;
+                }
 
-            records.push((id.to_vec(), seq.to_vec(), qual.to_vec()).into());
-        }
+                Some((id.to_vec(), seq.to_vec(), qual.to_vec()).into())
+            })
+            .collect();
 
         info!("total records: {}", records.len());
         Ok(records)
