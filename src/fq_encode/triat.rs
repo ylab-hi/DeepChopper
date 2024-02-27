@@ -1,6 +1,6 @@
 use anyhow::Result;
 use anyhow::{anyhow, Context};
-use log::{info, warn};
+use log::info;
 use needletail::Sequence;
 use noodles::fastq;
 use rayon::prelude::*;

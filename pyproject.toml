@@ -70,6 +70,7 @@ seqeval = "^1.2.2"
 tokenizers = "^0.15.2"
 einops = "^0.7.0"
 accelerate = "^0.27.2"
+torchinfo = "^1.8.0"
 
 
 [[tool.poetry.source]]

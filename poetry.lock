@@ -5312,6 +5312,14 @@ name = "torch"
 version = "2.2.1+cu118"
 description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
 optional = false
+python-versions = "*"
+files = []
+
+[[package]]
+name = "torch"
+version = "2.2.1+cu118"
+description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
+optional = false
 python-versions = ">=3.8.0"
 files = [
     {file = "torch-2.2.1+cu118-cp310-cp310-linux_x86_64.whl", hash = "sha256:438668ad1eec3a7d1a0473ebf8b60f4557e51548d6be0497d32cc6c3a26a1945"},
@@ -5354,6 +5362,17 @@ optree = ["optree (>=0.9.1)"]
 type = "legacy"
 url = "https://download.pytorch.org/whl/cu118"
 reference = "pytorch"
+
+[[package]]
+name = "torchinfo"
+version = "1.8.0"
+description = "Model summary in PyTorch, based off of the original torchsummary."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "torchinfo-1.8.0-py3-none-any.whl", hash = "sha256:2e911c2918603f945c26ff21a3a838d12709223dc4ccf243407bce8b6e897b46"},
+    {file = "torchinfo-1.8.0.tar.gz", hash = "sha256:72e94b0e9a3e64dc583a8e5b7940b8938a1ac0f033f795457f27e6f4e7afa2e9"},
+]
 
 [[package]]
 name = "torchmetrics"
@@ -5940,4 +5959,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10, <3.12"
-content-hash = "91851d44e48d1f53cd3130afc073f4271829b095b5bb7e10c16b322cb1f10882"
+content-hash = "a9192650876c3905174a0864404650f47013156b7b2335dfc7e388154e0c5050"
