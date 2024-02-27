@@ -27,12 +27,12 @@ pub fn splite_qual_by_offsets(target: &[usize], offsets: &[(usize, usize)]) -> R
 }
 
 #[pyfunction]
-pub fn vertorize_target(start: usize, end: usize) -> Result<Vec<usize>> {
-    if start >= end {
+pub fn vertorize_target(start: usize, end: usize, length: usize) -> Result<Vec<usize>> {
+    if start >= end || end > length {
         return Err(Error::from(EncodingError::TargetRegionInvalid));
     }
 
-    let mut result = vec![0; end];
+    let mut result = vec![0; length];
     result
         .par_iter_mut()
         .take(end)
@@ -384,15 +384,15 @@ mod tests {
     fn test_vertorize_target_valid() {
         let start = 3;
         let end = 5;
-        let result = vertorize_target(start, end).unwrap();
-        assert_eq!(result, vec![0, 0, 0, 1, 1]);
+        let result = vertorize_target(start, end, 6).unwrap();
+        assert_eq!(result, vec![0, 0, 0, 1, 1, 0]);
     }
 
     #[test]
     fn test_vertorize_target_invalid() {
         let start = 5;
         let end = 0;
-        let result = vertorize_target(start, end);
+        let result = vertorize_target(start, end, 2);
         assert!(result.is_err());
     }
 }
