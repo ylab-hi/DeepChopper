@@ -5,6 +5,7 @@ use crate::{
     output::{self, write_json, write_parquet},
     stat,
     types::{Element, Id2KmerTable, Kmer2IdTable},
+    utils,
 };
 use anyhow::Result;
 use bstr::BString;
@@ -138,7 +139,6 @@ impl PyRecordData {
 #[pyfunction]
 fn extract_records_by_ids(ids: Vec<String>, path: PathBuf) -> Result<Vec<PyRecordData>> {
     let ids: Vec<BString> = ids.into_par_iter().map(|id| id.into()).collect();
-
     output::extract_records_by_ids(&ids, path).map(|records| {
         records
             .into_par_iter()
@@ -434,6 +434,14 @@ fn encode_fq_paths_to_parquet(
     Ok(())
 }
 
+#[pyfunction]
+fn summary_predict(
+    predictions: Vec<Vec<i8>>,
+    labels: Vec<Vec<i8>>,
+) -> (Vec<Vec<i8>>, Vec<Vec<i8>>) {
+    utils::summary_predict(&predictions, &labels)
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -466,6 +474,9 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(summary_bam_record_len, m)?)?;
     m.add_function(wrap_pyfunction!(test_log, m)?)?;
     m.add_function(wrap_pyfunction!(extract_records_by_ids, m)?)?;
+
+    // add utils
+    m.add_function(wrap_pyfunction!(summary_predict, m)?)?;
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;
