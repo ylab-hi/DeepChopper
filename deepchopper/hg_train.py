@@ -1,14 +1,11 @@
-import logging
 import os
 import sys
 from dataclasses import dataclass, field
-from functools import partial
-from pathlib import Path
 
 import datasets
 import numpy as np
 import transformers
-from datasets import load_dataset
+from datasets import ClassLabel, load_dataset
 from transformers import (
     AutoConfig,
     AutoTokenizer,
@@ -19,6 +16,14 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import send_example_telemetry
+
+from .data.hg_data import load_and_split_dataset
+from .models.hyena import (
+    HyenaDNAForTokenClassification,
+    compute_metrics,
+    load_config_and_tokenizer_from_hyena_model,
+    tokenize_dataset,
+)
 
 from .models.hyena import (
     DataCollatorForTokenClassificationWithQual,
@@ -315,7 +320,7 @@ def train():
 
         if data_args.test_file is not None:
             data_files["test"] = data_args.test_file
-
+            extension = data_args.test_file.split(".")[-1]
         raw_datasets = load_dataset(
             extension, data_files=data_files, cache_dir=model_args.cache_dir
         )
@@ -329,11 +334,32 @@ def train():
         column_names = raw_datasets["validation"].column_names
         raw_datasets["validation"].features
 
-    if data_args.text_column_name is not None or "seq" in column_names:
+    if data_args.text_column_name is not None or "tokens" in column_names:
         pass
     else:
         column_names[0]
 
+    if data_args.label_column_name is not None:
+        label_column_name = data_args.label_column_name
+    elif f"{data_args.task_name}_tags" in column_names:
+        label_column_name = f"{data_args.task_name}_tags"
+    else:
+        label_column_name = column_names[1]
+
+    # If the labels are of type ClassLabel, they are already integers and we have the map stored somewhere.
+    # Otherwise, we have to get the list of labels manually.
+    labels_are_int = isinstance(features[label_column_name].feature, ClassLabel)
+    if labels_are_int:
+        label_list = features[label_column_name].feature.names
+        {i: i for i in range(len(label_list))}
+    else:
+        label_list = get_label_list(raw_datasets["train"][label_column_name])
+        {l: i for i, l in enumerate(label_list)}
+
+    num_labels = len(label_list)
+
+    # Load pretrained model and tokenizer
+    #
     # Distributed training:
     # The .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
@@ -350,6 +376,25 @@ def train():
     tokenizer_name_or_path = (
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path
     )
+    if config.model_type in {"bloom", "gpt2", "roberta"}:
+        tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer_name_or_path,
+            cache_dir=model_args.cache_dir,
+            use_fast=True,
+            revision=model_args.model_revision,
+            token=model_args.token,
+            trust_remote_code=model_args.trust_remote_code,
+            add_prefix_space=True,
+        )
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer_name_or_path,
+            cache_dir=model_args.cache_dir,
+            use_fast=True,
+            revision=model_args.model_revision,
+            token=model_args.token,
+            trust_remote_code=model_args.trust_remote_code,
+        )
 
     tokenizer = AutoTokenizer.from_pretrained(
         tokenizer_name_or_path,
@@ -368,10 +413,45 @@ def train():
         ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
     )
 
+    # Tokenizer check: this script requires a fast tokenizer.
+    if not isinstance(tokenizer, PreTrainedTokenizerFast):
+        raise ValueError(
+            "This example script only works for models that have a fast tokenizer. Checkout the big table of models at"
+            " https://huggingface.co/transformers/index.html#supported-frameworks to find the model types that meet"
+            " this requirement"
+        )
+
+    # Model has labels -> use them.
+    if model.config.label2id != PretrainedConfig(num_labels=num_labels).label2id:
+        if sorted(model.config.label2id.keys()) == sorted(label_list):
+            # Reorganize `label_list` to match the ordering of the model.
+            if labels_are_int:
+                {i: int(model.config.label2id[l]) for i, l in enumerate(label_list)}
+                label_list = [model.config.id2label[i] for i in range(num_labels)]
+            else:
+                label_list = [model.config.id2label[i] for i in range(num_labels)]
+                {l: i for i, l in enumerate(label_list)}
+        else:
+            logger.warning(
+                "Your model seems to have been trained with labels, but they don't match the dataset: ",
+                f"model labels: {sorted(model.config.label2id.keys())}, dataset labels:"
+                f" {sorted(label_list)}.\nIgnoring the model labels as a result.",
+            )
+
+    # Set the correspondences label/ID inside the model config
+    model.config.label2id = {l: i for i, l in enumerate(label_list)}
+    model.config.id2label = dict(enumerate(label_list))
+
+    # Map that sends B-Xxx label to its I-Xxx counterpart
+    b_to_i_label = []
+    for idx, label in enumerate(label_list):
+        if label.startswith("B-") and label.replace("B-", "I-") in label_list:
+            b_to_i_label.append(label_list.index(label.replace("B-", "I-")))
+        else:
+            b_to_i_label.append(idx)
+
     # Preprocessing the dataset
     # Padding strategy
-
-    # padding = "max_length" if data_args.pad_to_max_length else False
 
     if training_args.do_train:
         if "train" not in raw_datasets:
@@ -436,32 +516,11 @@ def train():
             ).remove_columns(["id", "seq", "qual", "target"])
 
     # Data collator
-    data_collator = DataCollatorForTokenClassificationWithQual(
+    data_collator = DataCollatorForTokenClassification(
         tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None
     )
 
-    from accelerate import Accelerator
-
-    accelerator = Accelerator()
-
-    training_args = TrainingArguments(
-        output_dir="hyena_model_use_qual",
-        learning_rate=2e-5,
-        per_device_train_batch_size=12,
-        per_device_eval_batch_size=12,
-        num_train_epochs=20,
-        weight_decay=0.01,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        load_best_model_at_end=True,
-        push_to_hub=False,
-        torch_compile=False,
-        # tf32=True,
-        report_to="wandb",
-        run_name="hyena_model_use_qual",
-        resume_from_checkpoint=True,
-    )
-
+    # Initialize our Trainer
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -524,7 +583,7 @@ def train():
 
         # Remove ignored index (special tokens)
         true_predictions = [
-            [p for (p, l) in zip(prediction, label, strict=False) if l != -100]
+            [label_list[p] for (p, l) in zip(prediction, label, strict=False) if l != -100]
             for prediction, label in zip(predictions, labels, strict=False)
         ]
 
@@ -553,6 +612,59 @@ def train():
         trainer.push_to_hub(**kwargs)
     else:
         trainer.create_model_card(**kwargs)
+
+    model_name = "hyenadna-small-32k-seqlen"
+    data_file = {"train": "./tests/data/test_input.parquet"}
+    learning_rate = 2e-5
+    per_device_train_batch_size = 8
+    per_device_eval_batch_size = 8
+    num_train_epochs = 20
+    weight_decay = 0.01
+    torch_compile = False
+    output_dir = "hyena_model_train"
+    push_to_hub = False
+
+    tokenizer, model_config = load_config_and_tokenizer_from_hyena_model(model_name)
+    train_dataset, val_dataset, test_dataset = load_and_split_dataset(data_file)
+
+    tokenize_train_dataset = tokenize_dataset(
+        train_dataset, tokenizer, max_length=model_config.max_seq_len
+    )
+    tokenize_val_dataset = tokenize_dataset(
+        val_dataset, tokenizer, max_length=model_config.max_seq_len
+    )
+    tokenize_test_dataset = tokenize_dataset(
+        test_dataset, tokenizer, max_length=model_config.max_seq_len
+    )
+
+    data_collator = DataCollatorForTokenClassification(tokenizer)
+    model = HyenaDNAForTokenClassification(model_config)
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        learning_rate=learning_rate,
+        per_device_train_batch_size=per_device_train_batch_size,
+        per_device_eval_batch_size=per_device_eval_batch_size,
+        num_train_epochs=num_train_epochs,
+        weight_decay=weight_decay,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        load_best_model_at_end=True,
+        push_to_hub=push_to_hub,
+        torch_compile=torch_compile,
+    )
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=tokenize_train_dataset,
+        eval_dataset=tokenize_val_dataset,
+        tokenizer=tokenizer,
+        data_collator=data_collator,
+        compute_metrics=compute_metrics,
+    )
+    trainer.train()
+    trainer.evaluate()
+    trainer.predict(tokenize_test_dataset)
 
 
 if __name__ == "__main__":
