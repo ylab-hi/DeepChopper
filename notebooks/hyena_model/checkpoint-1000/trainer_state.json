@@ -1,0 +1,59 @@
+{
+  "best_metric": 0.021001365035772324,
+  "best_model_checkpoint": "hyena_model/checkpoint-1000",
+  "epoch": 2.0,
+  "eval_steps": 500,
+  "global_step": 1000,
+  "is_hyper_param_search": false,
+  "is_local_process_zero": true,
+  "is_world_process_zero": true,
+  "log_history": [
+    {
+      "epoch": 1.0,
+      "grad_norm": 3.1886043548583984,
+      "learning_rate": 1e-05,
+      "loss": 0.0492,
+      "step": 500
+    },
+    {
+      "epoch": 1.0,
+      "eval_accuracy": 0.9891767467355373,
+      "eval_f1": 0.8037619657337968,
+      "eval_loss": 0.029281383380293846,
+      "eval_precision": 0.8581518731894672,
+      "eval_recall": 0.7558556234052923,
+      "eval_runtime": 57.592,
+      "eval_samples_per_second": 8.682,
+      "eval_steps_per_second": 1.094,
+      "step": 500
+    },
+    {
+      "epoch": 2.0,
+      "grad_norm": 10.176412582397461,
+      "learning_rate": 0.0,
+      "loss": 0.0258,
+      "step": 1000
+    },
+    {
+      "epoch": 2.0,
+      "eval_accuracy": 0.9919989978780572,
+      "eval_f1": 0.8572499962501312,
+      "eval_loss": 0.021001365035772324,
+      "eval_precision": 0.8989555807222851,
+      "eval_recall": 0.8192425675869385,
+      "eval_runtime": 56.7995,
+      "eval_samples_per_second": 8.803,
+      "eval_steps_per_second": 1.109,
+      "step": 1000
+    }
+  ],
+  "logging_steps": 500,
+  "max_steps": 1000,
+  "num_input_tokens_seen": 0,
+  "num_train_epochs": 2,
+  "save_steps": 500,
+  "total_flos": 1283560420746240.0,
+  "train_batch_size": 8,
+  "trial_name": null,
+  "trial_params": null
+}
