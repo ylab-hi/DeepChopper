@@ -9,6 +9,7 @@ use arrow::datatypes::{DataType, Field, Schema};
 
 use bstr::BString;
 use derive_builder::Builder;
+use serde_derive::{Deserialize, Serialize};
 
 use crate::types::Element;
 
@@ -26,7 +27,7 @@ pub struct ParquetData {
 }
 
 #[pyclass]
-#[derive(Debug, Builder, Default, Clone)]
+#[derive(Debug, Builder, Default, Clone, Serialize, Deserialize)]
 pub struct ParquetEncoder {
     pub option: FqEncoderOption,
 }

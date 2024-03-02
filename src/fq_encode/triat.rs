@@ -32,6 +32,8 @@ pub trait Encoder {
             return Ok(Vec::new());
         }
 
+        // TODO: add code to parse negative case  and then return [0, 0) <03-02-24, Yangyang Li>
+
         // @462:528,100:120|738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8
         // removea content after |
         let number_part = src

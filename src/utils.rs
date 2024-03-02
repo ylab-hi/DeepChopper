@@ -1,5 +1,7 @@
+use anyhow::Result;
 use ndarray::prelude::*;
 use rayon::prelude::*;
+use std::path::Path;
 
 pub fn summary_predict_for_array(
     predictions: &Array2<i8>,
@@ -54,6 +56,35 @@ pub fn summary_predict(
             (filter_predictions, filter_labels)
         })
         .unzip()
+}
+
+pub fn collect_and_split_dataset<P: AsRef<Path>>(
+    internal_fq_path: P,
+    terminal_fq_path: P,
+    negative_fq_path: P,
+) -> Result<()> {
+    Ok(())
+}
+
+pub fn smooth_label(labels: &[u8]) -> Vec<u8> {
+    let mut smoothed_labels = Vec::with_capacity(labels.len());
+    for i in 0..labels.len() {
+        let smooth_count = labels
+            .iter()
+            .skip(i.saturating_sub(1))
+            .take(3)
+            .filter(|&x| *x == 1)
+            .count();
+        smoothed_labels.push(if smooth_count >= 2 { 1 } else { 0 });
+    }
+    smoothed_labels
+}
+
+pub fn smooth_label_region(labels: &[u8]) -> Vec<u8> {
+    // find all region that has 1 continuous 1s
+    // let regions = vec![];
+    // labels.iter().map(|&x| x).collect();
+    todo!()
 }
 
 #[cfg(test)]
