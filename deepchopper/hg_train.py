@@ -1,54 +1,49 @@
-from dataclasses import dataclass, field
-import sys
-import os
-
-import numpy as np
-from transformers import (
-    DataCollatorForTokenClassification,
-    Trainer,
-    TrainingArguments,
-    HfArgumentParser,
-)
-
-from .data.hg_data import load_and_split_dataset
-from .models.hyena import (
-    HyenaDNAForTokenClassification,
-    compute_metrics,
-    load_config_and_tokenizer_from_hyena_model,
-    tokenize_dataset,
-)
-from .utils import (
-    RankedLogger,
-)
 import os
 import sys
-import warnings
 from dataclasses import dataclass, field
-from typing import Optional
 
 import datasets
-import evaluate
 import numpy as np
-from datasets import ClassLabel, load_dataset
-
 import transformers
+from datasets import load_dataset
 from transformers import (
     AutoConfig,
-    AutoModelForTokenClassification,
     AutoTokenizer,
-    DataCollatorForTokenClassification,
     HfArgumentParser,
-    PretrainedConfig,
-    PreTrainedTokenizerFast,
     Trainer,
     TrainingArguments,
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
-from transformers.utils import check_min_version, send_example_telemetry
-from transformers.utils.versions import require_version
+from transformers.utils import send_example_telemetry
 
-# log = RankedLogger(__name__, rank_zero_only=True)
+from .models.hyena import (
+    compute_metrics,
+)
+
+# model_name = "hyenadna-small-32k-seqlen"
+# data_file = {"train": "./tests/data/test_input.parquet"}
+# learning_rate = 2e-5
+# per_device_train_batch_size = 8
+# per_device_eval_batch_size = 8
+# num_train_epochs = 20
+# weight_decay = 0.01
+# torch_compile = False
+# output_dir = "hyena_model_train"
+# push_to_hub = False
+
+# tokenizer, model_config = load_config_and_tokenizer_from_hyena_model(model_name)
+# train_dataset, val_dataset, test_dataset = load_and_split_dataset(data_file)
+
+# tokenize_train_dataset = tokenize_dataset(
+#     train_dataset, tokenizer, max_length=model_config.max_seq_len
+# )
+# tokenize_val_dataset = tokenize_dataset(
+#     val_dataset, tokenizer, max_length=model_config.max_seq_len
+# )
+# tokenize_test_dataset = tokenize_dataset(
+#     test_dataset, tokenizer, max_length=model_config.max_seq_len
+# )
 
 
 @dataclass
@@ -228,10 +223,6 @@ class DataTrainingArguments:
             self.task_name = self.task_name.lower()
 
 
-def save_predicts(predicts, output_dir):
-    np.save(output_dir / "predicts.npy", predicts)
-
-
 def train():
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
@@ -274,10 +265,11 @@ def train():
     ):
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
-            raise ValueError(
+            msg = (
                 f"Output directory ({training_args.output_dir}) already exists and is not empty. "
                 "Use --overwrite_output_dir to overcome."
             )
+            raise ValueError(msg)
         elif last_checkpoint is not None and training_args.resume_from_checkpoint is None:
             logger.info(
                 f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
@@ -323,53 +315,25 @@ def train():
 
     if training_args.do_train:
         column_names = raw_datasets["train"].column_names
-        features = raw_datasets["train"].features
+        raw_datasets["train"].features
     else:
         column_names = raw_datasets["validation"].column_names
-        features = raw_datasets["validation"].features
+        raw_datasets["validation"].features
 
-    if data_args.text_column_name is not None:
-        text_column_name = data_args.text_column_name
-    elif "tokens" in column_names:
-        text_column_name = "tokens"
+    if data_args.text_column_name is not None or "tokens" in column_names:
+        pass
     else:
-        text_column_name = column_names[0]
+        column_names[0]
 
-    if data_args.label_column_name is not None:
-        label_column_name = data_args.label_column_name
-    elif f"{data_args.task_name}_tags" in column_names:
-        label_column_name = f"{data_args.task_name}_tags"
+    if data_args.label_column_name is not None or f"{data_args.task_name}_tags" in column_names:
+        pass
     else:
-        label_column_name = column_names[1]
+        column_names[1]
 
-    # In the event the labels are not a `Sequence[ClassLabel]`, we will need to go through the dataset to get the
-    # unique labels.
-    def get_label_list(labels):
-        unique_labels = set()
-        for label in labels:
-            unique_labels = unique_labels | set(label)
-        label_list = list(unique_labels)
-        label_list.sort()
-        return label_list
-
-    # If the labels are of type ClassLabel, they are already integers and we have the map stored somewhere.
-    # Otherwise, we have to get the list of labels manually.
-    labels_are_int = isinstance(features[label_column_name].feature, ClassLabel)
-    if labels_are_int:
-        label_list = features[label_column_name].feature.names
-        label_to_id = {i: i for i in range(len(label_list))}
-    else:
-        label_list = get_label_list(raw_datasets["train"][label_column_name])
-        label_to_id = {l: i for i, l in enumerate(label_list)}
-
-    num_labels = len(label_list)
-
-    # Load pretrained model and tokenizer
-    #
     # Distributed training:
     # The .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
-    config = AutoConfig.from_pretrained(
+    AutoConfig.from_pretrained(
         model_args.config_name if model_args.config_name else model_args.model_name_or_path,
         num_labels=num_labels,
         finetuning_task=data_args.task_name,
@@ -382,221 +346,148 @@ def train():
     tokenizer_name_or_path = (
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path
     )
-    if config.model_type in {"bloom", "gpt2", "roberta"}:
-        tokenizer = AutoTokenizer.from_pretrained(
-            tokenizer_name_or_path,
-            cache_dir=model_args.cache_dir,
-            use_fast=True,
-            revision=model_args.model_revision,
-            token=model_args.token,
-            trust_remote_code=model_args.trust_remote_code,
-            add_prefix_space=True,
-        )
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(
-            tokenizer_name_or_path,
-            cache_dir=model_args.cache_dir,
-            use_fast=True,
-            revision=model_args.model_revision,
-            token=model_args.token,
-            trust_remote_code=model_args.trust_remote_code,
-        )
 
-    model = AutoModelForTokenClassification.from_pretrained(
-        model_args.model_name_or_path,
-        from_tf=bool(".ckpt" in model_args.model_name_or_path),
-        config=config,
+    tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer_name_or_path,
         cache_dir=model_args.cache_dir,
         revision=model_args.model_revision,
         token=model_args.token,
         trust_remote_code=model_args.trust_remote_code,
+        add_prefix_space=True,
+    )
+
+    from functools import partial
+
+    from .models.hyena import (
+        DataCollatorForTokenClassificationWithQual,
+        TokenClassification,
+        tokenize_and_align_labels_and_quals,
+    )
+
+    model = TokenClassification.from_pretrained(
+        model_args.model_name_or_path,
+        cache_dir=model_args.cache_dir,
+        revision=model_args.model_revision,
+        trust_remote_code=model_args.trust_remote_code,
         ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
     )
 
-    # Tokenizer check: this script requires a fast tokenizer.
-    if not isinstance(tokenizer, PreTrainedTokenizerFast):
-        raise ValueError(
-            "This example script only works for models that have a fast tokenizer. Checkout the big table of models at"
-            " https://huggingface.co/transformers/index.html#supported-frameworks to find the model types that meet"
-            " this requirement"
-        )
-
-    # Model has labels -> use them.
-    if model.config.label2id != PretrainedConfig(num_labels=num_labels).label2id:
-        if sorted(model.config.label2id.keys()) == sorted(label_list):
-            # Reorganize `label_list` to match the ordering of the model.
-            if labels_are_int:
-                label_to_id = {i: int(model.config.label2id[l]) for i, l in enumerate(label_list)}
-                label_list = [model.config.id2label[i] for i in range(num_labels)]
-            else:
-                label_list = [model.config.id2label[i] for i in range(num_labels)]
-                label_to_id = {l: i for i, l in enumerate(label_list)}
-        else:
-            logger.warning(
-                "Your model seems to have been trained with labels, but they don't match the dataset: ",
-                f"model labels: {sorted(model.config.label2id.keys())}, dataset labels:"
-                f" {sorted(label_list)}.\nIgnoring the model labels as a result.",
-            )
-
-    # Set the correspondences label/ID inside the model config
-    model.config.label2id = {l: i for i, l in enumerate(label_list)}
-    model.config.id2label = dict(enumerate(label_list))
-
-    # Map that sends B-Xxx label to its I-Xxx counterpart
-    b_to_i_label = []
-    for idx, label in enumerate(label_list):
-        if label.startswith("B-") and label.replace("B-", "I-") in label_list:
-            b_to_i_label.append(label_list.index(label.replace("B-", "I-")))
-        else:
-            b_to_i_label.append(idx)
-
     # Preprocessing the dataset
     # Padding strategy
-    padding = "max_length" if data_args.pad_to_max_length else False
 
-    # Tokenize all texts and align the labels with them.
-    def tokenize_and_align_labels(examples):
-        tokenized_inputs = tokenizer(
-            examples[text_column_name],
-            padding=padding,
-            truncation=True,
-            max_length=data_args.max_seq_length,
-            # We use this argument because the texts in our dataset are lists of words (with a label for each word).
-            is_split_into_words=True,
-        )
-        labels = []
-        for i, label in enumerate(examples[label_column_name]):
-            word_ids = tokenized_inputs.word_ids(batch_index=i)
-            previous_word_idx = None
-            label_ids = []
-            for word_idx in word_ids:
-                # Special tokens have a word id that is None. We set the label to -100 so they are automatically
-                # ignored in the loss function.
-                if word_idx is None:
-                    label_ids.append(-100)
-                # We set the label for the first token of each word.
-                elif word_idx != previous_word_idx:
-                    label_ids.append(label_to_id[label[word_idx]])
-                # For the other tokens in a word, we set the label to either the current label or -100, depending on
-                # the label_all_tokens flag.
-                else:
-                    if data_args.label_all_tokens:
-                        label_ids.append(b_to_i_label[label_to_id[label[word_idx]]])
-                    else:
-                        label_ids.append(-100)
-                previous_word_idx = word_idx
-
-            labels.append(label_ids)
-        tokenized_inputs["labels"] = labels
-        return tokenized_inputs
+    # padding = "max_length" if data_args.pad_to_max_length else False
 
     if training_args.do_train:
         if "train" not in raw_datasets:
             raise ValueError("--do_train requires a train dataset")
+
         train_dataset = raw_datasets["train"]
+
         if data_args.max_train_samples is not None:
             max_train_samples = min(len(train_dataset), data_args.max_train_samples)
             train_dataset = train_dataset.select(range(max_train_samples))
+
         with training_args.main_process_first(desc="train dataset map pre-processing"):
             train_dataset = train_dataset.map(
-                tokenize_and_align_labels,
+                partial(
+                    tokenize_and_align_labels_and_quals, tokenizer=tokenizer, max_length=max_length
+                ),
                 batched=True,
                 num_proc=data_args.preprocessing_num_workers,
                 load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on train dataset",
-            )
+            ).remove_columns(["id", "seq", "qual", "target"])
 
     if training_args.do_eval:
         if "validation" not in raw_datasets:
             raise ValueError("--do_eval requires a validation dataset")
+
         eval_dataset = raw_datasets["validation"]
+
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             eval_dataset = eval_dataset.select(range(max_eval_samples))
+
         with training_args.main_process_first(desc="validation dataset map pre-processing"):
             eval_dataset = eval_dataset.map(
-                tokenize_and_align_labels,
+                partial(
+                    tokenize_and_align_labels_and_quals, tokenizer=tokenizer, max_length=max_length
+                ),
                 batched=True,
                 num_proc=data_args.preprocessing_num_workers,
                 load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on validation dataset",
-            )
+            ).remove_columns(["id", "seq", "qual", "target"])
 
     if training_args.do_predict:
         if "test" not in raw_datasets:
             raise ValueError("--do_predict requires a test dataset")
         predict_dataset = raw_datasets["test"]
+
         if data_args.max_predict_samples is not None:
             max_predict_samples = min(len(predict_dataset), data_args.max_predict_samples)
             predict_dataset = predict_dataset.select(range(max_predict_samples))
+
         with training_args.main_process_first(desc="prediction dataset map pre-processing"):
             predict_dataset = predict_dataset.map(
-                tokenize_and_align_labels,
+                partial(
+                    tokenize_and_align_labels_and_quals, tokenizer=tokenizer, max_length=max_length
+                ),
                 batched=True,
                 num_proc=data_args.preprocessing_num_workers,
                 load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on prediction dataset",
-            )
+            ).remove_columns(["id", "seq", "qual", "target"])
 
     # Data collator
-    data_collator = DataCollatorForTokenClassification(
+    data_collator = DataCollatorForTokenClassificationWithQual(
         tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None
     )
 
-    # Metrics
-    metric = evaluate.load("seqeval", cache_dir=model_args.cache_dir)
+    from accelerate import Accelerator
 
-    def compute_metrics(p):
-        predictions, labels = p
-        predictions = np.argmax(predictions, axis=2)
+    accelerator = Accelerator()
 
-        # Remove ignored index (special tokens)
-        true_predictions = [
-            [label_list[p] for (p, l) in zip(prediction, label) if l != -100]
-            for prediction, label in zip(predictions, labels)
-        ]
-        true_labels = [
-            [label_list[l] for (p, l) in zip(prediction, label) if l != -100]
-            for prediction, label in zip(predictions, labels)
-        ]
+    training_args = TrainingArguments(
+        output_dir="hyena_model_use_qual",
+        learning_rate=2e-5,
+        per_device_train_batch_size=12,
+        per_device_eval_batch_size=12,
+        num_train_epochs=20,
+        weight_decay=0.01,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        load_best_model_at_end=True,
+        push_to_hub=False,
+        torch_compile=False,
+        # tf32=True,
+        report_to="wandb",
+        run_name="hyena_model_use_qual",
+        resume_from_checkpoint=True,
+    )
 
-        results = metric.compute(predictions=true_predictions, references=true_labels)
-        if data_args.return_entity_level_metrics:
-            # Unpack nested dictionaries
-            final_results = {}
-            for key, value in results.items():
-                if isinstance(value, dict):
-                    for n, v in value.items():
-                        final_results[f"{key}_{n}"] = v
-                else:
-                    final_results[key] = value
-            return final_results
-        else:
-            return {
-                "precision": results["overall_precision"],
-                "recall": results["overall_recall"],
-                "f1": results["overall_f1"],
-                "accuracy": results["overall_accuracy"],
-            }
-
-    # Initialize our Trainer
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=train_dataset if training_args.do_train else None,
-        eval_dataset=eval_dataset if training_args.do_eval else None,
+        train_dataset=tokenize_train_dataset,
+        eval_dataset=tokenize_test_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
     )
 
+    trainer = accelerator.prepare(trainer)
+
     # Training
     if training_args.do_train:
         checkpoint = None
+
         if training_args.resume_from_checkpoint is not None:
             checkpoint = training_args.resume_from_checkpoint
+
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
+
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
         metrics = train_result.metrics
         trainer.save_model()  # Saves the tokenizer too for easy upload
@@ -637,17 +528,19 @@ def train():
 
         # Remove ignored index (special tokens)
         true_predictions = [
-            [label_list[p] for (p, l) in zip(prediction, label) if l != -100]
-            for prediction, label in zip(predictions, labels)
+            [p for (p, l) in zip(prediction, label, strict=False) if l != -100]
+            for prediction, label in zip(predictions, labels, strict=False)
         ]
 
         trainer.log_metrics("predict", metrics)
         trainer.save_metrics("predict", metrics)
 
+        from pathlib import Path
+
         # Save predictions
-        output_predictions_file = os.path.join(training_args.output_dir, "predictions.txt")
+        output_predictions_file = Path(training_args.output_dir) / "predictions.txt"
         if trainer.is_world_process_zero():
-            with open(output_predictions_file, "w") as writer:
+            with Path(output_predictions_file).open("w") as writer:
                 for prediction in true_predictions:
                     writer.write(" ".join(prediction) + "\n")
 
@@ -664,59 +557,6 @@ def train():
         trainer.push_to_hub(**kwargs)
     else:
         trainer.create_model_card(**kwargs)
-
-    model_name = "hyenadna-small-32k-seqlen"
-    data_file = {"train": "./tests/data/test_input.parquet"}
-    learning_rate = 2e-5
-    per_device_train_batch_size = 8
-    per_device_eval_batch_size = 8
-    num_train_epochs = 20
-    weight_decay = 0.01
-    torch_compile = False
-    output_dir = "hyena_model_train"
-    push_to_hub = False
-
-    tokenizer, model_config = load_config_and_tokenizer_from_hyena_model(model_name)
-    train_dataset, val_dataset, test_dataset = load_and_split_dataset(data_file)
-
-    tokenize_train_dataset = tokenize_dataset(
-        train_dataset, tokenizer, max_length=model_config.max_seq_len
-    )
-    tokenize_val_dataset = tokenize_dataset(
-        val_dataset, tokenizer, max_length=model_config.max_seq_len
-    )
-    tokenize_test_dataset = tokenize_dataset(
-        test_dataset, tokenizer, max_length=model_config.max_seq_len
-    )
-
-    data_collator = DataCollatorForTokenClassification(tokenizer)
-    model = HyenaDNAForTokenClassification(model_config)
-    training_args = TrainingArguments(
-        output_dir=output_dir,
-        learning_rate=learning_rate,
-        per_device_train_batch_size=per_device_train_batch_size,
-        per_device_eval_batch_size=per_device_eval_batch_size,
-        num_train_epochs=num_train_epochs,
-        weight_decay=weight_decay,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        load_best_model_at_end=True,
-        push_to_hub=push_to_hub,
-        torch_compile=torch_compile,
-    )
-
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=tokenize_train_dataset,
-        eval_dataset=tokenize_val_dataset,
-        tokenizer=tokenizer,
-        data_collator=data_collator,
-        compute_metrics=compute_metrics,
-    )
-    trainer.train()
-    trainer.evaluate()
-    trainer.predict(tokenize_test_dataset)
 
 
 if __name__ == "__main__":

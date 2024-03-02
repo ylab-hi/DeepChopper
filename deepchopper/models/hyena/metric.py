@@ -20,7 +20,6 @@ def compute_metrics(p):
             if l != -100:
                 filtered_prediction.append(p)
                 filtered_label.append(l)
-
         true_predictions.append(filtered_prediction)
         true_labels.append(filtered_label)
 
