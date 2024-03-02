@@ -1,6 +1,11 @@
 """hyena model components and utilities."""
 
-from .components import TokenClassification, TokenClassificationConfig, TokenClassificationHead
+from .components import (
+    HyenadnaMaxLengths,
+    TokenClassification,
+    TokenClassificationConfig,
+    TokenClassificationHead,
+)
 from .metric import compute_metrics
 from .tokenizer import (
     DataCollatorForTokenClassificationWithQual,
@@ -18,4 +23,5 @@ __all__ = [
     "load_tokenizer_from_hyena_model",
     "tokenize_and_align_labels_and_quals",
     "tokenize_dataset",
+    "HyenadnaMaxLengths",
 ]

@@ -7,8 +7,18 @@ from transformers.utils import logging
 logging.set_verbosity_info()
 logger = logging.get_logger("transformers")
 
+HyenadnaMaxLengths = {
+    "hyenadna-tiny-1k-seqlen": 1024,
+    "hyenadna-small-32k-seqlen": 32768,
+    "hyenadna-medium-160k-seqlen": 160000,
+    "hyenadna-medium-450k-seqlen": 450000,  # T4 up to here
+    "hyenadna-large-1m-seqlen": 1_000_000,  # only A100 (paid tier)
+}
+
 
 class TokenClassificationHead(nn.Module):
+    """Token classification head for the model."""
+
     def __init__(
         self,
         input_size: int,
@@ -19,6 +29,16 @@ class TokenClassificationHead(nn.Module):
         use_identity_layer_for_qual: bool,
         use_qual: bool,
     ):
+        """Initialize the neural network model.
+
+        Parameters:
+            input_size (int): The size of the input features.
+            lin1_size (int): The size of the first linear layer.
+            lin2_size (int): The size of the second linear layer.
+            num_class (int): The number of output classes.
+            use_identity_layer_for_qual (bool): Whether to use an identity layer for quality.
+            use_qual (bool): Whether to use quality in the model.
+        """
         super().__init__()
         self.use_qual = use_qual
         self.activation = nn.ReLU()
@@ -34,14 +54,17 @@ class TokenClassificationHead(nn.Module):
         """Forward pass through the neural network model.
 
         Parameters:
-        - x (torch.Tensor): Input tensor to the model.
-        - input_quals (torch.Tensor): Input tensor representing qualities.
+            x (torch.Tensor): Input tensor to the model.
+            input_quals (torch.Tensor): Input tensor representing qualities.
 
         Returns:
-        - torch.Tensor: Output tensor from the model.
+            torch.Tensor: Output tensor from the model.
 
-        This method performs a forward pass through the neural network model. It takes in two input tensors, x and input_quals, and processes them through the model layers. The output tensor is returned from the model after passing through the linear and activation layers.
-        If the 'use_qual' flag is set to True, the input_quals tensor is used to calculate a residual value that is added to the output tensor before passing through the linear and activation layers again. This helps incorporate qualities into the model's predictions.
+        This method performs a forward pass through the neural network model.
+        It takes in two input tensors, x and input_quals, and processes them through the model layers.
+        The output tensor is returned from the model after passing through the linear and activation layers.
+        If the 'use_qual' flag is set to True, the input_quals tensor is used to calculate a residual value that is added to the output tensor before passing through the linear and activation layers again.
+        This helps incorporate qualities into the model's predictions.
         If the 'use_qual' flag is set to False, the input_quals tensor is not used and the output tensor from the first linear layer is directly passed through the second linear and activation layers.
         The final output tensor is returned from the model after passing through the third linear layer.
         Note: The activation function used in the model is specified by self.activation and should be set during model initialization.
@@ -58,6 +81,8 @@ class TokenClassificationHead(nn.Module):
 
 
 class TokenClassificationConfig(PretrainedConfig):
+    """Configuration class to store the model's hyperparameters."""
+
     model_type = "token-classification"
 
     def __init__(
@@ -81,6 +106,8 @@ class TokenClassificationConfig(PretrainedConfig):
 
 
 class TokenClassification(PreTrainedModel):
+    """Token classification model."""
+
     config_class = TokenClassificationConfig
 
     def __init__(

@@ -22,24 +22,13 @@ from transformers.utils import send_example_telemetry
 
 from .models.hyena import (
     DataCollatorForTokenClassificationWithQual,
+    HyenadnaMaxLengths,
     TokenClassification,
     compute_metrics,
     tokenize_and_align_labels_and_quals,
 )
 
 logger = logging.getLogger(__name__)
-
-# model_name = "hyenadna-small-32k-seqlen"
-# data_file = {"train": "./tests/data/test_input.parquet"}
-# learning_rate = 2e-5
-# per_device_train_batch_size = 8
-# per_device_eval_batch_size = 8
-# num_train_epochs = 20
-# weight_decay = 0.01
-# torch_compile = False
-# output_dir = "hyena_model_train"
-# push_to_hub = False
-
 
 # train_dataset, val_dataset, test_dataset = load_and_split_dataset(data_file)
 # tokenize_train_dataset = tokenize_dataset(
@@ -60,6 +49,12 @@ class ModelArguments:
     model_name_or_path: str = field(
         metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
     )
+
+    hyenadna_model: str = field(
+        default="hyenadna-small-32k-seqlen",
+        metadata={"help": "The name of the hyenadna model to use."},
+    )
+
     config_name: str | None = field(
         default=None,
         metadata={"help": "Pretrained config name or path if not the same as model_name"},
@@ -105,6 +100,14 @@ class ModelArguments:
             "help": "Will enable to load a pretrained model whose head dimensions are different."
         },
     )
+
+    def __post_init__(self):
+        if self.hyenadna_model not in HyenadnaMaxLengths:
+            msg = (
+                f"Invalid hyenadna model name: {self.hyenadna_model}. "
+                f"Should be one of {list(HyenadnaMaxLengths.keys())}"
+            )
+            raise ValueError(msg)
 
 
 @dataclass
@@ -220,11 +223,13 @@ class DataTrainingArguments:
 
         if self.train_file is not None:
             extension = self.train_file.split(".")[-1]
-            assert extension in ["parquet"], "`train_file` should be a parquet file."
+            if extension not in ["parquet"]:
+                raise ValueError("`train_file` should be a parquet file.")
 
         if self.validation_file is not None:
             extension = self.validation_file.split(".")[-1]
-            assert extension in ["parquet"], "`validation_file` should be a parquet file."
+            if extension not in ["parquet"]:
+                raise ValueError("`validation_file` should be a parquet file.")
 
         if self.task_name is not None:
             self.task_name = self.task_name.lower()
@@ -233,7 +238,7 @@ class DataTrainingArguments:
 def train():
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
 
-    if len(sys.argv) == 2 and sys.argv[1].endswith(".parquet"):
+    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
         model_args, data_args, training_args = parser.parse_json_file(
@@ -326,19 +331,12 @@ def train():
     # https://huggingface.co/docs/datasets/loading_datasets.
 
     if training_args.do_train:
-        column_names = raw_datasets["train"].column_names
+        raw_datasets["train"].column_names
         raw_datasets["train"].features
     else:
-        column_names = raw_datasets["validation"].column_names
+        raw_datasets["validation"].column_names
         raw_datasets["validation"].features
 
-    if data_args.label_column_name is not None or "labels" in column_names:
-        pass
-    else:
-        column_names[1]
-
-    # Load pretrained model and tokenizer
-    #
     # Distributed training:
     # The .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
@@ -441,9 +439,7 @@ def train():
     data_collator = DataCollatorForTokenClassificationWithQual(
         tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None
     )
-
     accelerator = Accelerator()
-
     # Initialize our Trainer
     trainer = Trainer(
         model=model,
