@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import sys
-import
+import os
 
 import numpy as np
 from transformers import (
@@ -243,10 +243,10 @@ def train():
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-   # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
+    # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
     # information sent is the one passed as arguments along with your Python/PyTorch versions.
     send_example_telemetry("deepchopper", model_args, data_args)
-    
+
     if training_args.should_log:
         # The default of training_args.log_level is passive, so we set log level at info here to have that default.
         transformers.utils.logging.set_verbosity_info()
@@ -267,7 +267,11 @@ def train():
 
     # Detecting last checkpoint.
     last_checkpoint = None
-    if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
+    if (
+        os.path.isdir(training_args.output_dir)
+        and training_args.do_train
+        and not training_args.overwrite_output_dir
+    ):
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
             raise ValueError(
@@ -283,8 +287,7 @@ def train():
     # Set seed before initializing model.
     set_seed(training_args.seed)
 
-
- # Get the datasets: you can either provide your own CSV/JSON/TXT training and evaluation files (see below)
+    # Get the datasets: you can either provide your own CSV/JSON/TXT training and evaluation files (see below)
     # or just provide the name of one of the public datasets available on the hub at https://huggingface.co/datasets/
     # (the dataset will be downloaded automatically from the datasets Hub).
     #
@@ -312,7 +315,9 @@ def train():
         if data_args.test_file is not None:
             data_files["test"] = data_args.test_file
             extension = data_args.test_file.split(".")[-1]
-        raw_datasets = load_dataset(extension, data_files=data_files, cache_dir=model_args.cache_dir)
+        raw_datasets = load_dataset(
+            extension, data_files=data_files, cache_dir=model_args.cache_dir
+        )
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.
 
@@ -374,7 +379,9 @@ def train():
         trust_remote_code=model_args.trust_remote_code,
     )
 
-    tokenizer_name_or_path = model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path
+    tokenizer_name_or_path = (
+        model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path
+    )
     if config.model_type in {"bloom", "gpt2", "roberta"}:
         tokenizer = AutoTokenizer.from_pretrained(
             tokenizer_name_or_path,
@@ -532,7 +539,9 @@ def train():
             )
 
     # Data collator
-    data_collator = DataCollatorForTokenClassification(tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None)
+    data_collator = DataCollatorForTokenClassification(
+        tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None
+    )
 
     # Metrics
     metric = evaluate.load("seqeval", cache_dir=model_args.cache_dir)
@@ -593,7 +602,9 @@ def train():
         trainer.save_model()  # Saves the tokenizer too for easy upload
 
         max_train_samples = (
-            data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
+            data_args.max_train_samples
+            if data_args.max_train_samples is not None
+            else len(train_dataset)
         )
         metrics["train_samples"] = min(max_train_samples, len(train_dataset))
 
@@ -607,7 +618,11 @@ def train():
 
         metrics = trainer.evaluate()
 
-        max_eval_samples = data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
+        max_eval_samples = (
+            data_args.max_eval_samples
+            if data_args.max_eval_samples is not None
+            else len(eval_dataset)
+        )
         metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
 
         trainer.log_metrics("eval", metrics)
@@ -649,7 +664,6 @@ def train():
         trainer.push_to_hub(**kwargs)
     else:
         trainer.create_model_card(**kwargs)
-
 
     model_name = "hyenadna-small-32k-seqlen"
     data_file = {"train": "./tests/data/test_input.parquet"}
