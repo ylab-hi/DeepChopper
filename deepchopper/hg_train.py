@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from dataclasses import dataclass, field
@@ -10,7 +11,6 @@ import transformers
 from accelerate import Accelerator
 from datasets import load_dataset
 from transformers import (
-    AutoConfig,
     AutoTokenizer,
     HfArgumentParser,
     Trainer,
@@ -20,34 +20,29 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import send_example_telemetry
 
+from .data import load_and_split_dataset
 from .models.hyena import (
+    IGNORE_INDEX,
     DataCollatorForTokenClassificationWithQual,
     HyenadnaMaxLengths,
     TokenClassification,
+    TokenClassificationConfig,
     compute_metrics,
     tokenize_and_align_labels_and_quals,
 )
 
 logger = logging.getLogger(__name__)
 
-# train_dataset, val_dataset, test_dataset = load_and_split_dataset(data_file)
-# tokenize_train_dataset = tokenize_dataset(
-#     train_dataset, tokenizer, max_length=model_config.max_seq_len
-# )
-# tokenize_val_dataset = tokenize_dataset(
-#     val_dataset, tokenizer, max_length=model_config.max_seq_len
-# )
-# tokenize_test_dataset = tokenize_dataset(
-#     test_dataset, tokenizer, max_length=model_config.max_seq_len
-# )
-
 
 @dataclass
 class ModelArguments:
     """Arguments pertaining to which model/config/tokenizer we are going to fine-tune from."""
 
-    model_name_or_path: str = field(
-        metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
+    model_name_or_path: str | None = field(
+        default=None,
+        metadata={
+            "help": "Path to pretrained model or model identifier from huggingface.co/models"
+        },
     )
 
     hyenadna_model: str = field(
@@ -293,27 +288,20 @@ def train():
     # Set seed before initializing model.
     set_seed(training_args.seed)
 
-    # Get the datasets: you can either provide your own CSV/JSON/TXT training and evaluation files (see below)
-    # or just provide the name of one of the public datasets available on the hub at https://huggingface.co/datasets/
-    # (the dataset will be downloaded automatically from the datasets Hub).
-    #
-    # For CSV/JSON files, this script will use the column called 'text' or the first column if no column called
-    # 'text' is found. You can easily tweak this behavior (see below).
-    #
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
 
     extension = "parquet"
     if data_args.dataset_name is not None:
+        single_dataset = True
         # Downloading and loading a dataset from the hub.
-        raw_datasets = load_dataset(
-            extension,
-            data_args.dataset_name,
-            data_args.dataset_config_name,
-            cache_dir=model_args.cache_dir,
-            token=model_args.token,
+        # split "train", "validation", "test" from a dataset
+        # mainly used for small datasets for testing
+        train_dataset, eval_dataset, predict_dataset = load_and_split_dataset(
+            data_args.dataset_name
         )
     else:
+        single_dataset = False
         data_files = {}
         if data_args.train_file is not None:
             data_files["train"] = data_args.train_file
@@ -330,54 +318,56 @@ def train():
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.
 
-    if training_args.do_train:
-        raw_datasets["train"].column_names
-        raw_datasets["train"].features
-    else:
-        raw_datasets["validation"].column_names
-        raw_datasets["validation"].features
-
     # Distributed training:
     # The .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
+    if model_args.tokenizer_name is None:
+        logger.info(f"config_name is None, loading {model_args.hyenadna_model} from hg")
+        if model_args.hyenadna_model not in HyenadnaMaxLengths:
+            msg = f"Model name {model_args.hyenadna_model } not found in available models."
+            raise ValueError(msg)
+        max_length = HyenadnaMaxLengths[model_args.hyenadna_model]
+        hg_model = f"LongSafari/{model_args.hyenadna_model}-hf"
+        tokenizer = AutoTokenizer.from_pretrained(
+            hg_model,
+            max_length=max_length,
+            truncation=True,
+            padding=True,
+            cache_dir=model_args.cache_dir,
+            revision=model_args.model_revision,
+            token=model_args.token,
+            trust_remote_code=model_args.trust_remote_code,
+        )
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_args.config_name,
+            finetuning_task=data_args.task_name,
+            cache_dir=model_args.cache_dir,
+            revision=model_args.model_revision,
+            token=model_args.token,
+            trust_remote_code=model_args.trust_remote_code,
+        )
 
-    AutoConfig.from_pretrained(
-        model_args.config_name if model_args.config_name else model_args.model_name_or_path,
-        finetuning_task=data_args.task_name,
-        cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        token=model_args.token,
-        trust_remote_code=model_args.trust_remote_code,
-    )
-
-    tokenizer_name_or_path = (
-        model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path
-    )
-    tokenizer = AutoTokenizer.from_pretrained(
-        tokenizer_name_or_path,
-        cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        token=model_args.token,
-        trust_remote_code=model_args.trust_remote_code,
-        add_prefix_space=True,
-    )
-
-    model = TokenClassification.from_pretrained(
-        model_args.model_name_or_path,
-        cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        trust_remote_code=model_args.trust_remote_code,
-        ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
-    )
+    if model_args.config_name is not None:
+        model = TokenClassification.from_pretrained(
+            model_args.config_name,
+            cache_dir=model_args.cache_dir,
+            revision=model_args.model_revision,
+            trust_remote_code=model_args.trust_remote_code,
+            ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
+        )
+    else:
+        model_config = TokenClassificationConfig()
+        model = TokenClassification(model_config)
 
     # Preprocessing the dataset
     # Padding strategy
-
     if training_args.do_train:
-        if "train" not in raw_datasets:
+        if not single_dataset and "train" not in raw_datasets:
             raise ValueError("--do_train requires a train dataset")
 
-        train_dataset = raw_datasets["train"]
+        if not single_dataset:
+            train_dataset = raw_datasets["train"]
 
         if data_args.max_train_samples is not None:
             max_train_samples = min(len(train_dataset), data_args.max_train_samples)
@@ -386,19 +376,22 @@ def train():
         with training_args.main_process_first(desc="train dataset map pre-processing"):
             train_dataset = train_dataset.map(
                 partial(
-                    tokenize_and_align_labels_and_quals, tokenizer=tokenizer, max_length=max_length
+                    tokenize_and_align_labels_and_quals,
+                    tokenizer=tokenizer,
+                    max_length=tokenizer.max_len_single_sentence,
                 ),
-                batched=True,
+                batched=False,
                 num_proc=data_args.preprocessing_num_workers,
                 load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on train dataset",
             ).remove_columns(["id", "seq", "qual", "target"])
 
     if training_args.do_eval:
-        if "validation" not in raw_datasets:
+        if not single_dataset and "validation" not in raw_datasets:
             raise ValueError("--do_eval requires a validation dataset")
 
-        eval_dataset = raw_datasets["validation"]
+        if not single_dataset:
+            eval_dataset = raw_datasets["validation"]
 
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
@@ -407,18 +400,22 @@ def train():
         with training_args.main_process_first(desc="validation dataset map pre-processing"):
             eval_dataset = eval_dataset.map(
                 partial(
-                    tokenize_and_align_labels_and_quals, tokenizer=tokenizer, max_length=max_length
+                    tokenize_and_align_labels_and_quals,
+                    tokenizer=tokenizer,
+                    max_length=tokenizer.max_len_single_sentence,
                 ),
-                batched=True,
+                batched=False,
                 num_proc=data_args.preprocessing_num_workers,
                 load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on validation dataset",
             ).remove_columns(["id", "seq", "qual", "target"])
 
     if training_args.do_predict:
-        if "test" not in raw_datasets:
+        if not single_dataset and "test" not in raw_datasets:
             raise ValueError("--do_predict requires a test dataset")
-        predict_dataset = raw_datasets["test"]
+
+        if not single_dataset:
+            predict_dataset = raw_datasets["test"]
 
         if data_args.max_predict_samples is not None:
             max_predict_samples = min(len(predict_dataset), data_args.max_predict_samples)
@@ -427,9 +424,11 @@ def train():
         with training_args.main_process_first(desc="prediction dataset map pre-processing"):
             predict_dataset = predict_dataset.map(
                 partial(
-                    tokenize_and_align_labels_and_quals, tokenizer=tokenizer, max_length=max_length
+                    tokenize_and_align_labels_and_quals,
+                    tokenizer=tokenizer,
+                    max_length=tokenizer.max_len_single_sentence,
                 ),
-                batched=True,
+                batched=False,
                 num_proc=data_args.preprocessing_num_workers,
                 load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on prediction dataset",
@@ -445,7 +444,7 @@ def train():
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=test_dataset,
+        eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
@@ -502,8 +501,8 @@ def train():
 
         # Remove ignored index (special tokens)
         true_predictions = [
-            [p for (p, l) in zip(prediction, label, strict=False) if l != -100]
-            for prediction, label in zip(predictions, labels, strict=False)
+            [p for (p, l) in zip(prediction, label, strict=False) if l != IGNORE_INDEX]
+            for prediction, label in zip(predictions, labels, strict=True)
         ]
 
         trainer.log_metrics("predict", metrics)
@@ -514,7 +513,8 @@ def train():
         if trainer.is_world_process_zero():
             with Path(output_predictions_file).open("w") as writer:
                 for prediction in true_predictions:
-                    writer.write(" ".join(prediction) + "\n")
+                    prediction_str = (str(x) for x in prediction)
+                    writer.write(" ".join(prediction_str) + "\n")
 
     kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "token-classification"}
     if data_args.dataset_name is not None:

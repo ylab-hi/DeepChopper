@@ -6,7 +6,7 @@ from .components import (
     TokenClassificationConfig,
     TokenClassificationHead,
 )
-from .metric import compute_metrics
+from .metric import IGNORE_INDEX, compute_metrics
 from .tokenizer import (
     DataCollatorForTokenClassificationWithQual,
     load_tokenizer_from_hyena_model,
@@ -24,4 +24,5 @@ __all__ = [
     "tokenize_and_align_labels_and_quals",
     "tokenize_dataset",
     "HyenadnaMaxLengths",
+    "IGNORE_INDEX",
 ]

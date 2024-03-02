@@ -577,3 +577,4 @@ checkpoints
 wandb
 hyena_model
 hyena_model_use_qual
+hyena_model_train
