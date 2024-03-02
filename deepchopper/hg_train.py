@@ -40,9 +40,8 @@ logger = logging.getLogger(__name__)
 # output_dir = "hyena_model_train"
 # push_to_hub = False
 
-# tokenizer, model_config = load_config_and_tokenizer_from_hyena_model(model_name)
-# train_dataset, val_dataset, test_dataset = load_and_split_dataset(data_file)
 
+# train_dataset, val_dataset, test_dataset = load_and_split_dataset(data_file)
 # tokenize_train_dataset = tokenize_dataset(
 #     train_dataset, tokenizer, max_length=model_config.max_seq_len
 # )

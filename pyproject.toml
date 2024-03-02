@@ -37,6 +37,7 @@ classifiers = [
 [tool.poetry.scripts]
 dc-train = "deepchopper.train:main"
 dc-eval = "deepchopper.eval:main"
+dc-hg-train = "deepchopper.hg_train:train"
 
 [tool.poe.tasks.train]
 cmd = "dc-train"
