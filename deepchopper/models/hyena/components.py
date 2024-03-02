@@ -17,20 +17,43 @@ class TokenClassificationHead(nn.Module):
         num_class: int,
         *,
         use_identity_layer_for_qual: bool,
+        use_qual: bool,
     ):
         super().__init__()
+        self.use_qual = use_qual
         self.activation = nn.ReLU()
         self.linear1 = nn.Linear(input_size, lin1_size)
         self.linear2 = nn.Linear(lin1_size, lin2_size)
         self.linear3 = nn.Linear(lin2_size, num_class)
+
         self.qual_linear1 = (
             nn.Identity() if use_identity_layer_for_qual else nn.Linear(1, lin1_size)
         )
 
     def forward(self, x: torch.Tensor, input_quals: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the neural network model.
+
+        Parameters:
+        - x (torch.Tensor): Input tensor to the model.
+        - input_quals (torch.Tensor): Input tensor representing qualities.
+
+        Returns:
+        - torch.Tensor: Output tensor from the model.
+
+        This method performs a forward pass through the neural network model. It takes in two input tensors, x and input_quals, and processes them through the model layers. The output tensor is returned from the model after passing through the linear and activation layers.
+        If the 'use_qual' flag is set to True, the input_quals tensor is used to calculate a residual value that is added to the output tensor before passing through the linear and activation layers again. This helps incorporate qualities into the model's predictions.
+        If the 'use_qual' flag is set to False, the input_quals tensor is not used and the output tensor from the first linear layer is directly passed through the second linear and activation layers.
+        The final output tensor is returned from the model after passing through the third linear layer.
+        Note: The activation function used in the model is specified by self.activation and should be set during model initialization.
+        """
         output = self.activation(self.linear1(x))
-        residual = output + self.qual_linear1(input_quals.unsqueeze(-1))  # may add activation
-        output = self.activation(self.linear2(residual) + residual)
+
+        if self.use_qual:
+            residual = output + self.qual_linear1(input_quals.unsqueeze(-1))  # may add activation
+            output = self.activation(self.linear2(residual) + residual)
+        else:
+            output = self.activation(self.linear2(output))
+
         return self.linear3(output)
 
 
@@ -45,6 +68,7 @@ class TokenClassificationConfig(PretrainedConfig):
         num_class: int = 2,
         *,
         use_identity_layer_for_qual: bool = True,
+        use_qual: bool = True,
         **kwargs,
     ):
         self.input_size = input_size
@@ -52,6 +76,7 @@ class TokenClassificationConfig(PretrainedConfig):
         self.lin2_size = lin2_size
         self.num_class = num_class
         self.use_identity_layer_for_qual = use_identity_layer_for_qual
+        self.use_qual = use_qual
         super().__init__(**kwargs)
 
 
@@ -77,6 +102,7 @@ class TokenClassification(PreTrainedModel):
             lin2_size=config.lin2_size,
             num_class=config.num_class,
             use_identity_layer_for_qual=config.use_identity_layer_for_qual,
+            use_qual=config.use_qual,
         )
 
         # Initialize weights and apply final processing
@@ -90,7 +116,7 @@ class TokenClassification(PreTrainedModel):
         inputs_embeds: torch.FloatTensor | None = None,
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
-    ) -> torch.Tensor:
+    ):
         transformer_outputs = self.hyenadna(
             input_ids,
             inputs_embeds=inputs_embeds,

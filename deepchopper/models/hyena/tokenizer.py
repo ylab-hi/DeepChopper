@@ -1,12 +1,15 @@
 from functools import partial
 
 import torch
+from datasets import Dataset
 from transformers import (
     AutoTokenizer,
     DataCollatorForTokenClassification,
 )
 
 import deepchopper
+
+from .metric import IGNORE_INDEX
 
 
 def pad_without_fast_tokenizer_warning(tokenizer, *pad_args, **pad_kwargs):
@@ -111,7 +114,9 @@ def load_tokenizer_from_hyena_model(model_name):
     )
 
 
-def tokenize_and_align_labels_and_quals(data, tokenizer, max_length, pad_qual=0, pad_label=-100):
+def tokenize_and_align_labels_and_quals(
+    data, tokenizer, max_length, pad_qual=0, pad_label=IGNORE_INDEX
+):
     tokenized_inputs = tokenizer(data["seq"], max_length=max_length, truncation=True, padding=True)
     labels = torch.tensor(
         [*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label]
@@ -123,6 +128,27 @@ def tokenize_and_align_labels_and_quals(data, tokenizer, max_length, pad_qual=0,
 
 
 def tokenize_dataset(dataset, tokenizer, max_length):
+    """Tokenizes the input dataset using the provided tokenizer and aligns labels and qualities.
+
+    Args:
+        dataset (Dataset): The input dataset to be tokenized.
+        tokenizer (Tokenizer): The tokenizer to be used for tokenization.
+        max_length (int): The maximum length of the tokenized sequences.
+
+    Returns:
+        Tokenized dataset with aligned labels and qualities.
+
+    Raises:
+        ValueError: If the dataset is empty or if the tokenizer is not provided.
+        TypeError: If the dataset is not of type Dataset or if the tokenizer is not of type Tokenizer.
+    """
+    if not dataset:
+        raise ValueError("Input dataset is empty")
+    if not tokenizer:
+        raise ValueError("Tokenizer is not provided")
+    if not isinstance(dataset, Dataset):
+        raise TypeError("Input dataset must be of type Dataset")
+
     return dataset.map(
         partial(tokenize_and_align_labels_and_quals, tokenizer=tokenizer, max_length=max_length)
     ).remove_columns(["id", "seq", "qual", "target"])
