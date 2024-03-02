@@ -1,6 +1,9 @@
+import logging
 import os
 import sys
 from dataclasses import dataclass, field
+from functools import partial
+from pathlib import Path
 
 import datasets
 import numpy as np
@@ -18,8 +21,13 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import send_example_telemetry
 
 from .models.hyena import (
+    DataCollatorForTokenClassificationWithQual,
+    TokenClassification,
     compute_metrics,
+    tokenize_and_align_labels_and_quals,
 )
+
+logger = logging.getLogger(__name__)
 
 # model_name = "hyenadna-small-32k-seqlen"
 # data_file = {"train": "./tests/data/test_input.parquet"}
@@ -225,11 +233,12 @@ class DataTrainingArguments:
 
 def train():
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
         model_args, data_args, training_args = parser.parse_json_file(
-            json_file=os.path.abspath(sys.argv[1])
+            json_file=Path(sys.argv[1]).resolve()
         )
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
@@ -298,15 +307,16 @@ def train():
         )
     else:
         data_files = {}
+        extension = "parquet"
         if data_args.train_file is not None:
             data_files["train"] = data_args.train_file
-            extension = data_args.train_file.split(".")[-1]
+
         if data_args.validation_file is not None:
             data_files["validation"] = data_args.validation_file
-            extension = data_args.validation_file.split(".")[-1]
+
         if data_args.test_file is not None:
             data_files["test"] = data_args.test_file
-            extension = data_args.test_file.split(".")[-1]
+
         raw_datasets = load_dataset(
             extension, data_files=data_files, cache_dir=model_args.cache_dir
         )
@@ -320,22 +330,17 @@ def train():
         column_names = raw_datasets["validation"].column_names
         raw_datasets["validation"].features
 
-    if data_args.text_column_name is not None or "tokens" in column_names:
+    if data_args.text_column_name is not None or "seq" in column_names:
         pass
     else:
         column_names[0]
 
-    if data_args.label_column_name is not None or f"{data_args.task_name}_tags" in column_names:
-        pass
-    else:
-        column_names[1]
-
     # Distributed training:
     # The .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
+
     AutoConfig.from_pretrained(
         model_args.config_name if model_args.config_name else model_args.model_name_or_path,
-        num_labels=num_labels,
         finetuning_task=data_args.task_name,
         cache_dir=model_args.cache_dir,
         revision=model_args.model_revision,
@@ -354,14 +359,6 @@ def train():
         token=model_args.token,
         trust_remote_code=model_args.trust_remote_code,
         add_prefix_space=True,
-    )
-
-    from functools import partial
-
-    from .models.hyena import (
-        DataCollatorForTokenClassificationWithQual,
-        TokenClassification,
-        tokenize_and_align_labels_and_quals,
     )
 
     model = TokenClassification.from_pretrained(
