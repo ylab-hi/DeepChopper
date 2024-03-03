@@ -33,6 +33,10 @@ pub trait Encoder {
         }
 
         // TODO: add code to parse negative case  and then return [0, 0) <03-02-24, Yangyang Li>
+        // if no | in the id, return [0, 0)
+        if !src.contains(&b'|') {
+            return Ok(vec![0..0]);
+        }
 
         // @462:528,100:120|738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8
         // removea content after |
@@ -154,7 +158,7 @@ mod tests {
     #[test]
     fn test_parse_target_from_id() {
         // Test case 1: Valid input
-        let src = b"462:528,100:120";
+        let src = b"462:528,100:120|test_name";
         let expected = vec![462..528, 100..120];
 
         struct TestEncoder;
@@ -191,12 +195,8 @@ mod tests {
         let expected: Vec<Range<usize>> = Vec::new();
         assert_eq!(TestEncoder::parse_target_from_id(src).unwrap(), expected);
 
-        // Test case 3: Invalid input (missing colon)
-        let src = b"462528,100:120";
-        assert!(TestEncoder::parse_target_from_id(src).is_err());
-
-        // Test case 4: Invalid input (invalid number)
-        let src = b"462:528,100:abc";
-        assert!(TestEncoder::parse_target_from_id(src).is_err());
+        let src = b"738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8";
+        let result = TestEncoder::parse_target_from_id(src).unwrap();
+        assert_eq!(result, vec![0..0]);
     }
 }

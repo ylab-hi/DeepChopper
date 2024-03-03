@@ -4,6 +4,65 @@ from pathlib import Path
 from datasets import load_dataset
 
 
+def collect_and_split_dataset(
+    internal_fq_path: str | Path,
+    terminal_fq_path: str | Path,
+    negative_fq_path: str | Path,
+    total_reads: float,
+    train_ratio: float,  # 0.8
+    val_ratio: float,  # 0.1
+    test_ratio: float,  # 0.1
+    iternal_adapter_ratio: float,
+    positive_ratio: float,
+):
+    internal_fq_path = Path(internal_fq_path)
+    terminal_fq_path = Path(terminal_fq_path)
+    negative_fq_path = Path(negative_fq_path)
+
+    if (
+        not internal_fq_path.exists()
+        or not terminal_fq_path.exists()
+        or not negative_fq_path.exists()
+    ):
+        raise FileNotFoundError("One or more of the input files does not exist.")
+
+    if (
+        (internal_fq_path.suffix != ".parquet")
+        or (terminal_fq_path.suffix != ".parquet")
+        or (negative_fq_path.suffix != ".parquet")
+    ):
+        raise ValueError("Input files must be in .parquet format.")
+
+    if train_ratio + val_ratio + test_ratio != 1.0:
+        message = "train_ratio + val_ratio + test_ratio must be equal to 1.0"
+        raise ValueError(message)
+
+    terminal_adapter_ratio = 1.0 - iternal_adapter_ratio
+    negative_ratio = 1.0 - positive_ratio
+
+    # calculate the number of reads in each file
+    train_count = total_reads * train_ratio
+    val_count = total_reads * val_ratio
+    test_count = total_reads * test_ratio
+
+    train_positive_count = train_count * positive_ratio
+    val_positive_count = val_count * positive_ratio
+    test_positive_count = test_count * positive_ratio
+
+    train_negative_count = train_count * negative_ratio
+    val_negative_count = val_count * negative_ratio
+    test_negative_count = test_count * negative_ratio
+
+    train_internal_adapter_count = train_positive_count * iternal_adapter_ratio
+    train_terminal_adapter_count = train_positive_count * terminal_adapter_ratio
+
+    val_internal_adapter_count = val_positive_count * iternal_adapter_ratio
+    val_terminal_adapter_count = val_positive_count * terminal_adapter_ratio
+
+    test_internal_adapter_count = test_positive_count * iternal_adapter_ratio
+    test_terminal_adapter_count = test_positive_count * terminal_adapter_ratio
+
+
 def load_and_split_dataset(data_file: str | Path, num_proc: int | None = None):
     """Load and split a dataset into training, validation, and testing sets.
 

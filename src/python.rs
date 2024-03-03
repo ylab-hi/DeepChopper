@@ -442,6 +442,31 @@ fn summary_predict(
     utils::summary_predict(&predictions, &labels)
 }
 
+#[pyfunction]
+fn collect_and_split_dataset(
+    internal_fq_path: PathBuf,
+    terminal_fq_path: PathBuf,
+    negative_fq_path: PathBuf,
+    total_reads: f32,
+    train_ratio: f32, // 0.8
+    val_ratio: f32,   // 0.1
+    test_ratio: f32,  // 0.1
+    iternal_adapter_ratio: f32,
+    positive_ratio: f32,
+) -> Result<()> {
+    utils::collect_and_split_dataset(
+        internal_fq_path,
+        terminal_fq_path,
+        negative_fq_path,
+        total_reads,
+        train_ratio,
+        val_ratio,
+        test_ratio,
+        iternal_adapter_ratio,
+        positive_ratio,
+    )
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -477,6 +502,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // add utils
     m.add_function(wrap_pyfunction!(summary_predict, m)?)?;
+    m.add_function(wrap_pyfunction!(collect_and_split_dataset, m)?)?;
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;
