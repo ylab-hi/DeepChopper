@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 import os
 import sys
 from dataclasses import dataclass, field
@@ -9,7 +10,7 @@ import datasets
 import numpy as np
 import transformers
 from accelerate import Accelerator
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
 from transformers import (
     AutoTokenizer,
     HfArgumentParser,
@@ -301,6 +302,7 @@ def train():
             data_args.dataset_name
         )
     else:
+        num_proc = multiprocessing.cpu_count()
         single_dataset = False
         data_files = {}
         if data_args.train_file is not None:
@@ -313,8 +315,9 @@ def train():
             data_files["test"] = data_args.test_file
 
         raw_datasets = load_dataset(
-            extension, data_files=data_files, cache_dir=model_args.cache_dir
-        )
+            extension, data_files=data_files, num_proc=num_proc, cache_dir=model_args.cache_dir
+        ).with_format("torch")
+
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.
 
@@ -371,7 +374,9 @@ def train():
 
         if data_args.max_train_samples is not None:
             max_train_samples = min(len(train_dataset), data_args.max_train_samples)
-            train_dataset = Dataset.from_dict(train_dataset[:max_train_samples])
+            train_dataset = Dataset.from_dict(train_dataset[:max_train_samples]).with_format(
+                "torch"
+            )
 
         with training_args.main_process_first(desc="train dataset map pre-processing"):
             train_dataset = (
@@ -399,7 +404,7 @@ def train():
 
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
-            eval_dataset = Dataset.from_dict(eval_dataset[:max_eval_samples])
+            eval_dataset = Dataset.from_dict(eval_dataset[:max_eval_samples]).with_format("torch")
 
         with training_args.main_process_first(desc="validation dataset map pre-processing"):
             eval_dataset = (
@@ -427,7 +432,9 @@ def train():
 
         if data_args.max_predict_samples is not None:
             max_predict_samples = min(len(predict_dataset), data_args.max_predict_samples)
-            predict_dataset = Dataset.from_dict(predict_dataset[:max_predict_samples])
+            predict_dataset = Dataset.from_dict(predict_dataset[:max_predict_samples]).with_format(
+                "torch"
+            )
 
         with training_args.main_process_first(desc="prediction dataset map pre-processing"):
             predict_dataset = (

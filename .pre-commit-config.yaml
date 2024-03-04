@@ -81,7 +81,7 @@ repos:
 
   # jupyter notebook linting
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.7.1
+    rev: 1.8.3
     hooks:
       - id: nbqa-black
         args: ["--line-length=99"]

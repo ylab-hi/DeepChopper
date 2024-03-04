@@ -9,7 +9,10 @@ dc-hg-train \
 	--train_file data/train.parquet \
 	--validation_file data/val.parquet \
 	--test_file data/test.parquet \
-	--output_dir notebooks/hyena_model_train \
+	--max_train_sample 1000 \
+	--max_eval_samples 100 \
+	--max_predict_samples 100 \
+	--output_dir notebooks/deepchopper_train \
 	--num_train_epochs 1 \
 	--learning_rate 2e-5 \
 	--per_device_train_batch_size 8 \
