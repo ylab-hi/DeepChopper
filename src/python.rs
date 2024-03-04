@@ -467,6 +467,26 @@ fn collect_and_split_dataset(
     )
 }
 
+#[pyfunction]
+fn get_label_region(labels: Vec<u8>) -> Vec<(usize, usize)> {
+    utils::get_label_region(&labels)
+        .par_iter()
+        .map(|r| (r.start, r.end))
+        .collect()
+}
+
+#[pyfunction]
+fn smooth_label_region(
+    labels: Vec<u8>,
+    merge_threshold: usize,
+    region_distance_threshold: usize,
+) -> Vec<(usize, usize)> {
+    utils::smooth_label_region(&labels, merge_threshold, region_distance_threshold)
+        .par_iter()
+        .map(|r| (r.start, r.end))
+        .collect()
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -503,6 +523,8 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     // add utils
     m.add_function(wrap_pyfunction!(summary_predict, m)?)?;
     m.add_function(wrap_pyfunction!(collect_and_split_dataset, m)?)?;
+    m.add_function(wrap_pyfunction!(get_label_region, m)?)?;
+    m.add_function(wrap_pyfunction!(smooth_label_region, m)?)?;
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;

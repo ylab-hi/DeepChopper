@@ -7,6 +7,7 @@ set -o pipefail
 # --max_train_sample 1000 \
 # --max_eval_samples 100 \
 # --max_predict_samples 100 \
+# 24 batch size for 60GB GPU
 
 dc-hg-train \
 	--hyenadna_model hyenadna-small-32k-seqlen \
@@ -14,10 +15,10 @@ dc-hg-train \
 	--validation_file data/val.parquet \
 	--test_file data/test.parquet \
 	--output_dir notebooks/deepchopper_train \
-	--num_train_epochs 200 \
+	--num_train_epochs 150 \
 	--learning_rate 2e-5 \
-	--per_device_train_batch_size 16 \
-	--per_device_eval_batch_size 16 \
+	--per_device_train_batch_size 24 \
+	--per_device_eval_batch_size 24 \
 	--weight_decay 0.01 \
 	--torch_compile False \
 	--push_to_hub False \

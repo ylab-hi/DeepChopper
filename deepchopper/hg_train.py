@@ -8,6 +8,7 @@ from pathlib import Path
 
 import datasets
 import numpy as np
+import torch
 import transformers
 from accelerate import Accelerator
 from datasets import Dataset, load_dataset
@@ -33,6 +34,8 @@ from .models.hyena import (
 )
 
 logger = logging.getLogger(__name__)
+
+torch.cuda.empty_cache()
 
 
 @dataclass
