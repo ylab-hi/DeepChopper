@@ -522,7 +522,7 @@ def train():
 
         # Remove ignored index (special tokens)
         true_predictions = [
-            [p for (p, l) in zip(prediction, label, strict=False) if l != IGNORE_INDEX]
+            [p for (p, l) in zip(prediction, label, strict=True) if l != IGNORE_INDEX]
             for prediction, label in zip(predictions, labels, strict=True)
         ]
 
