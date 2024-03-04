@@ -49,18 +49,18 @@ def collect_and_split_dataset(
     val_positive_count = val_count * positive_ratio
     test_positive_count = test_count * positive_ratio
 
-    train_negative_count = train_count * negative_ratio
-    val_negative_count = val_count * negative_ratio
-    test_negative_count = test_count * negative_ratio
+    train_count * negative_ratio
+    val_count * negative_ratio
+    test_count * negative_ratio
 
-    train_internal_adapter_count = train_positive_count * iternal_adapter_ratio
-    train_terminal_adapter_count = train_positive_count * terminal_adapter_ratio
+    train_positive_count * iternal_adapter_ratio
+    train_positive_count * terminal_adapter_ratio
 
-    val_internal_adapter_count = val_positive_count * iternal_adapter_ratio
-    val_terminal_adapter_count = val_positive_count * terminal_adapter_ratio
+    val_positive_count * iternal_adapter_ratio
+    val_positive_count * terminal_adapter_ratio
 
-    test_internal_adapter_count = test_positive_count * iternal_adapter_ratio
-    test_terminal_adapter_count = test_positive_count * terminal_adapter_ratio
+    test_positive_count * iternal_adapter_ratio
+    test_positive_count * terminal_adapter_ratio
 
 
 def load_and_split_dataset(data_file: str | Path, num_proc: int | None = None):

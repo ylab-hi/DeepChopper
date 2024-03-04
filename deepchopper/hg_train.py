@@ -371,20 +371,24 @@ def train():
 
         if data_args.max_train_samples is not None:
             max_train_samples = min(len(train_dataset), data_args.max_train_samples)
-            train_dataset = train_dataset.select(range(max_train_samples))
+            train_dataset = Dataset.from_dict(train_dataset[:max_train_samples])
 
         with training_args.main_process_first(desc="train dataset map pre-processing"):
-            train_dataset = train_dataset.map(
-                partial(
-                    tokenize_and_align_labels_and_quals,
-                    tokenizer=tokenizer,
-                    max_length=tokenizer.max_len_single_sentence,
-                ),
-                batched=False,
-                num_proc=data_args.preprocessing_num_workers,
-                load_from_cache_file=not data_args.overwrite_cache,
-                desc="Running tokenizer on train dataset",
-            ).remove_columns(["id", "seq", "qual", "target"])
+            train_dataset = (
+                train_dataset.map(
+                    partial(
+                        tokenize_and_align_labels_and_quals,
+                        tokenizer=tokenizer,
+                        max_length=tokenizer.max_len_single_sentence,
+                    ),
+                    batched=False,
+                    num_proc=data_args.preprocessing_num_workers,
+                    load_from_cache_file=not data_args.overwrite_cache,
+                    desc="Running tokenizer on train dataset",
+                )
+                .remove_columns(["id", "seq", "qual", "target"])
+                .shuffle()
+            )
 
     if training_args.do_eval:
         if not single_dataset and "validation" not in raw_datasets:
@@ -395,20 +399,24 @@ def train():
 
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
-            eval_dataset = eval_dataset.select(range(max_eval_samples))
+            eval_dataset = Dataset.from_dict(eval_dataset[:max_eval_samples])
 
         with training_args.main_process_first(desc="validation dataset map pre-processing"):
-            eval_dataset = eval_dataset.map(
-                partial(
-                    tokenize_and_align_labels_and_quals,
-                    tokenizer=tokenizer,
-                    max_length=tokenizer.max_len_single_sentence,
-                ),
-                batched=False,
-                num_proc=data_args.preprocessing_num_workers,
-                load_from_cache_file=not data_args.overwrite_cache,
-                desc="Running tokenizer on validation dataset",
-            ).remove_columns(["id", "seq", "qual", "target"])
+            eval_dataset = (
+                eval_dataset.map(
+                    partial(
+                        tokenize_and_align_labels_and_quals,
+                        tokenizer=tokenizer,
+                        max_length=tokenizer.max_len_single_sentence,
+                    ),
+                    batched=False,
+                    num_proc=data_args.preprocessing_num_workers,
+                    load_from_cache_file=not data_args.overwrite_cache,
+                    desc="Running tokenizer on validation dataset",
+                )
+                .remove_columns(["id", "seq", "qual", "target"])
+                .shuffle()
+            )
 
     if training_args.do_predict:
         if not single_dataset and "test" not in raw_datasets:
@@ -419,20 +427,24 @@ def train():
 
         if data_args.max_predict_samples is not None:
             max_predict_samples = min(len(predict_dataset), data_args.max_predict_samples)
-            predict_dataset = predict_dataset.select(range(max_predict_samples))
+            predict_dataset = Dataset.from_dict(predict_dataset[:max_predict_samples])
 
         with training_args.main_process_first(desc="prediction dataset map pre-processing"):
-            predict_dataset = predict_dataset.map(
-                partial(
-                    tokenize_and_align_labels_and_quals,
-                    tokenizer=tokenizer,
-                    max_length=tokenizer.max_len_single_sentence,
-                ),
-                batched=False,
-                num_proc=data_args.preprocessing_num_workers,
-                load_from_cache_file=not data_args.overwrite_cache,
-                desc="Running tokenizer on prediction dataset",
-            ).remove_columns(["id", "seq", "qual", "target"])
+            predict_dataset = (
+                predict_dataset.map(
+                    partial(
+                        tokenize_and_align_labels_and_quals,
+                        tokenizer=tokenizer,
+                        max_length=tokenizer.max_len_single_sentence,
+                    ),
+                    batched=False,
+                    num_proc=data_args.preprocessing_num_workers,
+                    load_from_cache_file=not data_args.overwrite_cache,
+                    desc="Running tokenizer on prediction dataset",
+                )
+                .remove_columns(["id", "seq", "qual", "target"])
+                .shuffle()
+            )
 
     # Data collator
     data_collator = DataCollatorForTokenClassificationWithQual(
@@ -460,6 +472,8 @@ def train():
 
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
+
+        logger.info(f"{checkpoint=} {type(checkpoint)}")
 
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
         metrics = train_result.metrics
