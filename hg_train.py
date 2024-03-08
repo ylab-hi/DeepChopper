@@ -10,7 +10,6 @@ import datasets
 import numpy as np
 import torch
 import transformers
-from accelerate import Accelerator
 from datasets import Dataset, load_dataset
 from transformers import (
     AutoTokenizer,
@@ -460,7 +459,6 @@ def train():
     data_collator = DataCollatorForTokenClassificationWithQual(
         tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None
     )
-    # accelerator = Accelerator()
     # Initialize our Trainer
     trainer = Trainer(
         model=model,
@@ -471,7 +469,6 @@ def train():
         data_collator=data_collator,
         compute_metrics=compute_metrics,
     )
-    # trainer = accelerator.prepare(trainer)
 
     # Training
     if training_args.do_train:

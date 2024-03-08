@@ -1,3 +1,5 @@
+import typing
+
 import numpy as np
 from rich.console import Console
 from rich.highlighter import RegexHighlighter
@@ -8,6 +10,7 @@ from deepchopper.models.hyena import IGNORE_INDEX
 
 
 def highlight_target(seq: str, start: int, end: int, style="bold magenta"):
+    """Highlight the target sequence."""
     text = Text(seq)
     console = Console()
     text.stylize(style, start, end)
@@ -17,6 +20,7 @@ def highlight_target(seq: str, start: int, end: int, style="bold magenta"):
 def hightlight_predict(
     seq: str, target_start: int, target_end: int, predict_start: int, predict_end: int
 ):
+    """Highlight the predicted sequence."""
     text = Text(seq)
     console = Console()
 
@@ -27,6 +31,7 @@ def hightlight_predict(
 
 
 def summary_predict(predictions, labels):
+    """Summarize the predictions and labels."""
     predictions = np.argmax(predictions, axis=2)
     # Initialize lists to hold the filtered predictions and labels
     true_predictions = []
@@ -51,10 +56,11 @@ class LabelHighlighter(RegexHighlighter):
     """Apply style to anything that looks like an email."""
 
     base_style = "label."
-    highlights = [r"(?P<label>1+)"]
+    highlights: typing.ClassVar = [r"(?P<label>1+)"]
 
 
 def alignment_predict(prediction, label):
+    """Print the alignment of the predicted and labeled sequences."""
     import textwrap
 
     prediction_str = "".join(str(x) for x in prediction)
