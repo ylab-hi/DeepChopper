@@ -6,6 +6,7 @@ from rich.highlighter import RegexHighlighter
 from rich.text import Text
 from rich.theme import Theme
 
+from deepchopper.deepchopper import summary_predict as rust_summary_predict
 from deepchopper.models.hyena import IGNORE_INDEX
 
 
@@ -34,21 +35,7 @@ def summary_predict(predictions, labels):
     """Summarize the predictions and labels."""
     predictions = np.argmax(predictions, axis=2)
     # Initialize lists to hold the filtered predictions and labels
-    true_predictions = []
-    true_labels = []
-
-    # Filter out '-100' labels and correspondingly filter predictions
-    for prediction, label in zip(predictions, labels, strict=False):
-        filtered_prediction = []
-        filtered_label = []
-
-        for p, l in zip(prediction, label, strict=False):
-            if l != IGNORE_INDEX:
-                filtered_prediction.append(p)
-                filtered_label.append(l)
-        true_predictions.append(filtered_prediction)
-        true_labels.append(filtered_label)
-
+    true_predictions, true_labels = rust_summary_predict(predictions, labels, IGNORE_INDEX)
     return true_predictions, true_labels
 
 

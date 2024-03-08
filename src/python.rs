@@ -438,8 +438,9 @@ fn encode_fq_paths_to_parquet(
 fn summary_predict(
     predictions: Vec<Vec<i8>>,
     labels: Vec<Vec<i8>>,
+    ignore_label: i8,
 ) -> (Vec<Vec<i8>>, Vec<Vec<i8>>) {
-    utils::summary_predict(&predictions, &labels)
+    utils::summary_predict(&predictions, &labels, ignore_label)
 }
 
 #[pyfunction]

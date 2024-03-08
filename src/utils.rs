@@ -39,6 +39,7 @@ pub fn summary_predict_for_array(
 pub fn summary_predict(
     predictions: &[Vec<i8>],
     labels: &[Vec<i8>],
+    ignore_label: i8,
 ) -> (Vec<Vec<i8>>, Vec<Vec<i8>>) {
     predictions
         .par_iter()
@@ -48,7 +49,7 @@ pub fn summary_predict(
                 .iter()
                 .zip(label.iter())
                 .fold((vec![], vec![]), |mut acc, (&p, &l)| {
-                    if l != -100 {
+                    if l != ignore_label {
                         acc.1.push(l);
                         acc.0.push(p);
                     }
