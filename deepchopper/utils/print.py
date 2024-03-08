@@ -1,5 +1,10 @@
+import numpy as np
 from rich.console import Console
+from rich.highlighter import RegexHighlighter
 from rich.text import Text
+from rich.theme import Theme
+
+from deepchopper.models.hyena import IGNORE_INDEX
 
 
 def highlight_target(seq: str, start: int, end: int, style="bold magenta"):
@@ -33,7 +38,7 @@ def summary_predict(predictions, labels):
         filtered_label = []
 
         for p, l in zip(prediction, label, strict=False):
-            if l != -100:
+            if l != IGNORE_INDEX:
                 filtered_prediction.append(p)
                 filtered_label.append(l)
         true_predictions.append(filtered_prediction)
@@ -42,10 +47,23 @@ def summary_predict(predictions, labels):
     return true_predictions, true_labels
 
 
+class LabelHighlighter(RegexHighlighter):
+    """Apply style to anything that looks like an email."""
+
+    base_style = "label."
+    highlights = [r"(?P<label>1+)"]
+
+
 def alignment_predict(prediction, label):
     import textwrap
 
     prediction_str = "".join(str(x) for x in prediction)
     label_str = "".join(str(x) for x in label)
-    for _l1, _l2 in zip(textwrap.wrap(prediction_str), textwrap.wrap(label_str), strict=False):
-        pass
+
+    front2 = "L:"
+    front1 = "P:"
+    theme = Theme({"label.label": "bold magenta"})
+    console = Console(highlighter=LabelHighlighter(), theme=theme)
+    for l1, l2 in zip(textwrap.wrap(prediction_str), textwrap.wrap(label_str), strict=True):
+        ss = f"{front1}{l1}\n{front2}{l2}"
+        console.print(ss)

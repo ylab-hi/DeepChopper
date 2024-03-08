@@ -36,6 +36,6 @@ def encode_fq_files_in_folder_to_parquet(data_folder: Path):
         msg = f"Folder {data_folder} does not exist."
         logging.error(msg)
 
-    for fq_file in data_folder.glob("*.fq"):
+    for fq_file in data_folder.glob("*.[fq|fastq]"):
         logging.info(f"Encoding {fq_file}")
         encode_one_fq_file(fq_file)

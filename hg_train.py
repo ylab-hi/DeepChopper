@@ -22,8 +22,8 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import send_example_telemetry
 
-from .data import load_and_split_dataset
-from .models.hyena import (
+from deepchopper.data import load_and_split_dataset
+from deepchopper.models.hyena import (
     IGNORE_INDEX,
     DataCollatorForTokenClassificationWithQual,
     HyenadnaMaxLengths,
@@ -460,7 +460,7 @@ def train():
     data_collator = DataCollatorForTokenClassificationWithQual(
         tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None
     )
-    accelerator = Accelerator()
+    # accelerator = Accelerator()
     # Initialize our Trainer
     trainer = Trainer(
         model=model,
@@ -471,7 +471,7 @@ def train():
         data_collator=data_collator,
         compute_metrics=compute_metrics,
     )
-    trainer = accelerator.prepare(trainer)
+    # trainer = accelerator.prepare(trainer)
 
     # Training
     if training_args.do_train:

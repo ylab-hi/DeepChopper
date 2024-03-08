@@ -580,3 +580,5 @@ hyena_model_use_qual
 hyena_model_train
 train.slurm
 deepchopper_train*
+notebooks/dc*
+notebooks/cdc*

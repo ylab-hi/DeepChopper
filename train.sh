@@ -7,16 +7,24 @@ set -o pipefail
 # --max_train_sample 1000 \
 # --max_eval_samples 100 \
 # --max_predict_samples 100 \
+
 # 24 batch size for 60GB GPU
-dc-hg-train \
+
+inputdir="data/100000_samples"
+outdirname="cdc_train100000_20ep_18b"
+
+# accelerate launch
+python hg_train.py \
 	--hyenadna_model hyenadna-small-32k-seqlen \
-	--train_file data/600000_samples/train.parquet \
-	--validation_file data/600000_samples/val.parquet \
-	--test_file data/600000_samples/test.parquet \
-	--output_dir notebooks/dc_train_600000_15_ep_18b \
-	--num_train_epochs 15 \
+	--train_file $inputdir/train.parquet \
+	--validation_file $inputdir/val.parquet \
+	--test_file $inputdir/test.parquet \
+	--max_eval_sample 5000 \
+	--max_predict_samples 5000 \
+	--output_dir notebooks/$outdirname \
+	--num_train_epochs 20 \
 	--learning_rate 2e-5 \
-	--gradient_accumulation_steps 4 \
+	--gradient_accumulation_steps 1 \
 	--per_device_train_batch_size 18 \
 	--per_device_eval_batch_size 18 \
 	--weight_decay 0.01 \
@@ -27,5 +35,5 @@ dc-hg-train \
 	--load_best_model_at_end \
 	--trust_remote_code \
 	--report_to wandb \
-	--run_name dc_train_600000_15_ep_18b \
+	--run_name $outdirname \
 	--do_train --do_eval --do_predict
