@@ -17,7 +17,13 @@ from deepchopper.models.hyena import (
 from deepchopper.utils import alignment_predict, highlight_target, summary_predict
 
 
-def random_show_seq(dataset, sample=3):
+def random_show_seq(dataset, sample: int = 3):
+    """Randomly selects 'sample' number of sequences from the given dataset and prints their IDs and targets.
+
+    Parameters:
+    dataset : A list of dictionaries where each dictionary represents a sequence with keys 'id', 'seq', and 'target'.
+    sample (int): The number of sequences to randomly select from the dataset. Default is 3.
+    """
     total = len(dataset)
     import secrets
 
@@ -28,6 +34,7 @@ def random_show_seq(dataset, sample=3):
 
 
 def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int = 500):
+    """Load the dataset and model from the given paths."""
     if isinstance(check_point, str):
         check_point = Path(check_point)
 
@@ -59,7 +66,7 @@ def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int =
                 tokenizer=resume_tokenizer,
                 max_length=resume_tokenizer.max_len_single_sentence,
             ),
-            num_proc=multiprocessing.cpu_count(),
+            num_proc=multiprocessing.cpu_count(),  # type: ignore
         )
         .remove_columns(["id", "seq", "qual", "target"])
         .shuffle()
@@ -69,6 +76,7 @@ def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int =
 
 
 def load_trainer(resume_tokenizer, resume_model, batch_size: int = 24):
+    """Load the trainer with the given model and tokenizer."""
     data_collator = DataCollatorForTokenClassificationWithQual(resume_tokenizer)
     training_args = TrainingArguments(
         output_dir="hyena_model_use_qual_testt",
@@ -82,9 +90,8 @@ def load_trainer(resume_tokenizer, resume_model, batch_size: int = 24):
         load_best_model_at_end=True,
         push_to_hub=False,
         torch_compile=False,
-        report_to="wandb",
+        report_to="wandb",  # type: ignore
         run_name="eval",
-        resume_from_checkpoint=False,
     )
 
     # Initialize our Trainer
@@ -97,7 +104,8 @@ def load_trainer(resume_tokenizer, resume_model, batch_size: int = 24):
     )
 
 
-def main(check_point: Path, data_path: Path, max_sample: int = 1000, show_sample: bool = False):
+def main(check_point: Path, data_path: Path, max_sample: int = 1000, *, show_sample: bool = False):
+    """Predict the given dataset using the given model and tokenizer."""
     eval_dataset, tokenized_eval_dataset, resume_tokenizer, resume_model = load_dataset_and_model(
         check_point, data_path, max_sample
     )
@@ -106,7 +114,7 @@ def main(check_point: Path, data_path: Path, max_sample: int = 1000, show_sample
         random_show_seq(eval_dataset, sample=3)
 
     trainer = load_trainer(resume_tokenizer, resume_model)
-    predicts = trainer.predict(tokenized_eval_dataset)
+    predicts = trainer.predict(tokenized_eval_dataset)  # type: ignore
     print(predicts[2])
     true_prediction, true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
     if show_sample:
