@@ -8,12 +8,14 @@ use crate::{
     utils,
 };
 use anyhow::Result;
+use arrow::array::AsArray;
 use bstr::BString;
 use needletail::Sequence;
 use numpy::{IntoPyArray, PyArray2, PyArray3};
+use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use pyo3::prelude::*;
 use rayon::prelude::*;
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, ops::Range, path::PathBuf};
 
 use log::{debug, error, info, warn};
 
@@ -488,6 +490,62 @@ fn smooth_label_region(
         .collect()
 }
 
+#[pyfunction]
+fn remove_intervals_and_keep_left(
+    seq: String,
+    intervals: Vec<(usize, usize)>,
+) -> Result<(Vec<String>, Vec<(usize, usize)>)> {
+    let intervals: Vec<Range<usize>> = intervals
+        .par_iter()
+        .map(|(start, end)| *start..*end)
+        .collect();
+
+    let (seqs, intevals) = output::remove_intervals_and_keep_left(seq.as_bytes(), &intervals)?;
+    Ok((
+        seqs.par_iter().map(|s| s.to_string()).collect(),
+        intevals.par_iter().map(|r| (r.start, r.end)).collect(),
+    ))
+}
+
+#[pyfunction]
+fn get_dataset(dataset: PathBuf) {
+    let file = std::fs::File::open(dataset).unwrap();
+    let builder = ParquetRecordBatchReaderBuilder::try_new(file).unwrap();
+    println!("Converted arrow schema is: {}", builder.schema());
+
+    let mut reader = builder.build().unwrap();
+
+    let record_batch = reader.next().unwrap().unwrap();
+
+    println!("Read {} records.", record_batch.num_rows());
+
+    let id_column = record_batch.column_by_name("id").unwrap();
+    let seq_column = record_batch.column_by_name("seq").unwrap();
+    let qual_column = record_batch.column_by_name("qual").unwrap();
+
+    (0..record_batch.num_rows()).into_par_iter().for_each(|i| {
+        let id = id_column
+            .as_any()
+            .downcast_ref::<arrow::array::StringArray>()
+            .unwrap();
+        let seq = seq_column
+            .as_any()
+            .downcast_ref::<arrow::array::StringArray>()
+            .unwrap();
+        // let qual = qual_column
+        //     .as_any()
+        //     .downcast_ref::<arrow::array::StringArray>()
+        //     .unwrap();
+
+        println!(
+            "id: {}, seq: {}, qual:",
+            id.value(i),
+            seq.value(i),
+            // qual.value(i)
+        );
+    });
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -526,6 +584,8 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(collect_and_split_dataset, m)?)?;
     m.add_function(wrap_pyfunction!(get_label_region, m)?)?;
     m.add_function(wrap_pyfunction!(smooth_label_region, m)?)?;
+    m.add_function(wrap_pyfunction!(remove_intervals_and_keep_left, m)?)?;
+    m.add_function(wrap_pyfunction!(get_dataset, m)?)?;
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;

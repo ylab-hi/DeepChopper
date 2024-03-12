@@ -2,9 +2,10 @@ import multiprocessing
 from functools import partial
 from pathlib import Path
 
-import fire
+import typer
 from datasets import load_dataset
 from rich import print
+from torch import Tensor
 from transformers import AutoTokenizer, Trainer, TrainingArguments
 
 from deepchopper.data import encode_one_fq_file
@@ -14,7 +15,18 @@ from deepchopper.models.hyena import (
     compute_metrics,
     tokenize_and_align_labels_and_quals,
 )
-from deepchopper.utils import alignment_predict, highlight_target, summary_predict
+from deepchopper.utils import (
+    alignment_predict,
+    highlight_target,
+    summary_predict,
+)
+
+from .deepchopper import (
+    get_dataset,
+    remove_intervals_and_keep_left,
+    smooth_label_region,
+)
+from .utils import hightlight_predicts
 
 
 def random_show_seq(dataset, sample: int = 3):
@@ -59,18 +71,14 @@ def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int =
         split=f"predict[:{max_sample}]",
     ).with_format("torch")
 
-    tokenized_eval_dataset = (
-        eval_dataset.map(
-            partial(
-                tokenize_and_align_labels_and_quals,
-                tokenizer=resume_tokenizer,
-                max_length=resume_tokenizer.max_len_single_sentence,
-            ),
-            num_proc=multiprocessing.cpu_count(),  # type: ignore
-        )
-        .remove_columns(["id", "seq", "qual", "target"])
-        .shuffle()
-    )
+    tokenized_eval_dataset = eval_dataset.map(
+        partial(
+            tokenize_and_align_labels_and_quals,
+            tokenizer=resume_tokenizer,
+            max_length=resume_tokenizer.max_len_single_sentence,
+        ),
+        num_proc=multiprocessing.cpu_count(),  # type: ignore
+    ).remove_columns(["id", "seq", "qual", "target"])
 
     return eval_dataset, tokenized_eval_dataset, resume_tokenizer, resume_model
 
@@ -104,7 +112,19 @@ def load_trainer(resume_tokenizer, resume_model, batch_size: int = 24):
     )
 
 
-def main(check_point: Path, data_path: Path, max_sample: int = 1000, *, show_sample: bool = False):
+app = typer.Typer()
+
+
+@app.command()
+def main(
+    check_point: Path,
+    data_path: Path,
+    max_sample: int = 1000,
+    min_region_length_for_smooth: int = 1,
+    max_distance_for_smooth: int = 1,
+    *,
+    show_sample: bool = False,
+):
     """Predict the given dataset using the given model and tokenizer."""
     eval_dataset, tokenized_eval_dataset, resume_tokenizer, resume_model = load_dataset_and_model(
         check_point, data_path, max_sample
@@ -117,9 +137,42 @@ def main(check_point: Path, data_path: Path, max_sample: int = 1000, *, show_sam
     predicts = trainer.predict(tokenized_eval_dataset)  # type: ignore
     print(predicts[2])
     true_prediction, true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
+
     if show_sample:
         alignment_predict(true_prediction[4], true_label[4])
 
+    polished_fq_path = data_path.with_suffix(".chopped.fq")
+    get_dataset(data_path)
+
+    with polished_fq_path.open("w") as f:
+        for idx, preds in enumerate(true_prediction):
+            record_id = eval_dataset[idx]["id"]
+            seq = eval_dataset[idx]["seq"]
+            eval_dataset[idx]["qual"]
+            smooth_predict_targets = smooth_label_region(
+                preds, min_region_length_for_smooth, max_distance_for_smooth
+            )
+
+            if show_sample:
+                targets = eval_dataset[idx]["target"]
+
+                if isinstance(targets, Tensor):
+                    targets = targets.tolist()
+                # zip two consecutive elements
+                targets = [(targets[i], targets[i + 1]) for i in range(0, len(targets), 2)]
+                print(f"{record_id=}")
+
+                hightlight_predicts(seq, targets, smooth_predict_targets)
+
+            selected_seqs, selected_intervals = remove_intervals_and_keep_left(
+                seq, smooth_predict_targets
+            )
+
+            for idy, record_seq in enumerate(selected_seqs):
+                f.write(
+                    f"@{record_id}|{idy}|{selected_intervals[idy]}\n{record_seq}\n+\n{'I' * len(record_seq)}\n"
+                )
+
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    app()

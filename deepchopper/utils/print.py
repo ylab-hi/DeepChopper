@@ -10,6 +10,40 @@ from deepchopper.deepchopper import summary_predict as rust_summary_predict
 from deepchopper.models.hyena import IGNORE_INDEX
 
 
+def hightlight_predicts(
+    seq: str,
+    targets: list[tuple[int, int]],
+    predicts: list[tuple[int, int]],
+    style="bold magenta",
+    width=80,
+):
+    target_seq = Text(seq)
+    predict_seq = Text(seq)
+    console = Console()
+
+    for start, end in targets:
+        target_seq.stylize(style, start, end)
+
+    for start, end in predicts:
+        predict_seq.stylize(style, start, end)
+
+    front2 = "L:"
+    front1 = "P:"
+    for t1, t2 in zip(
+        target_seq.wrap(console, width), predict_seq.wrap(console, width), strict=True
+    ):
+        console.print(front1, t1)
+        console.print(front2, t2)
+
+
+def highlight_targets(seq: str, targets: list[tuple[int, int]], style="bold magenta"):
+    text = Text(seq)
+    console = Console()
+    for start, end in targets:
+        text.stylize(style, start, end)
+    console.print(text)
+
+
 def highlight_target(seq: str, start: int, end: int, style="bold magenta"):
     """Highlight the target sequence."""
     text = Text(seq)

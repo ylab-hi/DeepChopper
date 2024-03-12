@@ -1,40 +1,7 @@
 use anyhow::Result;
-use ndarray::prelude::*;
 use noodles::fastq;
 use rayon::prelude::*;
 use std::{fs::File, io::BufReader, ops::Range, path::Path};
-
-pub fn summary_predict_for_array(
-    predictions: &Array2<i8>,
-    labels: &Array2<i8>,
-) -> (Array2<i8>, Array2<i8>) {
-    // First, ensure that predictions and labels have the same shape
-    assert_eq!(predictions.dim(), labels.dim());
-
-    // Flatten both arrays
-    let flat_predictions = predictions.iter().copied().collect::<Vec<i8>>();
-    let flat_labels = labels.iter().copied().collect::<Vec<i8>>();
-
-    // Filter predictions and labels where label != -100
-    let filtered: Vec<(i8, i8)> = flat_labels
-        .into_iter()
-        .zip(flat_predictions)
-        .filter(|&(l, _)| l != -100)
-        .collect();
-
-    // Separate the filtered predictions and labels
-    let (filtered_labels, filtered_predictions): (Vec<i8>, Vec<i8>) = filtered.into_iter().unzip();
-
-    let shape = (filtered_labels.len(), 1);
-
-    // Convert back to Array2 - note this will be 1D arrays since original structure is lost
-    let filtered_labels_array = Array1::from(filtered_labels).into_shape(shape).unwrap();
-    let filtered_predictions_array = Array1::from(filtered_predictions)
-        .into_shape(shape)
-        .unwrap();
-
-    (filtered_predictions_array, filtered_labels_array)
-}
 
 pub fn summary_predict(
     predictions: &[Vec<i8>],

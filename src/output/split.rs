@@ -16,10 +16,12 @@ pub fn split_records_by_remove_interval(
 
     rayon::scope(|s| {
         s.spawn(|_| {
-            seqs = remove_intervals_and_keep_left(seq, target).unwrap();
+            let result = remove_intervals_and_keep_left(seq, target).unwrap();
+            seqs = result.0;
         });
         s.spawn(|_| {
-            quals = remove_intervals_and_keep_left(qual, target).unwrap();
+            let result = remove_intervals_and_keep_left(qual, target).unwrap();
+            quals = result.0;
         });
     });
 
@@ -82,12 +84,12 @@ pub fn generate_unmaped_intervals(
 pub fn remove_intervals_and_keep_left<'a>(
     seq: &'a [u8],
     intervals: &[Range<usize>],
-) -> Result<Vec<&'a BStr>> {
+) -> Result<(Vec<&'a BStr>, Vec<Range<usize>>)> {
     let mut intervals = intervals.to_vec();
     intervals.par_sort_by(|a: &Range<usize>, b: &Range<usize>| a.start.cmp(&b.start));
     let slected_intervals = generate_unmaped_intervals(&intervals, seq.len());
 
-    slected_intervals
+    let slected_seq = slected_intervals
         .par_iter()
         .map(|interval| {
             // Check if the interval is valid and starts after the current start point
@@ -101,7 +103,8 @@ pub fn remove_intervals_and_keep_left<'a>(
                 ))))
             }
         })
-        .collect::<Result<Vec<_>>>()
+        .collect::<Result<Vec<_>>>()?;
+    Ok((slected_seq, slected_intervals))
 }
 
 #[cfg(test)]
@@ -114,12 +117,12 @@ mod tests {
         // |a| bcde |fghij| klmno |pqrst| uvwxyz
 
         let intervals = vec![1..5, 10..15, 20..25];
-        let result = remove_intervals_and_keep_left(seq, &intervals).unwrap();
-        assert_eq!(result, vec!["a", "fghij", "pqrst"]);
+        let (seq, inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
+        assert_eq!(seq, vec!["a", "fghij", "pqrst"]);
 
         let seq = b"abcdefghijklmnopqrstuvwxyz";
         let intervals = vec![5..10, 15..20];
-        let result = remove_intervals_and_keep_left(seq, &intervals).unwrap();
-        assert_eq!(result, vec!["abcde", "klmno", "uvwxy"]);
+        let (seq, inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
+        assert_eq!(seq, vec!["abcde", "klmno", "uvwxy"]);
     }
 }
