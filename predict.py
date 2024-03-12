@@ -7,6 +7,7 @@ from datasets import load_dataset
 from rich import print
 from transformers import AutoTokenizer, Trainer, TrainingArguments
 
+from deepchopper.data import encode_one_fq_file
 from deepchopper.models.hyena import (
     DataCollatorForTokenClassificationWithQual,
     TokenClassification,
@@ -29,8 +30,17 @@ def random_show_seq(dataset, sample=3):
 def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int = 500):
     if isinstance(check_point, str):
         check_point = Path(check_point)
+
     if isinstance(data_path, str):
         data_path = Path(data_path)
+
+    if data_path.suffix in (".fq", ".fastq"):
+        encode_one_fq_file(data_path)
+        data_path = data_path.with_suffix(".parquet")
+
+    if data_path.suffix != ".parquet":
+        msg = f"Unsupported file format: {data_path.suffix}"
+        raise ValueError(msg)
 
     resume_tokenizer = AutoTokenizer.from_pretrained(check_point, trust_remote_code=True)
     resume_model = TokenClassification.from_pretrained(check_point)

@@ -8,7 +8,7 @@ from ..deepchopper import encode_fq_path_to_parquet  # noqa: TID252
 
 def encode_one_fq_file(
     fq_file: Path,
-    kmer_size: int = 3,
+    kmer_size: int = 3,  # unused for encode parquet
     qual_offset: int = 33,
     bases="ACGTN",
 ):

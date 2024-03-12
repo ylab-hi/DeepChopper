@@ -263,7 +263,7 @@ mod tests {
     fn test_summary_predict() {
         let predictions = vec![vec![0, 0, 1], vec![1, 1, 1]];
         let labels = vec![vec![0, -100, 1], vec![-100, 1, -100]];
-        let (true_predictions, true_labels) = summary_predict(&predictions, &labels);
+        let (true_predictions, true_labels) = summary_predict(&predictions, &labels, -100);
         let expected_predictions = vec![vec![0, 1], vec![1]];
         let expected_labels = vec![vec![0, 1], vec![1]];
         assert_eq!(true_predictions, expected_predictions);
