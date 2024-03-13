@@ -8,16 +8,18 @@ use crate::{error::EncodingError, fq_encode::RecordData};
 pub fn split_records_by_remove_interval(
     seq: &BStr,
     id: &BStr,
-    qual: &BStr,
+    qual: &[u8],
     target: &[Range<usize>],
 ) -> Result<Vec<RecordData>> {
     let mut seqs = Vec::new();
     let mut quals = Vec::new();
+    let mut selected_intervals = Vec::new();
 
     rayon::scope(|s| {
         s.spawn(|_| {
             let result = remove_intervals_and_keep_left(seq, target).unwrap();
             seqs = result.0;
+            selected_intervals = result.1;
         });
         s.spawn(|_| {
             let result = remove_intervals_and_keep_left(qual, target).unwrap();
@@ -26,7 +28,7 @@ pub fn split_records_by_remove_interval(
     });
 
     // Ensure seqs and quals have the same length; otherwise, return an error or handle as needed
-    if seqs.len() != qual.len() {
+    if seqs.len() != quals.len() {
         return Err(Error::new(
             EncodingError::NotSameLengthForQualityAndSequence(format!(
                 "seqs: {:?}, quals: {:?}",
@@ -36,7 +38,14 @@ pub fn split_records_by_remove_interval(
         ));
     }
 
-    let ids: Vec<String> = (0..seqs.len()).map(|x| format!("{}{}", id, x)).collect();
+    let ids: Vec<String> = (0..seqs.len())
+        .map(|x| {
+            format!(
+                "{}|{}|{}-{}",
+                id, x, selected_intervals[x].start, selected_intervals[x].end
+            )
+        })
+        .collect();
 
     let records = ids
         .into_iter()
@@ -117,12 +126,12 @@ mod tests {
         // |a| bcde |fghij| klmno |pqrst| uvwxyz
 
         let intervals = vec![1..5, 10..15, 20..25];
-        let (seq, inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
+        let (seq, _inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
         assert_eq!(seq, vec!["a", "fghij", "pqrst"]);
 
         let seq = b"abcdefghijklmnopqrstuvwxyz";
         let intervals = vec![5..10, 15..20];
-        let (seq, inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
+        let (seq, _inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
         assert_eq!(seq, vec!["abcde", "klmno", "uvwxy"]);
     }
 }

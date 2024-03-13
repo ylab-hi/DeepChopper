@@ -8,7 +8,6 @@ use crate::{
     utils,
 };
 use anyhow::Result;
-use arrow::array::AsArray;
 use bstr::BString;
 use needletail::Sequence;
 use numpy::{IntoPyArray, PyArray2, PyArray3};
@@ -508,42 +507,70 @@ fn remove_intervals_and_keep_left(
 }
 
 #[pyfunction]
-fn get_dataset(dataset: PathBuf) {
+fn get_dataset(
+    dataset: PathBuf,
+    predicts: Vec<Vec<u8>>,
+    min_region_length_for_smooth: usize, // 1
+    max_distance_for_smooth: usize,      // 1
+) -> Result<()> {
     let file = std::fs::File::open(dataset).unwrap();
     let builder = ParquetRecordBatchReaderBuilder::try_new(file).unwrap();
     println!("Converted arrow schema is: {}", builder.schema());
 
     let mut reader = builder.build().unwrap();
-
     let record_batch = reader.next().unwrap().unwrap();
-
     println!("Read {} records.", record_batch.num_rows());
 
     let id_column = record_batch.column_by_name("id").unwrap();
     let seq_column = record_batch.column_by_name("seq").unwrap();
     let qual_column = record_batch.column_by_name("qual").unwrap();
 
-    (0..record_batch.num_rows()).into_par_iter().for_each(|i| {
-        let id = id_column
-            .as_any()
-            .downcast_ref::<arrow::array::StringArray>()
-            .unwrap();
-        let seq = seq_column
-            .as_any()
-            .downcast_ref::<arrow::array::StringArray>()
-            .unwrap();
-        // let qual = qual_column
-        //     .as_any()
-        //     .downcast_ref::<arrow::array::StringArray>()
-        //     .unwrap();
+    let result = (0..record_batch.num_rows())
+        .into_par_iter()
+        .map(|i| {
+            let predict = &predicts[i];
+            let smooth_predict = utils::smooth_label_region(
+                predict,
+                min_region_length_for_smooth,
+                max_distance_for_smooth,
+            );
 
-        println!(
-            "id: {}, seq: {}, qual:",
-            id.value(i),
-            seq.value(i),
-            // qual.value(i)
-        );
-    });
+            let id = id_column
+                .as_any()
+                .downcast_ref::<arrow::array::StringArray>()
+                .unwrap();
+            let seq = seq_column
+                .as_any()
+                .downcast_ref::<arrow::array::StringArray>()
+                .unwrap();
+            let qual = qual_column
+                .as_any()
+                .downcast_ref::<arrow::array::ListArray>()
+                .unwrap();
+
+            let current_qual = qual.value(i);
+            let qual_array = current_qual
+                .as_any()
+                .downcast_ref::<arrow::array::Int32Array>()
+                .unwrap();
+            // Convert the Int32Array for this row into a Vec<i32>
+            let qual_len = qual_array.len();
+            let qual_vec: Vec<u8> = (0..qual_len).map(|j| qual_array.value(j) as u8).collect();
+
+            let records = output::split_records_by_remove_interval(
+                seq.value(i).into(),
+                id.value(i).into(),
+                &qual_vec,
+                &smooth_predict,
+            )
+            .unwrap();
+            records
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    output::write_fq(&result, Some("tt.fq".into()))?;
+    Ok(())
 }
 
 /// A Python module implemented in Rust.

@@ -19,10 +19,12 @@ pub fn write_fq(records: &[RecordData], file_path: Option<PathBuf>) -> Result<()
     let mut writer = fastq::Writer::new(sink);
 
     for record in records {
+        let qual_str = record.qual.to_string();
+
         let record = fastq::Record::new(
             Definition::new(record.id.to_vec(), ""),
             record.seq.to_vec(),
-            record.qual.to_vec(),
+            qual_str,
         );
         writer.write_record(&record)?;
     }

@@ -136,42 +136,33 @@ def main(
     trainer = load_trainer(resume_tokenizer, resume_model)
     predicts = trainer.predict(tokenized_eval_dataset)  # type: ignore
     print(predicts[2])
+
     true_prediction, true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
-
     if show_sample:
-        alignment_predict(true_prediction[4], true_label[4])
-
-    polished_fq_path = data_path.with_suffix(".chopped.fq")
-    get_dataset(data_path)
-
-    with polished_fq_path.open("w") as f:
+        alignment_predict(true_prediction[0], true_label[0])
         for idx, preds in enumerate(true_prediction):
             record_id = eval_dataset[idx]["id"]
             seq = eval_dataset[idx]["seq"]
-            eval_dataset[idx]["qual"]
             smooth_predict_targets = smooth_label_region(
                 preds, min_region_length_for_smooth, max_distance_for_smooth
             )
 
-            if show_sample:
-                targets = eval_dataset[idx]["target"]
+            targets = eval_dataset[idx]["target"]
 
-                if isinstance(targets, Tensor):
-                    targets = targets.tolist()
-                # zip two consecutive elements
-                targets = [(targets[i], targets[i + 1]) for i in range(0, len(targets), 2)]
-                print(f"{record_id=}")
+            if isinstance(targets, Tensor):
+                targets = targets.tolist()
+            # zip two consecutive elements
+            targets = [(targets[i], targets[i + 1]) for i in range(0, len(targets), 2)]
+            print(f"{record_id=}")
+            hightlight_predicts(seq, targets, smooth_predict_targets)
 
-                hightlight_predicts(seq, targets, smooth_predict_targets)
-
-            selected_seqs, selected_intervals = remove_intervals_and_keep_left(
+            _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(
                 seq, smooth_predict_targets
             )
-
-            for idy, record_seq in enumerate(selected_seqs):
-                f.write(
-                    f"@{record_id}|{idy}|{selected_intervals[idy]}\n{record_seq}\n+\n{'I' * len(record_seq)}\n"
-                )
+    else:
+        get_dataset(
+            data_path, true_prediction, min_region_length_for_smooth, max_distance_for_smooth
+        )
 
 
 if __name__ == "__main__":
