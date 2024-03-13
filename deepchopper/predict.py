@@ -84,7 +84,9 @@ def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int =
     return eval_dataset, tokenized_eval_dataset, resume_tokenizer, resume_model
 
 
-def load_trainer(resume_tokenizer, resume_model, batch_size: int = 24):
+def load_trainer(
+    resume_tokenizer, resume_model, batch_size: int = 24, *, show_metrics: bool = False
+):
     """Load the trainer with the given model and tokenizer."""
     data_collator = DataCollatorForTokenClassificationWithQual(resume_tokenizer)
     training_args = TrainingArguments(
@@ -103,13 +105,15 @@ def load_trainer(resume_tokenizer, resume_model, batch_size: int = 24):
         run_name="eval",
     )
 
+    compute_metrics_func = compute_metrics if show_metrics else None
+
     # Initialize our Trainer
     return Trainer(
         model=resume_model,
         args=training_args,
         tokenizer=resume_tokenizer,
         data_collator=data_collator,
-        compute_metrics=compute_metrics,
+        compute_metrics=compute_metrics_func,
     )
 
 
@@ -124,10 +128,12 @@ app = typer.Typer(
 def main(
     check_point: Path,
     data_path: Path,
+    batch_size: int = 12,
     max_sample: int = 1000,
     min_region_length_for_smooth: int = 1,
-    max_distance_for_smooth: int = 1,
+    max_distance_for_smooth: Annotated[int, typer.Option()] = 1,
     *,
+    show_metrics: Annotated[bool, typer.Option(help="if show metrics")] = False,
     show_sample: Annotated[bool, typer.Option(help="if show sample")] = False,
     save_predict: Annotated[bool, typer.Option(help="if save predict")] = False,
 ):
@@ -139,8 +145,11 @@ def main(
     if show_sample:
         random_show_seq(eval_dataset, sample=3)
 
-    trainer = load_trainer(resume_tokenizer, resume_model)
+    trainer = load_trainer(
+        resume_tokenizer, resume_model, batch_size=batch_size, show_metrics=show_metrics
+    )
     predicts = trainer.predict(tokenized_eval_dataset)  # type: ignore
+    print(len(predicts))
     print(predicts[2])
 
     true_prediction, true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
