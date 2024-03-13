@@ -253,6 +253,7 @@ fn normalize_seq(seq: String, iupac: bool) -> String {
     String::from_utf8_lossy(&seq.as_bytes().normalize(iupac)).to_string()
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pyfunction]
 fn encode_fq_paths_to_tensor(
     py: Python,
@@ -299,6 +300,7 @@ fn encode_fq_paths_to_tensor(
     ))
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pyfunction]
 fn encode_fq_path_to_tensor(
     py: Python,
@@ -507,19 +509,19 @@ fn remove_intervals_and_keep_left(
 }
 
 #[pyfunction]
-fn get_dataset(
+fn write_predicts(
     dataset: PathBuf,
+    output_fq_path: PathBuf,
     predicts: Vec<Vec<u8>>,
     min_region_length_for_smooth: usize, // 1
     max_distance_for_smooth: usize,      // 1
 ) -> Result<()> {
     let file = std::fs::File::open(dataset).unwrap();
     let builder = ParquetRecordBatchReaderBuilder::try_new(file).unwrap();
-    println!("Converted arrow schema is: {}", builder.schema());
-
     let mut reader = builder.build().unwrap();
     let record_batch = reader.next().unwrap().unwrap();
-    println!("Read {} records.", record_batch.num_rows());
+
+    info!("Read {} records.", record_batch.num_rows());
 
     let id_column = record_batch.column_by_name("id").unwrap();
     let seq_column = record_batch.column_by_name("seq").unwrap();
@@ -555,7 +557,9 @@ fn get_dataset(
                 .unwrap();
             // Convert the Int32Array for this row into a Vec<i32>
             let qual_len = qual_array.len();
-            let qual_vec: Vec<u8> = (0..qual_len).map(|j| qual_array.value(j) as u8).collect();
+            let qual_vec: Vec<u8> = (0..qual_len)
+                .map(|j| qual_array.value(j) as u8 + QUAL_OFFSET)
+                .collect();
 
             let records = output::split_records_by_remove_interval(
                 seq.value(i).into(),
@@ -569,7 +573,8 @@ fn get_dataset(
         .flatten()
         .collect::<Vec<_>>();
 
-    output::write_fq(&result, Some("tt.fq".into()))?;
+    // output::write_fq(&result, Some("tt.fq".into()))?;
+    output::write_fq_parallel(&result, output_fq_path, None)?;
     Ok(())
 }
 
@@ -612,7 +617,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_label_region, m)?)?;
     m.add_function(wrap_pyfunction!(smooth_label_region, m)?)?;
     m.add_function(wrap_pyfunction!(remove_intervals_and_keep_left, m)?)?;
-    m.add_function(wrap_pyfunction!(get_dataset, m)?)?;
+    m.add_function(wrap_pyfunction!(write_predicts, m)?)?;
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;

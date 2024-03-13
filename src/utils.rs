@@ -27,6 +27,7 @@ pub fn summary_predict(
         .unzip()
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn collect_and_split_dataset<P: AsRef<Path>>(
     internal_fq_path: P,
     terminal_fq_path: P,

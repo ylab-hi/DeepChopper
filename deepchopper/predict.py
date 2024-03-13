@@ -22,7 +22,7 @@ from deepchopper.utils import (
 )
 
 from .deepchopper import (
-    get_dataset,
+    write_predicts,
     remove_intervals_and_keep_left,
     smooth_label_region,
 )
@@ -124,6 +124,7 @@ def main(
     max_distance_for_smooth: int = 1,
     *,
     show_sample: bool = False,
+    save_predict: bool = False,
 ):
     """Predict the given dataset using the given model and tokenizer."""
     eval_dataset, tokenized_eval_dataset, resume_tokenizer, resume_model = load_dataset_and_model(
@@ -159,9 +160,14 @@ def main(
             _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(
                 seq, smooth_predict_targets
             )
-    else:
-        get_dataset(
-            data_path, true_prediction, min_region_length_for_smooth, max_distance_for_smooth
+    elif save_predict:
+        outout_path = data_path.with_suffix(".chopped.fq.gz")
+        write_predicts(
+            data_path,
+            outout_path,
+            true_prediction,
+            min_region_length_for_smooth,
+            max_distance_for_smooth,
         )
 
 
