@@ -128,6 +128,7 @@ app = typer.Typer(
 def main(
     check_point: Path,
     data_path: Path,
+    output_path: Path | None = None,
     batch_size: int = 12,
     max_sample: int = 1000,
     min_region_length_for_smooth: int = 1,
@@ -149,11 +150,10 @@ def main(
         resume_tokenizer, resume_model, batch_size=batch_size, show_metrics=show_metrics
     )
     predicts = trainer.predict(tokenized_eval_dataset)  # type: ignore
-    print(len(predicts))
-    print(predicts[2])
 
     true_prediction, true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
     if show_sample:
+        print(predicts[2])
         alignment_predict(true_prediction[0], true_label[0])
         for idx, preds in enumerate(true_prediction):
             record_id = eval_dataset[idx]["id"]
@@ -175,7 +175,13 @@ def main(
                 seq, smooth_predict_targets
             )
     elif save_predict:
-        outout_path = data_path.with_suffix(".chopped.fq.gz")
+        if output_path is None:
+            outout_path = data_path.with_suffix(".chopped.fq.gz")
+        else:
+            if not output_path.exists():
+                output_path.mkdir(parents=True, exist_ok=True)
+            outout_path = output_path / data_path.with_suffix(".chopped.fq.gz").name
+
         write_predicts(
             data_path,
             outout_path,
