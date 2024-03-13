@@ -119,7 +119,7 @@ app = typer.Typer(
 
 
 @app.command(
-    help="DeepChopper is all you need",
+    help="DeepChopper is All You Need",
 )
 def main(
     check_point: Path,
