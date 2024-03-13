@@ -11,9 +11,9 @@ use bstr::BString;
 use derive_builder::Builder;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::types::Element;
+use crate::{output::write_parquet, types::Element};
 
-use super::{triat::Encoder, FqEncoderOption};
+use super::{triat::Encoder, FqEncoderOption, RecordData};
 use anyhow::{Context, Result};
 use pyo3::prelude::*;
 use rayon::prelude::*;
@@ -35,6 +35,105 @@ pub struct ParquetEncoder {
 impl ParquetEncoder {
     pub fn new(option: FqEncoderOption) -> Self {
         Self { option }
+    }
+
+    fn generate_schema(&self) -> Arc<Schema> {
+        Arc::new(Schema::new(vec![
+            Field::new("id", DataType::Utf8, false),
+            Field::new("seq", DataType::Utf8, false),
+            Field::new(
+                "qual",
+                DataType::List(Box::new(Field::new("item", DataType::Int32, true)).into()),
+                false,
+            ),
+            Field::new(
+                "target",
+                DataType::List(Box::new(Field::new("item", DataType::Int32, true)).into()),
+                false,
+            ),
+        ]))
+    }
+
+    fn generate_batch(
+        &mut self,
+        records: &[RecordData],
+        schema: &Arc<Schema>,
+    ) -> Result<RecordBatch> {
+        let data: Vec<ParquetData> = records
+            .into_par_iter()
+            .filter_map(|data| {
+                let id = data.id.as_ref();
+                let seq = data.seq.as_ref();
+                let qual = data.qual.as_ref();
+                match self.encode_record(id, seq, qual).context(format!(
+                    "encode fq read id {} error",
+                    String::from_utf8_lossy(id)
+                )) {
+                    Ok(result) => Some(result),
+                    Err(_e) => None,
+                }
+            })
+            .collect();
+
+        // Create builders for each field
+        let mut id_builder = StringBuilder::new();
+        let mut seq_builder = StringBuilder::new();
+        let mut qual_builder = ListBuilder::new(Int32Builder::new());
+        let mut target_builder = ListBuilder::new(Int32Builder::new());
+
+        // Populate builders
+        data.into_iter().for_each(|parquet_record| {
+            id_builder.append_value(&parquet_record.id.to_string());
+            seq_builder.append_value(&parquet_record.seq.to_string());
+
+            parquet_record.qual.into_iter().for_each(|qual| {
+                qual_builder.values().append_value(qual);
+            });
+            qual_builder.append(true);
+
+            parquet_record.target.into_iter().for_each(|target| {
+                target_builder.values().append_value(target);
+            });
+            target_builder.append(true);
+        });
+
+        // Build arrays
+        let id_array = Arc::new(id_builder.finish());
+        let seq_array = Arc::new(seq_builder.finish());
+        let qual_array = Arc::new(qual_builder.finish());
+        let target_array = Arc::new(target_builder.finish());
+
+        // Create a RecordBatch
+        let record_batch = RecordBatch::try_new(
+            schema.clone(),
+            vec![
+                id_array as Arc<dyn Array>,
+                seq_array as Arc<dyn Array>,
+                qual_array as Arc<dyn Array>,
+                target_array as Arc<dyn Array>,
+            ],
+        )?;
+        Ok(record_batch)
+    }
+
+    pub fn encode_chunk<P: AsRef<Path>>(&mut self, path: P, chunk_size: usize) -> Result<()> {
+        let schema = self.generate_schema();
+        let records = self.fetch_records(&path, self.option.kmer_size)?;
+        records
+            .chunks(chunk_size)
+            .enumerate()
+            .for_each(|(idx, record)| {
+                let record_batch = self
+                    .generate_batch(record, &schema)
+                    .context(format!("Failed to generate record batch for chunk {}", idx))
+                    .unwrap();
+                let parquet_path = format!("{}_{}.parquet", path.as_ref().to_str().unwrap(), idx);
+                write_parquet(parquet_path, record_batch, schema.clone())
+                    .context(format!("Failed to write parquet file for chunk {}", idx))
+                    .unwrap();
+            });
+
+        Ok(())
     }
 }
 
@@ -98,78 +197,9 @@ impl Encoder for ParquetEncoder {
 
     fn encode<P: AsRef<Path>>(&mut self, path: P) -> Self::EncodeOutput {
         // Define the schema of the data (one column of integers)
-        let schema = Arc::new(Schema::new(vec![
-            Field::new("id", DataType::Utf8, false),
-            Field::new("seq", DataType::Utf8, false),
-            Field::new(
-                "qual",
-                DataType::List(Box::new(Field::new("item", DataType::Int32, true)).into()),
-                false,
-            ),
-            Field::new(
-                "target",
-                DataType::List(Box::new(Field::new("item", DataType::Int32, true)).into()),
-                false,
-            ),
-        ]));
-
+        let schema = self.generate_schema();
         let records = self.fetch_records(path, self.option.kmer_size)?;
-
-        let data: Vec<ParquetData> = records
-            .into_par_iter()
-            .filter_map(|data| {
-                let id = data.id.as_ref();
-                let seq = data.seq.as_ref();
-                let qual = data.qual.as_ref();
-                match self.encode_record(id, seq, qual).context(format!(
-                    "encode fq read id {} error",
-                    String::from_utf8_lossy(id)
-                )) {
-                    Ok(result) => Some(result),
-                    Err(_e) => None,
-                }
-            })
-            .collect();
-
-        // Create builders for each field
-        let mut id_builder = StringBuilder::new();
-        let mut seq_builder = StringBuilder::new();
-        let mut qual_builder = ListBuilder::new(Int32Builder::new());
-        let mut target_builder = ListBuilder::new(Int32Builder::new());
-
-        // Populate builders
-        data.into_iter().for_each(|parquet_record| {
-            id_builder.append_value(&parquet_record.id.to_string());
-            seq_builder.append_value(&parquet_record.seq.to_string());
-
-            parquet_record.qual.into_iter().for_each(|qual| {
-                qual_builder.values().append_value(qual);
-            });
-            qual_builder.append(true);
-
-            parquet_record.target.into_iter().for_each(|target| {
-                target_builder.values().append_value(target);
-            });
-            target_builder.append(true);
-        });
-
-        // Build arrays
-        let id_array = Arc::new(id_builder.finish());
-        let seq_array = Arc::new(seq_builder.finish());
-        let qual_array = Arc::new(qual_builder.finish());
-        let target_array = Arc::new(target_builder.finish());
-
-        // Create a RecordBatch
-        let record_batch = RecordBatch::try_new(
-            schema.clone(),
-            vec![
-                id_array as Arc<dyn Array>,
-                seq_array as Arc<dyn Array>,
-                qual_array as Arc<dyn Array>,
-                target_array as Arc<dyn Array>,
-            ],
-        )?;
-
+        let record_batch = self.generate_batch(&records, &schema)?;
         Ok((record_batch, schema))
     }
 

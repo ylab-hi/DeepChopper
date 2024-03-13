@@ -382,6 +382,28 @@ fn encode_fq_path_to_json(
 }
 
 #[pyfunction]
+fn encode_fq_path_to_parquet_chunk(
+    fq_path: PathBuf,
+    chunk_size: usize,
+    bases: String,
+    qual_offset: usize,
+    vectorized_target: bool,
+) -> Result<()> {
+    let option = fq_encode::FqEncoderOptionBuilder::default()
+        .kmer_size(0)
+        .bases(bases.as_bytes().to_vec())
+        .qual_offset(qual_offset as u8)
+        .vectorized_target(vectorized_target)
+        .build()?;
+
+    let mut encoder = fq_encode::ParquetEncoderBuilder::default()
+        .option(option)
+        .build()?;
+    encoder.encode_chunk(&fq_path, chunk_size)?;
+    Ok(())
+}
+
+#[pyfunction]
 fn encode_fq_path_to_parquet(
     fq_path: PathBuf,
     k: usize,
@@ -605,6 +627,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(encode_fq_path_to_tensor, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_path_to_parquet, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_paths_to_parquet, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_fq_path_to_parquet_chunk, m)?)?;
     m.add_function(wrap_pyfunction!(encode_fq_path_to_json, m)?)?;
     m.add_function(wrap_pyfunction!(summary_fx_record_len, m)?)?;
     m.add_function(wrap_pyfunction!(summary_bam_record_len, m)?)?;
