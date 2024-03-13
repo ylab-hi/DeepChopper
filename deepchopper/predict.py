@@ -22,9 +22,9 @@ from deepchopper.utils import (
 )
 
 from .deepchopper import (
-    write_predicts,
     remove_intervals_and_keep_left,
     smooth_label_region,
+    write_predicts,
 )
 from .utils import hightlight_predicts
 
@@ -112,10 +112,16 @@ def load_trainer(resume_tokenizer, resume_model, batch_size: int = 24):
     )
 
 
-app = typer.Typer()
+from typing import Annotated
+
+app = typer.Typer(
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 
 
-@app.command()
+@app.command(
+    help="DeepChopper is all you need",
+)
 def main(
     check_point: Path,
     data_path: Path,
@@ -123,8 +129,8 @@ def main(
     min_region_length_for_smooth: int = 1,
     max_distance_for_smooth: int = 1,
     *,
-    show_sample: bool = False,
-    save_predict: bool = False,
+    show_sample: Annotated[bool, typer.Option(help="if show sample")] = False,
+    save_predict: Annotated[bool, typer.Option(help="if save predict")] = False,
 ):
     """Predict the given dataset using the given model and tokenizer."""
     eval_dataset, tokenized_eval_dataset, resume_tokenizer, resume_model = load_dataset_and_model(
