@@ -1,6 +1,7 @@
 import multiprocessing
 from functools import partial
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from datasets import load_dataset
@@ -111,8 +112,6 @@ def load_trainer(resume_tokenizer, resume_model, batch_size: int = 24):
         compute_metrics=compute_metrics,
     )
 
-
-from typing import Annotated
 
 app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
