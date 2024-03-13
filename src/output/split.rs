@@ -60,12 +60,13 @@ pub fn generate_unmaped_intervals(
     input: &[Range<usize>],
     total_length: usize,
 ) -> Vec<Range<usize>> {
-    if input.is_empty() {
-        return vec![];
-    }
-
     // Assuming the input ranges are sorted and non-overlapping
     let mut result = Vec::new();
+
+    if input.is_empty() {
+        result.push(0..total_length);
+        return result;
+    }
 
     // Initial start for the very first interval
     let mut current_start = 0;
@@ -113,6 +114,7 @@ pub fn remove_intervals_and_keep_left<'a>(
             }
         })
         .collect::<Result<Vec<_>>>()?;
+
     Ok((slected_seq, slected_intervals))
 }
 
