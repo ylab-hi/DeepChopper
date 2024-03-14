@@ -168,7 +168,7 @@ fn write_fq_parallel(
         .map(|py_record| py_record.0)
         .collect();
 
-    output::write_fq_parallel(&records, file_path, Some(threads))
+    output::write_zip_fq_parallel(&records, file_path, Some(threads))
 }
 
 #[pyfunction]
@@ -385,6 +385,7 @@ fn encode_fq_path_to_json(
 fn encode_fq_path_to_parquet_chunk(
     fq_path: PathBuf,
     chunk_size: usize,
+    parallel: bool,
     bases: String,
     qual_offset: usize,
     vectorized_target: bool,
@@ -399,7 +400,7 @@ fn encode_fq_path_to_parquet_chunk(
     let mut encoder = fq_encode::ParquetEncoderBuilder::default()
         .option(option)
         .build()?;
-    encoder.encode_chunk(&fq_path, chunk_size)?;
+    encoder.encode_chunk(&fq_path, chunk_size, parallel)?;
     Ok(())
 }
 
@@ -596,7 +597,28 @@ fn write_predicts(
         .collect::<Vec<_>>();
 
     // output::write_fq(&result, Some("tt.fq".into()))?;
-    output::write_fq_parallel(&result, output_fq_path, None)?;
+    output::write_zip_fq_parallel(&result, output_fq_path, None)?;
+    Ok(())
+}
+
+#[pyfunction]
+fn convert_multiple_fqs_to_one_fq(
+    paths: Vec<PathBuf>,
+    result_path: PathBuf,
+    parallel: bool,
+) -> Result<()> {
+    if paths.is_empty() {
+        return Ok(());
+    }
+
+    let is_zip = paths[0].extension().unwrap() == "gz";
+
+    if is_zip {
+        output::convert_multiple_fqs_to_one_zip_fq(&paths, result_path, parallel)?;
+    } else {
+        output::convert_multiple_zip_fqs_to_one_zip_fq(&paths, result_path, parallel)?;
+    }
+
     Ok(())
 }
 
@@ -641,6 +663,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(smooth_label_region, m)?)?;
     m.add_function(wrap_pyfunction!(remove_intervals_and_keep_left, m)?)?;
     m.add_function(wrap_pyfunction!(write_predicts, m)?)?;
+    m.add_function(wrap_pyfunction!(convert_multiple_fqs_to_one_fq, m)?)?;
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;

@@ -9,6 +9,7 @@ use arrow::datatypes::{DataType, Field, Schema};
 
 use bstr::BString;
 use derive_builder::Builder;
+use log::info;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::{output::write_parquet, types::Element};
@@ -54,11 +55,7 @@ impl ParquetEncoder {
         ]))
     }
 
-    fn generate_batch(
-        &mut self,
-        records: &[RecordData],
-        schema: &Arc<Schema>,
-    ) -> Result<RecordBatch> {
+    fn generate_batch(&self, records: &[RecordData], schema: &Arc<Schema>) -> Result<RecordBatch> {
         let data: Vec<ParquetData> = records
             .into_par_iter()
             .filter_map(|data| {
@@ -116,22 +113,48 @@ impl ParquetEncoder {
         Ok(record_batch)
     }
 
-    pub fn encode_chunk<P: AsRef<Path>>(&mut self, path: P, chunk_size: usize) -> Result<()> {
+    pub fn encode_chunk<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+        chunk_size: usize,
+        parallel: bool,
+    ) -> Result<()> {
         let schema = self.generate_schema();
         let records = self.fetch_records(&path, self.option.kmer_size)?;
-        records
-            .chunks(chunk_size)
-            .enumerate()
-            .for_each(|(idx, record)| {
-                let record_batch = self
-                    .generate_batch(record, &schema)
-                    .context(format!("Failed to generate record batch for chunk {}", idx))
-                    .unwrap();
-                let parquet_path = format!("{}_{}.parquet", path.as_ref().to_str().unwrap(), idx);
-                write_parquet(parquet_path, record_batch, schema.clone())
-                    .context(format!("Failed to write parquet file for chunk {}", idx))
-                    .unwrap();
-            });
+        info!("Encoding records with chunk size {} ", chunk_size);
+        let path_str = path.as_ref().to_str().unwrap();
+
+        if parallel {
+            records
+                // .chunks(chunk_size)
+                .par_chunks(chunk_size)
+                .enumerate()
+                .for_each(|(idx, record)| {
+                    let record_batch = self
+                        .generate_batch(record, &schema)
+                        .context(format!("Failed to generate record batch for chunk {}", idx))
+                        .unwrap();
+                    let parquet_path = format!("{}_{}.parquet", path_str, idx);
+
+                    write_parquet(parquet_path, record_batch, schema.clone())
+                        .context(format!("Failed to write parquet file for chunk {}", idx))
+                        .unwrap();
+                });
+        } else {
+            records
+                .chunks(chunk_size)
+                .enumerate()
+                .for_each(|(idx, record)| {
+                    let record_batch = self
+                        .generate_batch(record, &schema)
+                        .context(format!("Failed to generate record batch for chunk {}", idx))
+                        .unwrap();
+                    let parquet_path = format!("{}_{}.parquet", path_str, idx);
+                    write_parquet(parquet_path, record_batch, schema.clone())
+                        .context(format!("Failed to write parquet file for chunk {}", idx))
+                        .unwrap();
+                });
+        }
 
         Ok(())
     }

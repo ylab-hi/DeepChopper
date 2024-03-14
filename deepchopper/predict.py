@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 from functools import partial
 from pathlib import Path
@@ -6,28 +7,38 @@ from typing import Annotated
 import typer
 from datasets import load_dataset
 from rich import print
+from rich.logging import RichHandler
 from torch import Tensor
 from transformers import AutoTokenizer, Trainer, TrainingArguments
 
-from deepchopper.data import encode_one_fq_file
-from deepchopper.models.hyena import (
+from .deepchopper import (
+    convert_multiple_fqs_to_one_fq,
+    default,
+    encode_fq_path_to_parquet,
+    encode_fq_path_to_parquet_chunk,
+    remove_intervals_and_keep_left,
+    smooth_label_region,
+    write_predicts,
+)
+from .models.hyena import (
     DataCollatorForTokenClassificationWithQual,
     TokenClassification,
     compute_metrics,
     tokenize_and_align_labels_and_quals,
 )
-from deepchopper.utils import (
+from .utils import (
     alignment_predict,
     highlight_target,
+    hightlight_predicts,
     summary_predict,
 )
 
-from .deepchopper import (
-    remove_intervals_and_keep_left,
-    smooth_label_region,
-    write_predicts,
+FORMAT = "%(message)s"
+logging.basicConfig(
+    level=logging.INFO,
+    format=FORMAT,
+    handlers=[RichHandler()],
 )
-from .utils import hightlight_predicts
 
 
 def random_show_seq(dataset, sample: int = 3):
@@ -46,7 +57,7 @@ def random_show_seq(dataset, sample: int = 3):
         highlight_target(dataset[highlight_id]["seq"], *dataset[highlight_id]["target"])
 
 
-def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int = 500):
+def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int | None = None):
     """Load the dataset and model from the given paths."""
     if isinstance(check_point, str):
         check_point = Path(check_point)
@@ -55,8 +66,8 @@ def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int =
         data_path = Path(data_path)
 
     if data_path.suffix in (".fq", ".fastq"):
-        encode_one_fq_file(data_path)
-        data_path = data_path.with_suffix(".parquet")
+        msg = f"Please Encoded {data_path.with_suffix('.fq')} first using `deepchopper encode`"
+        raise ValueError(msg)
 
     if data_path.suffix != ".parquet":
         msg = f"Unsupported file format: {data_path.suffix}"
@@ -64,6 +75,9 @@ def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int =
 
     resume_tokenizer = AutoTokenizer.from_pretrained(check_point, trust_remote_code=True)
     resume_model = TokenClassification.from_pretrained(check_point)
+
+    if max_sample is None:
+        max_sample: str = "100%"
 
     eval_dataset = load_dataset(
         "parquet",
@@ -90,7 +104,7 @@ def load_trainer(
     """Load the trainer with the given model and tokenizer."""
     data_collator = DataCollatorForTokenClassificationWithQual(resume_tokenizer)
     training_args = TrainingArguments(
-        output_dir="hyena_model_use_qual_testt",
+        output_dir="deepchopper",
         learning_rate=2e-5,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
@@ -125,12 +139,12 @@ app = typer.Typer(
 @app.command(
     help="DeepChopper is All You Need",
 )
-def main(
+def predict(
     check_point: Path,
     data_path: Path,
     output_path: Path | None = None,
     batch_size: int = 12,
-    max_sample: int = 1000,
+    max_sample: int | None = None,
     min_region_length_for_smooth: int = 1,
     max_distance_for_smooth: Annotated[int, typer.Option()] = 1,
     *,
@@ -189,6 +203,67 @@ def main(
             min_region_length_for_smooth,
             max_distance_for_smooth,
         )
+
+    if (Path.cwd() / "deepchopper").exists():
+        (Path.cwd() / "deepchopper").rmdir()
+
+
+@app.command(
+    help="DeepChopper is All You Need: encode the given fastq",
+)
+def encode(
+    data_folder: Path, *, chunk: bool = False, chunk_size: int = 1000000, parallel: bool = False
+):
+    """Encode the given fastq files to parquet format."""
+    if not data_folder.exists():
+        msg = f"Folder {data_folder} does not exist."
+        logging.error(msg)
+
+    fq_files = (
+        [data_folder]
+        if data_folder.is_file()
+        else list(data_folder.glob("*.fq")) + list(data_folder.glob("*.fastq"))
+    )
+
+    for fq_file in fq_files:
+        logging.info(f"Processing {fq_file}")
+        if not chunk:
+            encode_fq_path_to_parquet(
+                fq_file,
+                default.KMER_SIZE,
+                bases=default.BASES,
+                qual_offset=default.QUAL_OFFSET,
+                vectorized_target=default.VECTORIZED_TARGET,
+            )
+        else:
+            encode_fq_path_to_parquet_chunk(
+                fq_file,
+                chunk_size=chunk_size,
+                parallel=parallel,
+                bases=default.BASES,
+                qual_offset=default.QUAL_OFFSET,
+                vectorized_target=default.VECTORIZED_TARGET,
+            )
+
+
+@app.command(
+    help="DeepChopper is All You Need: collect the given fastq",
+)
+def collect(data_folder: Path, output: Path):
+    """Collect multiple fastq files to one fastq file."""
+    if not data_folder.exists():
+        msg = f"Folder {data_folder} does not exist."
+        raise ValueError(msg)
+
+    fq_files = (
+        [data_folder]
+        if data_folder.is_file()
+        else list(data_folder.glob("*.fq"))
+        + list(data_folder.glob("*.fastq"))
+        + list(data_folder.glob("*.fq.gz"))
+        + list(data_folder.glob("*.fastq.gz"))
+    )
+    convert_multiple_fqs_to_one_fq(fq_files, output)
 
 
 if __name__ == "__main__":
