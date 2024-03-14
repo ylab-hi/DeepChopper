@@ -40,6 +40,8 @@ logging.basicConfig(
     handlers=[RichHandler()],
 )
 
+TMPOUTPUT = Path.cwd() / "deepchopper_predict"
+
 
 def random_show_seq(dataset, sample: int = 3):
     """Randomly selects 'sample' number of sequences from the given dataset and prints their IDs and targets.
@@ -104,7 +106,7 @@ def load_trainer(
     """Load the trainer with the given model and tokenizer."""
     data_collator = DataCollatorForTokenClassificationWithQual(resume_tokenizer)
     training_args = TrainingArguments(
-        output_dir="deepchopper",
+        output_dir=TMPOUTPUT.as_posix(),
         learning_rate=2e-5,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
@@ -204,8 +206,8 @@ def predict(
             max_distance_for_smooth,
         )
 
-    if (Path.cwd() / "deepchopper").exists():
-        (Path.cwd() / "deepchopper").rmdir()
+    if TMPOUTPUT.exists():
+        TMPOUTPUT.rmdir()
 
 
 @app.command(
