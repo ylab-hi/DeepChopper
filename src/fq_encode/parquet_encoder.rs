@@ -122,7 +122,17 @@ impl ParquetEncoder {
         let schema = self.generate_schema();
         let records = self.fetch_records(&path, self.option.kmer_size)?;
         info!("Encoding records with chunk size {} ", chunk_size);
-        let path_str = path.as_ref().to_str().unwrap();
+
+        // create a folder for the chunk parquet files
+        let file_name = path.as_ref().file_name().unwrap().to_str().unwrap();
+        let chunks_folder = path
+            .as_ref()
+            .parent()
+            .unwrap()
+            .join(format!("{}_{}", file_name, "chunks"))
+            .to_path_buf();
+        // create the folder
+        std::fs::create_dir_all(&chunks_folder).context("Failed to create folder for chunks")?;
 
         if parallel {
             records
@@ -134,8 +144,7 @@ impl ParquetEncoder {
                         .generate_batch(record, &schema)
                         .context(format!("Failed to generate record batch for chunk {}", idx))
                         .unwrap();
-                    let parquet_path = format!("{}_{}.parquet", path_str, idx);
-
+                    let parquet_path = chunks_folder.join(format!("{}_{}.parquet", file_name, idx));
                     write_parquet(parquet_path, record_batch, schema.clone())
                         .context(format!("Failed to write parquet file for chunk {}", idx))
                         .unwrap();
@@ -149,7 +158,7 @@ impl ParquetEncoder {
                         .generate_batch(record, &schema)
                         .context(format!("Failed to generate record batch for chunk {}", idx))
                         .unwrap();
-                    let parquet_path = format!("{}_{}.parquet", path_str, idx);
+                    let parquet_path = chunks_folder.join(format!("{}_{}.parquet", file_name, idx));
                     write_parquet(parquet_path, record_batch, schema.clone())
                         .context(format!("Failed to write parquet file for chunk {}", idx))
                         .unwrap();
