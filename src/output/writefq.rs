@@ -1,12 +1,15 @@
 use std::fs::File;
+use std::io::BufReader;
 use std::num::NonZeroUsize;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::{io, thread};
 
 use anyhow::Result;
 use noodles::fastq::{self as fastq, record::Definition};
 
 use noodles::bgzf;
+use noodles::fastq::record::Record as FastqRecord;
+use rayon::prelude::*;
 
 use crate::fq_encode::RecordData;
 
@@ -19,17 +22,47 @@ pub fn write_fq(records: &[RecordData], file_path: Option<PathBuf>) -> Result<()
     let mut writer = fastq::Writer::new(sink);
 
     for record in records {
+        let qual_str = record.qual.to_string();
+
         let record = fastq::Record::new(
             Definition::new(record.id.to_vec(), ""),
             record.seq.to_vec(),
-            record.qual.to_vec(),
+            qual_str,
         );
         writer.write_record(&record)?;
     }
 
     Ok(())
 }
-pub fn write_fq_parallel(
+
+pub fn read_noodle_records_from_fq<P: AsRef<Path>>(file_path: P) -> Result<Vec<FastqRecord>> {
+    let mut reader = File::open(file_path)
+        .map(BufReader::new)
+        .map(fastq::Reader::new)?;
+    let records: Result<Vec<FastqRecord>> = reader
+        .records()
+        .par_bridge()
+        .map(|record| {
+            let record = record?;
+            Ok(record)
+        })
+        .collect();
+    records
+}
+
+pub fn write_fq_for_noodle_record<P: AsRef<Path>>(
+    records: &[FastqRecord],
+    file_path: P,
+) -> Result<()> {
+    let file = File::create(file_path)?;
+    let mut writer = fastq::Writer::new(file);
+    for record in records {
+        writer.write_record(record)?;
+    }
+    Ok(())
+}
+
+pub fn write_zip_fq_parallel(
     records: &[RecordData],
     file_path: PathBuf,
     threads: Option<usize>,
@@ -54,11 +87,83 @@ pub fn write_fq_parallel(
     Ok(())
 }
 
+pub fn write_fq_parallel_for_noodle_record(
+    records: &[FastqRecord],
+    file_path: PathBuf,
+    threads: Option<usize>,
+) -> Result<()> {
+    let worker_count = NonZeroUsize::new(threads.unwrap_or(1))
+        .map(|count| count.min(thread::available_parallelism().unwrap()))
+        .unwrap();
+
+    let sink = File::create(file_path)?;
+    let encoder = bgzf::MultithreadedWriter::with_worker_count(worker_count, sink);
+
+    let mut writer = fastq::Writer::new(encoder);
+
+    for record in records {
+        writer.write_record(record)?;
+    }
+    Ok(())
+}
+
+pub fn read_noodle_records_from_zip_fq<P: AsRef<Path>>(file_path: P) -> Result<Vec<FastqRecord>> {
+    let decoder = bgzf::Reader::new(File::open(file_path)?);
+    let mut reader = fastq::Reader::new(decoder);
+    let records: Result<Vec<FastqRecord>> = reader
+        .records()
+        .map(|record| {
+            let record = record?;
+            Ok(record)
+        })
+        .collect();
+    records
+}
+
+pub fn convert_multiple_zip_fqs_to_one_zip_fq<P: AsRef<Path>>(
+    paths: &[PathBuf],
+    result_path: P,
+    parallel: bool,
+) -> Result<()> {
+    let records = if parallel {
+        paths
+            .par_iter()
+            .flat_map(|path| read_noodle_records_from_zip_fq(path).unwrap())
+            .collect::<Vec<FastqRecord>>()
+    } else {
+        paths
+            .iter()
+            .flat_map(|path| read_noodle_records_from_zip_fq(path).unwrap())
+            .collect::<Vec<FastqRecord>>()
+    };
+    write_fq_parallel_for_noodle_record(&records, result_path.as_ref().to_path_buf(), None)?;
+    Ok(())
+}
+
+pub fn convert_multiple_fqs_to_one_zip_fq<P: AsRef<Path>>(
+    paths: &[PathBuf],
+    result_path: P,
+    parallel: bool,
+) -> Result<()> {
+    let records = if parallel {
+        paths
+            .par_iter()
+            .flat_map(|path| read_noodle_records_from_fq(path).unwrap())
+            .collect::<Vec<FastqRecord>>()
+    } else {
+        paths
+            .iter()
+            .flat_map(|path| read_noodle_records_from_fq(path).unwrap())
+            .collect::<Vec<FastqRecord>>()
+    };
+    write_fq_parallel_for_noodle_record(&records, result_path.as_ref().to_path_buf(), None)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use rayon::prelude::*;
     use tempfile::NamedTempFile;
 
     #[test]
@@ -105,7 +210,7 @@ mod tests {
         let file_path = file.path().to_path_buf();
 
         // Call the function being tested
-        write_fq_parallel(&records, file_path, None).unwrap();
+        write_zip_fq_parallel(&records, file_path, None).unwrap();
 
         let decoder = bgzf::Reader::new(file.reopen().unwrap());
         let mut reader = fastq::Reader::new(decoder);

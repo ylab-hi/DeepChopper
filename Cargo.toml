@@ -10,11 +10,12 @@ crate-type = ["cdylib", "rlib"]
 
 
 [profile.release]
-debug = 0
-strip = "symbols"
+debug = false
+strip = "none"
 lto = true
 opt-level = 3
 codegen-units = 1
+panic = "abort"
 
 [profile.no-opt]
 inherits = "dev"

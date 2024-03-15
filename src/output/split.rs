@@ -8,23 +8,27 @@ use crate::{error::EncodingError, fq_encode::RecordData};
 pub fn split_records_by_remove_interval(
     seq: &BStr,
     id: &BStr,
-    qual: &BStr,
+    qual: &[u8],
     target: &[Range<usize>],
 ) -> Result<Vec<RecordData>> {
     let mut seqs = Vec::new();
     let mut quals = Vec::new();
+    let mut selected_intervals = Vec::new();
 
     rayon::scope(|s| {
         s.spawn(|_| {
-            seqs = remove_intervals_and_keep_left(seq, target).unwrap();
+            let result = remove_intervals_and_keep_left(seq, target).unwrap();
+            seqs = result.0;
+            selected_intervals = result.1;
         });
         s.spawn(|_| {
-            quals = remove_intervals_and_keep_left(qual, target).unwrap();
+            let result = remove_intervals_and_keep_left(qual, target).unwrap();
+            quals = result.0;
         });
     });
 
     // Ensure seqs and quals have the same length; otherwise, return an error or handle as needed
-    if seqs.len() != qual.len() {
+    if seqs.len() != quals.len() {
         return Err(Error::new(
             EncodingError::NotSameLengthForQualityAndSequence(format!(
                 "seqs: {:?}, quals: {:?}",
@@ -34,7 +38,14 @@ pub fn split_records_by_remove_interval(
         ));
     }
 
-    let ids: Vec<String> = (0..seqs.len()).map(|x| format!("{}{}", id, x)).collect();
+    let ids: Vec<String> = (0..seqs.len())
+        .map(|x| {
+            format!(
+                "{}|{}|{}-{}",
+                id, x, selected_intervals[x].start, selected_intervals[x].end
+            )
+        })
+        .collect();
 
     let records = ids
         .into_iter()
@@ -49,12 +60,13 @@ pub fn generate_unmaped_intervals(
     input: &[Range<usize>],
     total_length: usize,
 ) -> Vec<Range<usize>> {
-    if input.is_empty() {
-        return vec![];
-    }
-
     // Assuming the input ranges are sorted and non-overlapping
     let mut result = Vec::new();
+
+    if input.is_empty() {
+        result.push(0..total_length);
+        return result;
+    }
 
     // Initial start for the very first interval
     let mut current_start = 0;
@@ -82,12 +94,12 @@ pub fn generate_unmaped_intervals(
 pub fn remove_intervals_and_keep_left<'a>(
     seq: &'a [u8],
     intervals: &[Range<usize>],
-) -> Result<Vec<&'a BStr>> {
+) -> Result<(Vec<&'a BStr>, Vec<Range<usize>>)> {
     let mut intervals = intervals.to_vec();
     intervals.par_sort_by(|a: &Range<usize>, b: &Range<usize>| a.start.cmp(&b.start));
     let slected_intervals = generate_unmaped_intervals(&intervals, seq.len());
 
-    slected_intervals
+    let slected_seq = slected_intervals
         .par_iter()
         .map(|interval| {
             // Check if the interval is valid and starts after the current start point
@@ -101,7 +113,9 @@ pub fn remove_intervals_and_keep_left<'a>(
                 ))))
             }
         })
-        .collect::<Result<Vec<_>>>()
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok((slected_seq, slected_intervals))
 }
 
 #[cfg(test)]
@@ -114,12 +128,12 @@ mod tests {
         // |a| bcde |fghij| klmno |pqrst| uvwxyz
 
         let intervals = vec![1..5, 10..15, 20..25];
-        let result = remove_intervals_and_keep_left(seq, &intervals).unwrap();
-        assert_eq!(result, vec!["a", "fghij", "pqrst"]);
+        let (seq, _inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
+        assert_eq!(seq, vec!["a", "fghij", "pqrst"]);
 
         let seq = b"abcdefghijklmnopqrstuvwxyz";
         let intervals = vec![5..10, 15..20];
-        let result = remove_intervals_and_keep_left(seq, &intervals).unwrap();
-        assert_eq!(result, vec!["abcde", "klmno", "uvwxy"]);
+        let (seq, _inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
+        assert_eq!(seq, vec!["abcde", "klmno", "uvwxy"]);
     }
 }

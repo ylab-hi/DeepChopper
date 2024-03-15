@@ -1,0 +1,8 @@
+{
+  "input_size": 256,
+  "lin1_size": 2048,
+  "lin2_size": 1024,
+  "model_type": "deepchopper",
+  "num_class": 2,
+  "transformers_version": "4.38.1"
+}

@@ -1,12 +1,12 @@
-use std::fmt::{self, Display, Formatter};
-
 use crate::default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET};
 use derive_builder::Builder;
+use serde::{Deserialize, Serialize};
+use std::fmt::{self, Display, Formatter};
 
 use pyo3::prelude::*;
 
 #[pyclass]
-#[derive(Debug, Builder, Default, Clone)]
+#[derive(Debug, Builder, Default, Clone, Serialize, Deserialize)]
 pub struct FqEncoderOption {
     #[pyo3(get, set)]
     #[builder(default = "KMER_SIZE")]

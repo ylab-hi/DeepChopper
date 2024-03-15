@@ -566,7 +566,6 @@ TSWLatexianTemp*
 
 # End of https://www.toptal.com/developers/gitignore/api/latex
 
-SRR8615225.fq.gz
 data.npz
 kmer2idx.txt
 massif.out.*
@@ -574,5 +573,13 @@ task.slurm
 temp/
 test.parquet
 .virtual_documents
-wandb
 checkpoints
+wandb
+hyena_model
+hyena_model_use_qual
+hyena_model_train
+train.slurm
+deepchopper_train*
+notebooks/dc*
+notebooks/cdc*
+test_predict*
