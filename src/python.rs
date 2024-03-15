@@ -19,6 +19,18 @@ use std::{collections::HashMap, ops::Range, path::PathBuf};
 use log::{debug, error, info, warn};
 
 #[pyfunction]
+fn encode_qual(qual: String, qual_offset: u8) -> Vec<u8> {
+    let quals = qual.as_bytes();
+    quals
+        .par_iter()
+        .map(|&q| {
+            // Convert ASCII to Phred score for Phred+33 encoding
+            q - qual_offset
+        })
+        .collect()
+}
+
+#[pyfunction]
 fn test_log() {
     debug!("debug Hello from Rust!");
     info!("info Hello from Rust!");
@@ -655,6 +667,7 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(summary_bam_record_len, m)?)?;
     m.add_function(wrap_pyfunction!(test_log, m)?)?;
     m.add_function(wrap_pyfunction!(extract_records_by_ids, m)?)?;
+    m.add_function(wrap_pyfunction!(encode_qual, m)?)?;
 
     // add utils
     m.add_function(wrap_pyfunction!(summary_predict, m)?)?;

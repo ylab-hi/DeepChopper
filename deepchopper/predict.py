@@ -109,7 +109,12 @@ def load_dataset_from_checkpont(
 
 
 def load_trainer(
-    resume_tokenizer, resume_model, batch_size: int = 24, *, show_metrics: bool = False
+    resume_tokenizer,
+    resume_model,
+    batch_size: int = 24,
+    *,
+    show_metrics: bool = False,
+    use_cpu=False,
 ):
     """Load the trainer with the given model and tokenizer."""
     data_collator = DataCollatorForTokenClassificationWithQual(resume_tokenizer)
@@ -127,6 +132,7 @@ def load_trainer(
         torch_compile=False,
         report_to="wandb",  # type: ignore
         run_name="eval",
+        use_cpu=use_cpu,
     )
 
     compute_metrics_func = compute_metrics if show_metrics else None

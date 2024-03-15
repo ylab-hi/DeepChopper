@@ -6,7 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "deepchopper"
-crate-type = ["cdylib", "rlib"]
+crate-type = [
+    "cdylib",
+    # "rlib"
+]
 
 
 [profile.release]
@@ -35,7 +38,7 @@ pyo3 = { version = "0.20.3", features = [
 ctrlc = "3.4"
 log = "0.4"
 pyo3-log = "0.9"
-noodles = { version = "0.65.0", features = [
+noodles = { version = "0.66.0", features = [
     "bgzf",
     "core",
     "csi",

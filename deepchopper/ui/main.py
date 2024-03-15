@@ -5,7 +5,12 @@ from pathlib import Path
 import gradio as gr
 from datasets import Dataset
 
-from deepchopper.deepchopper import encode_qual, remove_intervals_and_keep_left, smooth_label_region
+from deepchopper.deepchopper import (
+    default,
+    encode_qual,
+    remove_intervals_and_keep_left,
+    smooth_label_region,
+)
 from deepchopper.models.hyena import (
     tokenize_and_align_labels_and_quals,
 )
@@ -14,13 +19,12 @@ from deepchopper.predict import (
     load_trainer,
 )
 from deepchopper.utils import (
-    highlight_targets,
     summary_predict,
 )
 
-check_point = Path.cwd() / "deepchopper_train"
+check_point = Path("/Users/ylk4626/ClionProjects/DeepChopper/tests/checkpoint/checkpoint-20007")
 tokenizer, model = load_model_from_checkpoint(check_point)
-trainer = load_trainer(tokenizer, model, show_metrics=False)
+trainer = load_trainer(tokenizer, model, show_metrics=False, use_cpu=True)
 
 
 def parse_fq_record(text: str):
@@ -28,11 +32,18 @@ def parse_fq_record(text: str):
     for i in range(0, len(lines), 4):
         content = lines[i : i + 4]
         record_id, seq, _, qual = content
-        yield {"id": record_id, "seq": seq, "qual": encode_qual(qual), "target": [0, 0]}
+        yield {
+            "id": record_id,
+            "seq": seq,
+            "qual": encode_qual(qual, default.KMER_SIZE),
+            "target": [0, 0],
+        }
 
 
 def load_dataset(text: str, tokenizer):
-    dataset = Dataset.from_generator(parse_fq_record(text))
+    dataset = Dataset.from_generator(parse_fq_record, gen_kwargs={"text": text}).with_format(
+        "torch"
+    )
     tokenized_dataset = dataset.map(
         partial(
             tokenize_and_align_labels_and_quals,
@@ -51,26 +62,48 @@ def predict(text: str):
     predicts = trainer.predict(tokenized_dataset)  # type: ignore
     true_prediction, _true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
 
+    highted_text = []
+    total_intervals = []
+
     for idx, preds in enumerate(true_prediction):
-        dataset[idx]["id"]
+        _id = dataset[idx]["id"]
         seq = dataset[idx]["seq"]
         smooth_predict_targets = smooth_label_region(
             preds, min_region_length_for_smooth, max_distance_for_smooth
         )
         # zip two consecutive elements
-        highlight_targets(seq, smooth_predict_targets)
         _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(
             seq, smooth_predict_targets
         )
 
-    return predicts[2]
+        total_intervals.extend(_selected_intervals)
+        total_intervals.extend(smooth_predict_targets)
+
+    if total_intervals:
+        total_intervals.sort()
+        for interval in total_intervals:
+            if interval in smooth_predict_targets:
+                highted_text.append((seq[interval[0] : interval[1]], "ada"))
+            else:
+                highted_text.append((seq[interval[0] : interval[1]], None))
+
+    metrics = predicts[2]
+    metrics["intervals"] = smooth_predict_targets
+    return metrics, highted_text
 
 
 def main():
     demo = gr.Interface(
         fn=predict,
-        inputs=["text"],
-        outputs=["text"],
+        inputs=[
+            "text",
+        ],
+        outputs=["json", gr.HighlightedText()],
+        examples=[[]],
     )
 
     demo.launch()
+
+
+if __name__ == "__main__":
+    main()
