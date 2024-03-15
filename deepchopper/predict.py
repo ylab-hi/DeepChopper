@@ -168,8 +168,8 @@ def predict(
     predicts = trainer.predict(tokenized_eval_dataset)  # type: ignore
 
     true_prediction, true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
+
     if show_sample:
-        print(predicts[2])
         alignment_predict(true_prediction[0], true_label[0])
         for idx, preds in enumerate(true_prediction):
             record_id = eval_dataset[idx]["id"]
@@ -190,6 +190,8 @@ def predict(
             _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(
                 seq, smooth_predict_targets
             )
+
+        print(predicts[2])
     elif save_predict:
         if output_path is None:
             outout_path = data_path.with_suffix(".chopped.fq.gz")
