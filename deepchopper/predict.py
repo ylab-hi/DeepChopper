@@ -59,7 +59,18 @@ def random_show_seq(dataset, sample: int = 3):
         highlight_target(dataset[highlight_id]["seq"], *dataset[highlight_id]["target"])
 
 
-def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int | None = None):
+def load_model_from_checkpoint(check_point: Path):
+    """Load the model from the given path."""
+    if isinstance(check_point, str):
+        check_point = Path(check_point)
+    resume_tokenizer = AutoTokenizer.from_pretrained(check_point, trust_remote_code=True)
+    resume_model = TokenClassification.from_pretrained(check_point)
+    return resume_tokenizer, resume_model
+
+
+def load_dataset_from_checkpont(
+    check_point: Path, data_path: Path, resume_tokenizer, max_sample: int | None = None
+):
     """Load the dataset and model from the given paths."""
     if isinstance(check_point, str):
         check_point = Path(check_point)
@@ -74,9 +85,6 @@ def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int |
     if data_path.suffix != ".parquet":
         msg = f"Unsupported file format: {data_path.suffix}"
         raise ValueError(msg)
-
-    resume_tokenizer = AutoTokenizer.from_pretrained(check_point, trust_remote_code=True)
-    resume_model = TokenClassification.from_pretrained(check_point)
 
     if max_sample is None:
         max_sample: str = "100%"
@@ -97,7 +105,7 @@ def load_dataset_and_model(check_point: Path, data_path: Path, max_sample: int |
         num_proc=multiprocessing.cpu_count(),  # type: ignore
     ).remove_columns(["id", "seq", "qual", "target"])
 
-    return eval_dataset, tokenized_eval_dataset, resume_tokenizer, resume_model
+    return eval_dataset, tokenized_eval_dataset
 
 
 def load_trainer(
@@ -155,9 +163,11 @@ def predict(
     save_predict: Annotated[bool, typer.Option(help="if save predict")] = False,
 ):
     """Predict the given dataset using the given model and tokenizer."""
-    eval_dataset, tokenized_eval_dataset, resume_tokenizer, resume_model = load_dataset_and_model(
-        check_point, data_path, max_sample
-    )
+    resume_tokenizer, resume_model = load_model_from_checkpoint(check_point)
+    (
+        eval_dataset,
+        tokenized_eval_dataset,
+    ) = load_dataset_from_checkpont(check_point, data_path, resume_tokenizer, max_sample)
 
     if show_sample:
         random_show_seq(eval_dataset, sample=3)
@@ -193,6 +203,8 @@ def predict(
 
         print(predicts[2])
     elif save_predict:
+        del eval_dataset
+        del tokenized_eval_dataset
         if output_path is None:
             outout_path = data_path.with_suffix(".chopped.fq.gz")
         else:
