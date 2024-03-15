@@ -38,6 +38,7 @@ classifiers = [
 dc-train = "deepchopper.train:main"
 dc-eval = "deepchopper.eval:main"
 deepchopper = "deepchopper.predict:app"
+deepchopper-webui = "deepchopper.ui.main:main"
 
 [tool.poe.tasks.train]
 cmd = "dc-train"
