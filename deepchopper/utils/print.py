@@ -17,6 +17,7 @@ def hightlight_predicts(
     style="bold magenta",
     width=80,
 ):
+    """Highlight the predicted and labeled sequences."""
     target_seq = Text(seq)
     predict_seq = Text(seq)
     console = Console()
@@ -27,8 +28,8 @@ def hightlight_predicts(
     for start, end in predicts:
         predict_seq.stylize(style, start, end)
 
-    front2 = "L:"
-    front1 = "P:"
+    front1 = "L:"
+    front2 = "P:"
     for t1, t2 in zip(
         target_seq.wrap(console, width), predict_seq.wrap(console, width), strict=True
     ):
@@ -37,6 +38,7 @@ def hightlight_predicts(
 
 
 def highlight_targets(seq: str, targets: list[tuple[int, int]], style="bold magenta"):
+    """Highlight the target sequences."""
     text = Text(seq)
     console = Console()
     for start, end in targets:
