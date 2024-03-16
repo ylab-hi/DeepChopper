@@ -39,10 +39,11 @@ pub fn split_records_by_remove_interval(
     }
 
     let ids: Vec<String> = (0..seqs.len())
+        .into_par_iter()
         .map(|x| {
             format!(
-                "{}|{}|{}-{}",
-                id, x, selected_intervals[x].start, selected_intervals[x].end
+                "{}|{}:{}",
+                id, selected_intervals[x].start, selected_intervals[x].end,
             )
         })
         .collect();
