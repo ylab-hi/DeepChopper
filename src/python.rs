@@ -517,13 +517,19 @@ fn get_label_region(labels: Vec<u8>) -> Vec<(usize, usize)> {
 #[pyfunction]
 fn smooth_label_region(
     labels: Vec<u8>,
-    merge_threshold: usize,
-    region_distance_threshold: usize,
+    length_between_intervals_for_merge: usize,
+    min_interval_length_threshold: usize,
+    min_interval_length_for_discard: usize,
 ) -> Vec<(usize, usize)> {
-    utils::smooth_label_region(&labels, merge_threshold, region_distance_threshold)
-        .par_iter()
-        .map(|r| (r.start, r.end))
-        .collect()
+    utils::smooth_label_region(
+        &labels,
+        length_between_intervals_for_merge,
+        min_interval_length_threshold,
+        min_interval_length_for_discard,
+    )
+    .par_iter()
+    .map(|r| (r.start, r.end))
+    .collect()
 }
 
 #[pyfunction]
@@ -548,8 +554,9 @@ fn write_predicts(
     dataset: PathBuf,
     output_fq_path: PathBuf,
     predicts: Vec<Vec<u8>>,
-    min_region_length_for_smooth: usize, // 1
-    max_distance_for_smooth: usize,      // 1
+    length_between_intervals_for_merge: usize, // 1
+    min_interval_length_threshold: usize,      // 1
+    min_interval_length_for_discard: usize,    // 0
 ) -> Result<()> {
     let file = std::fs::File::open(dataset).unwrap();
     let builder = ParquetRecordBatchReaderBuilder::try_new(file).unwrap();
@@ -568,8 +575,9 @@ fn write_predicts(
             let predict = &predicts[i];
             let smooth_predict = utils::smooth_label_region(
                 predict,
-                min_region_length_for_smooth,
-                max_distance_for_smooth,
+                length_between_intervals_for_merge,
+                min_interval_length_threshold,
+                min_interval_length_for_discard,
             );
 
             let id = id_column

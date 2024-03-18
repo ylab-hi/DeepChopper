@@ -191,7 +191,10 @@ def predict(
             record_id = eval_dataset[idx]["id"]
             seq = eval_dataset[idx]["seq"]
             smooth_predict_targets = smooth_label_region(
-                preds, min_region_length_for_smooth, max_distance_for_smooth
+                preds,
+                min_region_length_for_smooth,
+                max_distance_for_smooth,
+                min_interval_length_for_discard=0,
             )
 
             targets = eval_dataset[idx]["target"]

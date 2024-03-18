@@ -197,14 +197,15 @@ pub fn get_label_region(labels: &[u8]) -> Vec<Range<usize>> {
 /// e.g. 00110011100 -> 0011111100
 pub fn smooth_label_region(
     labels: &[u8],
-    merge_threshold: usize,
-    region_distance_threshold: usize,
+    length_between_intervals_for_merge: usize,
+    min_interval_length_threshold: usize,
+    min_interval_length_for_discard: usize,
 ) -> Vec<Range<usize>> {
     let labels_region = get_label_region(labels);
     let mut smoothed_regions = vec![];
 
     for region in labels_region {
-        if region.len() < region_distance_threshold {
+        if region.len() < min_interval_length_threshold {
             continue;
         }
 
@@ -214,12 +215,15 @@ pub fn smooth_label_region(
         }
 
         let last_region = smoothed_regions.last_mut().unwrap();
-        if region.start - last_region.end <= merge_threshold {
+        if region.start - last_region.end <= length_between_intervals_for_merge {
             last_region.end = region.end;
         } else {
             smoothed_regions.push(region);
         }
     }
+
+    // remove regions that are too short
+    smoothed_regions.retain(|region| region.len() >= min_interval_length_for_discard);
     smoothed_regions
 }
 
@@ -297,7 +301,7 @@ mod tests {
         let distance_threshold1 = 2;
         let expected_result1 = vec![2..9];
         assert_eq!(
-            smooth_label_region(&labels1, merge_threshold1, distance_threshold1),
+            smooth_label_region(&labels1, merge_threshold1, distance_threshold1, 0),
             expected_result1
         );
 
@@ -307,7 +311,7 @@ mod tests {
         let distance_threshold2 = 2;
         let expected_result2 = vec![2..4, 6..9];
         assert_eq!(
-            smooth_label_region(&labels2, merge_threshold2, distance_threshold2),
+            smooth_label_region(&labels2, merge_threshold2, distance_threshold2, 0),
             expected_result2
         );
     }
