@@ -67,8 +67,8 @@ bstr = "1.9.1"
 # binaries
 clap = { version = "4.5.1", features = ["derive"] }
 env_logger = "0.11"
-parquet = "50.0.0"
-arrow = "50.0"
+parquet = "51.0.0"
+arrow = "51.0"
 
 [dev-dependencies]
 tempfile = "3.10"

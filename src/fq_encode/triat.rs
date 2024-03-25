@@ -45,7 +45,7 @@ pub trait Encoder {
             .next()
             .context("Failed to get number part")?;
 
-        number_part
+        let result = number_part
             .par_split(|&c| c == b',')
             .map(|target| {
                 let mut parts = target.split(|&c| c == b':');
@@ -55,7 +55,30 @@ pub trait Encoder {
                     lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
                 Ok(start..end)
             })
-            .collect::<Result<Vec<_>>>()
+            .collect::<Result<Vec<_>>>();
+
+        if result.is_err() {
+            // @738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8|462:528,100:120
+            // remove content before |
+            let number_part = src
+                .split(|&c| c == b'|')
+                .last()
+                .context("Failed to get number part")?;
+
+            number_part
+                .par_split(|&c| c == b',')
+                .map(|target| {
+                    let mut parts = target.split(|&c| c == b':');
+                    let start: usize =
+                        lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
+                    let end: usize =
+                        lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
+                    Ok(start..end)
+                })
+                .collect::<Result<Vec<_>>>()
+        } else {
+            result
+        }
     }
 
     fn fetch_records<P: AsRef<Path>>(&mut self, path: P, kmer_size: u8) -> Result<Vec<RecordData>> {
