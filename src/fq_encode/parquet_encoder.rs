@@ -242,7 +242,7 @@ impl Encoder for ParquetEncoder {
 
 #[cfg(test)]
 mod tests {
-    use crate::{fq_encode::FqEncoderOptionBuilder, output::write_parquet};
+    use crate::fq_encode::FqEncoderOptionBuilder;
 
     use super::*;
     #[test]
