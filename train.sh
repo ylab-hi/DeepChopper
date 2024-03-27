@@ -11,7 +11,8 @@ set -o pipefail
 # 24 batch size for 60GB GPU
 
 inputdir="data/100000_samples"
-outdirname="cdc_train100000_20ep_18b"
+# outdirname="cdc_train100000_20ep_18b"
+outdirname="ont_data_train1200000_20ep_18b"
 
 # accelerate launch
 python hg_train.py \
