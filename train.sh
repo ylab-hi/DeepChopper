@@ -10,24 +10,25 @@ set -o pipefail
 
 # 24 batch size for 60GB GPU
 
-inputdir="data/100000_samples"
+inputdir="data/120_0000_samples"
 # outdirname="cdc_train100000_20ep_18b"
-outdirname="ont_data_train1200000_20ep_18b"
+outdirname="ont_data_train_1200000_20ep_8b"
+# --resume_from_checkpoint notebooks/$outdirname/checkpoint-213336 \
 
 # accelerate launch
-python hg_train.py \
+python train.py \
 	--hyenadna_model hyenadna-small-32k-seqlen \
 	--train_file $inputdir/train.parquet \
 	--validation_file $inputdir/val.parquet \
 	--test_file $inputdir/test.parquet \
-	--max_eval_sample 5000 \
-	--max_predict_samples 5000 \
+	--max_eval_sample 2000 \
+	--max_predict_samples 2000 \
 	--output_dir notebooks/$outdirname \
 	--num_train_epochs 20 \
 	--learning_rate 2e-5 \
 	--gradient_accumulation_steps 1 \
-	--per_device_train_batch_size 18 \
-	--per_device_eval_batch_size 18 \
+	--per_device_train_batch_size 8 \
+	--per_device_eval_batch_size 8 \
 	--weight_decay 0.01 \
 	--torch_compile False \
 	--push_to_hub False \

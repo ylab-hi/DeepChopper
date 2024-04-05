@@ -1,15 +1,28 @@
 from __future__ import annotations
 
-from typing import Any
+import multiprocessing
+from functools import partial
+from typing import TYPE_CHECKING, Any
 
-import torch
+from datasets import load_dataset
 from lightning import LightningDataModule
-from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split
-from torchvision.datasets import MNIST
-from torchvision.transforms import transforms
+from torch.utils.data import DataLoader, Dataset
+from transformers import AutoTokenizer
+
+from deepchopper.deepchopper import (
+    default,
+    encode_fq_path_to_parquet,
+)
+from deepchopper.models.hyena import (
+    DataCollatorForTokenClassificationWithQual,
+    tokenize_and_align_labels_and_quals,
+)
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
-class MNISTDataModule(LightningDataModule):
+class FqDataModule(LightningDataModule):
     """`LightningDataModule` for the MNIST dataset.
 
     The MNIST database of handwritten digits has a training set of 60,000 examples, and a test set of 10,000 examples.
@@ -56,16 +69,18 @@ class MNISTDataModule(LightningDataModule):
 
     def __init__(
         self,
-        data_dir: str = "data/",
-        train_val_test_split: tuple[int, int, int] = (55_000, 5_000, 10_000),
-        batch_size: int = 64,
+        tokenizer: AutoTokenizer,
+        train_data_path: Path,
+        val_data_path: Path | None = None,
+        test_data_path: Path | None = None,
+        train_val_test_split: tuple[float, float, float] = (0.8, 0.1, 0.1),
+        batch_size: int = 12,
         num_workers: int = 0,
         *,
         pin_memory: bool = False,
     ) -> None:
-        """Initialize a `MNISTDataModule`.
+        """Initialize a `FqDataModule`.
 
-        :param data_dir: The data directory. Defaults to `"data/"`.
         :param train_val_test_split: The train, validation and test split. Defaults to `(55_000, 5_000, 10_000)`.
         :param batch_size: The batch size. Defaults to `64`.
         :param num_workers: The number of workers. Defaults to `0`.
@@ -77,16 +92,11 @@ class MNISTDataModule(LightningDataModule):
         # also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
 
-        # data transformations
-        self.transforms = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
-        )
-
         self.data_train: Dataset | None = None
         self.data_val: Dataset | None = None
         self.data_test: Dataset | None = None
-
         self.batch_size_per_device = batch_size
+        self.data_collator = DataCollatorForTokenClassificationWithQual(tokenizer)
 
     @property
     def num_classes(self) -> int:
@@ -94,18 +104,40 @@ class MNISTDataModule(LightningDataModule):
 
         :return: The number of MNIST classes (10).
         """
-        return 10
+        return 2
 
     def prepare_data(self) -> None:
-        """Download data if needed. Lightning ensures that `self.prepare_data()` is called only
-        within a single process on CPU, so you can safely add your downloading logic within. In
-        case of multi-node training, the execution of this hook depends upon
-        `self.prepare_data_per_node()`.
+        """Encode the FastQ data to Parquet format."""
+        data_paths = [self.hparams.train_data_path]
 
-        Do not use it to assign state (self.x = y).
-        """
-        MNIST(self.hparams.data_dir, train=True, download=True)
-        MNIST(self.hparams.data_dir, train=False, download=True)
+        if self.hparams.val_data_path is not None:
+            data_paths.append(self.hparams.val_data_path)
+
+        if self.hparams.test_data_path is not None:
+            data_paths.append(self.hparams.test_data_path)
+
+        for data_path in data_paths:
+            if data_path in (".fq", ".fastq"):
+                encode_fq_path_to_parquet(
+                    data_path,
+                    default.KMER_SIZE,
+                    bases=default.BASES,
+                    qual_offset=default.QUAL_OFFSET,
+                    vectorized_target=default.VECTORIZED_TARGET,
+                )
+            elif data_path.suffix == ".parquet":
+                pass
+            else:
+                msg = f"Data file {data_path} is not in FastQ or Parquet format."
+                raise ValueError(msg)
+
+        self.hparams.train_data_path = self.hparams.train_data_path.with_suffix(".parquet")
+
+        if self.hparams.val_data_path is not None:
+            self.hparams.val_data_path = self.hparams.val_data_path.with_suffix(".parquet")
+
+        if self.hparams.test_data_path is not None:
+            self.hparams.test_data_path = self.hparams.test_data_path.with_suffix(".parquet")
 
     def setup(self, stage: str | None = None) -> None:
         """Load data. Set variables: `self.data_train`, `self.data_val`, `self.data_test`.
@@ -126,14 +158,77 @@ class MNISTDataModule(LightningDataModule):
 
         # load and split datasets only if not loaded already
         if not self.data_train and not self.data_val and not self.data_test:
-            trainset = MNIST(self.hparams.data_dir, train=True, transform=self.transforms)
-            testset = MNIST(self.hparams.data_dir, train=False, transform=self.transforms)
-            dataset = ConcatDataset(datasets=[trainset, testset])
-            self.data_train, self.data_val, self.data_test = random_split(
-                dataset=dataset,
-                lengths=self.hparams.train_val_test_split,
-                generator=torch.Generator().manual_seed(42),
-            )
+            num_proc = multiprocessing.cpu_count()
+            data_files = {}
+            data_files["train"] = self.hparams.train_data_path
+
+            if self.hparams.val_data_path is not None:
+                data_files["validation"] = self.hparams.val_data_path
+
+            if self.hparams.test_data_path is not None:
+                data_files["test"] = self.hparams.test_data_path
+
+            if self.hparams.val_data_path is None or self.hparams.test_data_path is None:
+                split_percent = self.hparams.train_val_test_split * 100
+
+                train_dataset = load_dataset(
+                    "parquet",
+                    data_files=data_files,
+                    num_proc=num_proc,
+                    split=f"train[:{split_percent[0]}%]",
+                ).with_format("torch")
+
+                val_dataset = load_dataset(
+                    "parquet",
+                    data_files=data_files,
+                    num_proc=num_proc,
+                    split=f"train[{split_percent[0]}%:{split_percent[0] + split_percent[1]}%]",
+                ).with_format("torch")
+
+                test_dataset = load_dataset(
+                    "parquet",
+                    data_files=data_files,
+                    num_proc=num_proc,
+                    split=f"train[{split_percent[0] + split_percent[1]}%:]",
+                ).with_format("torch")
+
+            else:
+                raw_datasets = load_dataset(
+                    "parquet", data_files=data_files, num_proc=num_proc
+                ).with_format("torch")
+
+                train_dataset = raw_datasets["train"]
+                val_dataset = raw_datasets["validation"]
+                test_dataset = raw_datasets["test"]
+
+            self.data_train = train_dataset.map(
+                partial(
+                    tokenize_and_align_labels_and_quals,
+                    tokenizer=self.hparams.tokenizer,
+                    max_length=self.hparams.tokenizer.max_len_single_sentence,
+                ),
+                num_proc=multiprocessing.cpu_count(),  # type: ignore
+            ).remove_columns(["id", "seq", "qual", "target"])
+
+            self.data_val = val_dataset.map(
+                partial(
+                    tokenize_and_align_labels_and_quals,
+                    tokenizer=self.hparams.tokenizer,
+                    max_length=self.hparams.tokenizer.max_len_single_sentence,
+                ),
+                num_proc=multiprocessing.cpu_count(),  # type: ignore
+            ).remove_columns(["id", "seq", "qual", "target"])
+
+            self.data_test = test_dataset.map(
+                partial(
+                    tokenize_and_align_labels_and_quals,
+                    tokenizer=self.hparams.tokenizer,
+                    max_length=self.hparams.tokenizer.max_len_single_sentence,
+                ),
+                num_proc=multiprocessing.cpu_count(),  # type: ignore
+            ).remove_columns(["id", "seq", "qual", "target"])
+
+            del train_dataset, val_dataset, test_dataset
 
     def train_dataloader(self) -> DataLoader[Any]:
         """Create and return the train dataloader.
@@ -145,6 +240,7 @@ class MNISTDataModule(LightningDataModule):
             batch_size=self.batch_size_per_device,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
+            collate_fn=self.data_collator.torch_call,
             shuffle=True,
         )
 
@@ -158,6 +254,7 @@ class MNISTDataModule(LightningDataModule):
             batch_size=self.batch_size_per_device,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
+            collate_fn=self.data_collator.torch_call,
             shuffle=False,
         )
 
@@ -171,6 +268,7 @@ class MNISTDataModule(LightningDataModule):
             batch_size=self.batch_size_per_device,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
+            collate_fn=self.data_collator.torch_call,
             shuffle=False,
         )
 
@@ -197,7 +295,3 @@ class MNISTDataModule(LightningDataModule):
 
         :param state_dict: The datamodule state returned by `self.state_dict()`.
         """
-
-
-if __name__ == "__main__":
-    _ = MNISTDataModule()

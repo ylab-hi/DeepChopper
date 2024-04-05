@@ -89,7 +89,7 @@ class DataCollatorForTokenClassificationWithQual(DataCollatorForTokenClassificat
             ]
 
         batch[label_name] = torch.tensor(batch[label_name], dtype=torch.int64)
-        batch[qual_name] = torch.tensor(batch[qual_name], dtype=torch.int64)
+        batch[qual_name] = torch.tensor(batch[qual_name], dtype=torch.float32)
         return batch
 
 
@@ -122,8 +122,8 @@ def tokenize_and_align_labels_and_quals(
         [*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label]
     )
     quals = torch.cat((data["qual"], torch.tensor([pad_qual]))).float()
-    torch.nn.functional.normalize(quals, dim=0)
-    tokenized_inputs.update({"labels": labels, "input_quals": quals})
+    normalized_quals = torch.nn.functional.normalize(quals, dim=0)
+    tokenized_inputs.update({"labels": labels, "input_quals": normalized_quals})
     return tokenized_inputs
 
 

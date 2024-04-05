@@ -582,4 +582,6 @@ train.slurm
 deepchopper_train*
 notebooks/dc*
 notebooks/cdc*
+notebooks/ont*
 test_predict*
+
