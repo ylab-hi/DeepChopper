@@ -10,9 +10,9 @@ set -o pipefail
 
 # 24 batch size for 60GB GPU
 
-inputdir="data/120_0000_samples"
+inputdir="data/60_0000_samples"
 # outdirname="cdc_train100000_20ep_18b"
-outdirname="ont_data_train_1200000_20ep_8b"
+outdirname="sg_data_train_600000_20ep_8b"
 # --resume_from_checkpoint notebooks/$outdirname/checkpoint-213336 \
 
 # accelerate launch

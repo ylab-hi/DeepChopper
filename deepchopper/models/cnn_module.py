@@ -30,7 +30,6 @@ class BenchmarkCNN(nn.Module):
             )
             self.batch_norms.append(nn.BatchNorm1d(num_filters))
 
-        # TODO:
         # use number of kernel same as the length of the sequence and average pooling
         # then flatten and use dense layers
         self.dense_model = nn.Sequential(
@@ -47,7 +46,14 @@ class BenchmarkCNN(nn.Module):
 
 
 class LitBenchmarkCNN(L.LightningModule):
-    def __init__(self, net: BenchmarkCNN):
+    def __init__(
+        self,
+        net: BenchmarkCNN,
+        optimizer: torch.optim.Optimizer,
+        scheduler: torch.optim.lr_scheduler,
+        *,
+        compile: bool,
+    ):
         """Genomics Benchmark CNN model for PyTorch Lightning.
 
         :param net: The CNN model.
