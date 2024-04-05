@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 from datasets import load_dataset
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
-from transformers import AutoTokenizer
 
 from deepchopper.deepchopper import (
     default,
@@ -20,6 +19,8 @@ from deepchopper.models.hyena import (
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from transformers import AutoTokenizer
 
 
 class FqDataModule(LightningDataModule):
