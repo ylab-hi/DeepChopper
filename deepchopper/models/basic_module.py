@@ -8,6 +8,8 @@ from torchmetrics.classification import F1Score
 
 
 class TokenClassificationLit(LightningModule):
+    """A PyTorch Lightning module for training a token classification model."""
+
     def __init__(
         self,
         net: nn.Module,

@@ -4,6 +4,8 @@ from torch import nn
 
 
 class BenchmarkCNN(nn.Module):
+    """BenchmarkCNN."""
+
     def __init__(self, number_of_classes, vocab_size, num_filters, filter_sizes, embedding_dim=100):
         """Genomics Benchmark CNN model.
 
@@ -43,7 +45,6 @@ class BenchmarkCNN(nn.Module):
     def forward(self, x):  # Adding `state` to be consistent with other models
         x = self.embeddings(x)
         x = x.transpose(1, 2)  # [batch_size, embedding_dim, input_len]
-
         x = [F.relu(bn(conv(x))) for conv, bn in zip(self.convs, self.batch_norms, strict=True)]
         x = torch.cat(x, dim=1) if len(x) > 1 else x[0]
         x = self.final_conv(x)
