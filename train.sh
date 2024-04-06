@@ -24,6 +24,7 @@ python train.py \
 	--max_eval_sample 2000 \
 	--max_predict_samples 2000 \
 	--output_dir notebooks/$outdirname \
+	--resume_from_checkpoint notebooks/$outdirname/checkpoint-30000 \
 	--num_train_epochs 20 \
 	--learning_rate 2e-5 \
 	--gradient_accumulation_steps 1 \

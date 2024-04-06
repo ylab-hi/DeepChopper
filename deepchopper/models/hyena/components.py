@@ -2,10 +2,6 @@ import torch
 from torch import nn
 from transformers import AutoModel, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import TokenClassifierOutput
-from transformers.utils import logging
-
-logging.set_verbosity_info()
-logger = logging.get_logger("transformers")
 
 HyenadnaMaxLengths = {
     "hyenadna-tiny-1k-seqlen": 1024,

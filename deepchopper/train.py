@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 import torch
 
-torch.set_float32_matmul_precision("medium" | "high")
+torch.set_float32_matmul_precision("high")
 
 log = RankedLogger(__name__, rank_zero_only=True)
 
