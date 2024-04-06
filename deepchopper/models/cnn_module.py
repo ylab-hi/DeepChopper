@@ -83,9 +83,14 @@ class LitBenchmarkCNN(LightningModule):
         self.criterion = torch.nn.CrossEntropyLoss()
 
         # metric objects for calculating and averaging accuracy across batches
-        self.train_acc = Accuracy(task="multiclass", num_classes=net.number_of_classes)
-        self.val_acc = Accuracy(task="multiclass", num_classes=net.number_of_classes)
-        self.test_acc = Accuracy(task="multiclass", num_classes=net.number_of_classes)
+        self.train_acc = Accuracy(
+            task="binary", num_classes=net.number_of_classes, ignore_index=-100
+        )
+        self.val_acc = Accuracy(task="binary", num_classes=net.number_of_classes, ignore_index=-100)
+        self.test_acc = Accuracy(
+            task="binary", num_classes=net.number_of_classes, ignore_index=-100
+        )
+
         # for averaging loss across batches
         self.train_loss = MeanMetric()
         self.val_loss = MeanMetric()
@@ -127,9 +132,10 @@ class LitBenchmarkCNN(LightningModule):
         input_ids = batch["input_ids"]
         input_quals = batch["input_quals"]
         logits = self.forward(input_ids, input_quals)
-        loss = self.criterion(logits, batch["label"])
-        preds = torch.argmax(logits, dim=1)
-        return loss, preds, batch["label"]
+        loss = self.criterion(logits.reshape(-1, logits.size(-1)), batch["labels"].view(-1))
+        preds = torch.argmax(logits, dim=-1)
+
+        return loss, preds, batch["labels"]
 
     def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Perform a single training step on a batch of data from the training set.
@@ -146,7 +152,6 @@ class LitBenchmarkCNN(LightningModule):
         self.train_acc(preds, targets)
         self.log("train/loss", self.train_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("train/acc", self.train_acc, on_step=False, on_epoch=True, prog_bar=True)
-
         # return loss or backpropagation will fail
         return loss
 
