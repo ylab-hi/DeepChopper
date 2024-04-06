@@ -6,6 +6,7 @@ from .components import (
     TokenClassificationConfig,
     TokenClassificationHead,
 )
+from .lit import TokenClassificationModule
 from .metric import IGNORE_INDEX, compute_metrics
 from .tokenizer import (
     DataCollatorForTokenClassificationWithQual,
@@ -13,8 +14,6 @@ from .tokenizer import (
     tokenize_and_align_labels_and_quals,
     tokenize_dataset,
 )
-
-from .lit import TokenClassificationModule
 
 __all__ = [
     "compute_metrics",

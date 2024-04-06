@@ -5,6 +5,7 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from datasets import Dataset as HuggingFaceDataset
 from datasets import load_dataset
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
@@ -76,6 +77,9 @@ class FqDataModule(LightningDataModule):
         train_val_test_split: tuple[float, float, float] = (0.8, 0.1, 0.1),
         batch_size: int = 12,
         num_workers: int = 0,
+        max_train_samples: int | None = None,
+        max_val_samples: int | None = None,
+        max_test_samples: int | None = None,
         *,
         pin_memory: bool = False,
     ) -> None:
@@ -206,6 +210,24 @@ class FqDataModule(LightningDataModule):
                 train_dataset = raw_datasets["train"]
                 val_dataset = raw_datasets["validation"]
                 test_dataset = raw_datasets["test"]
+
+            if self.hparams.max_train_samples is not None:
+                max_train_samples = min(self.hparams.max_train_samples, len(train_dataset))
+                train_dataset = HuggingFaceDataset.from_dict(
+                    train_dataset[:max_train_samples]
+                ).with_format("torch")
+
+            if self.hparams.max_val_samples is not None:
+                max_val_samples = min(self.hparams.max_val_samples, len(val_dataset))
+                val_dataset = HuggingFaceDataset.from_dict(
+                    val_dataset[:max_val_samples]
+                ).with_format("torch")
+
+            if self.hparams.max_test_samples is not None:
+                max_test_samples = min(self.hparams.max_test_samples, len(test_dataset))
+                test_dataset = HuggingFaceDataset.from_dict(
+                    test_dataset[:max_test_samples]
+                ).with_format("torch")
 
             self.data_train = train_dataset.map(
                 partial(
