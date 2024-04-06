@@ -1,8 +1,3 @@
-"""Genomics Benchmark CNN model.
-
-Adapted from https://github.com/ML-Bioinfo-CEITEC/genomic_benchmarks/blob/main/src/genomic_benchmarks/models/torch.py
-"""
-
 from typing import Any
 
 import torch
@@ -10,60 +5,13 @@ import torch.nn.functional as F  # noqa: N812
 from lightning import LightningModule
 from torch import nn
 from torchmetrics import MaxMetric, MeanMetric
-from torchmetrics.classification.accuracy import Accuracy
+from torchmetrics.classification import F1Score
 
 
-class BenchmarkCNN(nn.Module):
-    def __init__(self, number_of_classes, vocab_size, num_filters, filter_sizes, embedding_dim=100):
-        """Genomics Benchmark CNN model.
-
-        `embedding_dim` = 100 comes from:
-        https://github.com/ML-Bioinfo-CEITEC/genomic_benchmarks/tree/main/experiments/torch_cnn_experiments
-        """
-        super().__init__()
-        self.number_of_classes = number_of_classes
-        self.embeddings = nn.Embedding(vocab_size, embedding_dim)
-        self.convs = nn.ModuleList()
-        self.batch_norms = nn.ModuleList()
-
-        for fs in filter_sizes:
-            self.convs.append(
-                nn.Conv1d(
-                    in_channels=embedding_dim,
-                    out_channels=num_filters,
-                    kernel_size=fs,
-                    padding="same",
-                )
-            )
-            self.batch_norms.append(nn.BatchNorm1d(num_filters))
-
-            # Final convolutional layer to get the number_of_classes predictions per token
-        self.final_conv = nn.Conv1d(
-            in_channels=num_filters * len(filter_sizes),
-            out_channels=number_of_classes,
-            kernel_size=1,
-        )  # this layer doesn't alter sequence length
-
-        # use number of kernel same as the length of the sequence and average pooling
-        # then flatten and use dense layers
-        self.dense_model = nn.Sequential(
-            nn.Linear(num_filters * len(filter_sizes), number_of_classes),
-        )
-
-    def forward(self, x):  # Adding `state` to be consistent with other models
-        x = self.embeddings(x)
-        x = x.transpose(1, 2)  # [batch_size, embedding_dim, input_len]
-
-        x = [F.relu(bn(conv(x))) for conv, bn in zip(self.convs, self.batch_norms, strict=True)]
-        x = torch.cat(x, dim=1) if len(x) > 1 else x[0]
-        x = self.final_conv(x)
-        return x.transpose(1, 2)  # [batch_size, input_len, num_filters]
-
-
-class LitBenchmarkCNN(LightningModule):
+class TokenClassificationLit(LightningModule):
     def __init__(
         self,
-        net: BenchmarkCNN,
+        net: nn.Module,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
         *,
@@ -83,13 +31,11 @@ class LitBenchmarkCNN(LightningModule):
         self.criterion = torch.nn.CrossEntropyLoss()
 
         # metric objects for calculating and averaging accuracy across batches
-        self.train_acc = Accuracy(
+        self.train_acc = F1Score(
             task="binary", num_classes=net.number_of_classes, ignore_index=-100
         )
-        self.val_acc = Accuracy(task="binary", num_classes=net.number_of_classes, ignore_index=-100)
-        self.test_acc = Accuracy(
-            task="binary", num_classes=net.number_of_classes, ignore_index=-100
-        )
+        self.val_acc = F1Score(task="binary", num_classes=net.number_of_classes, ignore_index=-100)
+        self.test_acc = F1Score(task="binary", num_classes=net.number_of_classes, ignore_index=-100)
 
         # for averaging loss across batches
         self.train_loss = MeanMetric()
@@ -134,7 +80,6 @@ class LitBenchmarkCNN(LightningModule):
         logits = self.forward(input_ids, input_quals)
         loss = self.criterion(logits.reshape(-1, logits.size(-1)), batch["labels"].view(-1))
         preds = torch.argmax(logits, dim=-1)
-
         return loss, preds, batch["labels"]
 
     def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:

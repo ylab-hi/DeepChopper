@@ -1,4 +1,4 @@
-_target_: deepchopper.models.cnn_module.LitBenchmarkCNN
+_target_: deepchopper.models.basic_module.TokenClassificationLit
 
 optimizer:
   _target_: torch.optim.Adam
@@ -15,7 +15,7 @@ scheduler:
 
   # number_of_classes, vocab_size, num_filters, filter_sizes, embedding_dim=100
 net:
-  _target_: deepchopper.models.cnn_module.BenchmarkCNN
+  _target_: deepchopper.models.cnn.BenchmarkCNN
   number_of_classes: 2
   vocab_size: 11
   num_filters: 2
