@@ -175,7 +175,7 @@ class FqDataModule(LightningDataModule):
                 data_files["test"] = self.hparams.test_data_path
 
             if self.hparams.val_data_path is None or self.hparams.test_data_path is None:
-                split_percent = self.hparams.train_val_test_split * 100
+                split_percent = self.hparams.train_val_test_split
 
                 train_dataset = load_dataset(
                     "parquet",

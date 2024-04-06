@@ -17,7 +17,7 @@ scheduler:
 net:
   _target_: deepchopper.models.cnn_module.BenchmarkCNN
   number_of_classes: 2
-  vocab_size: 5
+  vocab_size: 11
   num_filters: 2
   filter_sizes: [5, 15]
   embedding_dim: 100

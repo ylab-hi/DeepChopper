@@ -6,6 +6,7 @@ Adapted from https://github.com/ML-Bioinfo-CEITEC/genomic_benchmarks/blob/main/s
 from typing import Any
 
 import torch
+import torch.nn.functional as F  # noqa: N812
 from lightning import LightningModule
 from torch import nn
 from torchmetrics import MaxMetric, MeanMetric
@@ -27,9 +28,21 @@ class BenchmarkCNN(nn.Module):
 
         for fs in filter_sizes:
             self.convs.append(
-                nn.Conv1d(in_channels=embedding_dim, out_channels=num_filters, kernel_size=fs)
+                nn.Conv1d(
+                    in_channels=embedding_dim,
+                    out_channels=num_filters,
+                    kernel_size=fs,
+                    padding="same",
+                )
             )
             self.batch_norms.append(nn.BatchNorm1d(num_filters))
+
+            # Final convolutional layer to get the number_of_classes predictions per token
+        self.final_conv = nn.Conv1d(
+            in_channels=num_filters * len(filter_sizes),
+            out_channels=number_of_classes,
+            kernel_size=1,
+        )  # this layer doesn't alter sequence length
 
         # use number of kernel same as the length of the sequence and average pooling
         # then flatten and use dense layers
@@ -40,10 +53,11 @@ class BenchmarkCNN(nn.Module):
     def forward(self, x):  # Adding `state` to be consistent with other models
         x = self.embeddings(x)
         x = x.transpose(1, 2)  # [batch_size, embedding_dim, input_len]
-        x = [F.relu(conv(x)) for conv, bn in zip(self.convs, self.batch_norms, strict=True)]
-        x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]
-        x = torch.cat(x, 1)
-        return self.dense_model(x)
+
+        x = [F.relu(bn(conv(x))) for conv, bn in zip(self.convs, self.batch_norms, strict=True)]
+        x = torch.cat(x, dim=1) if len(x) > 1 else x[0]
+        x = self.final_conv(x)
+        return x.transpose(1, 2)  # [batch_size, input_len, num_filters]
 
 
 class LitBenchmarkCNN(LightningModule):
@@ -79,13 +93,17 @@ class LitBenchmarkCNN(LightningModule):
         # for tracking best so far validation accuracy
         self.val_acc_best = MaxMetric()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        input_quals: torch.Tensor,
+    ) -> torch.Tensor:
         """Perform a forward pass through the model `self.net`.
 
         :param x: A tensor of images.
         :return: A tensor of logits.
         """
-        return self.net(x)
+        return self.net(input_ids)
 
     def on_train_start(self) -> None:
         """Lightning hook that is called when training begins."""
@@ -101,21 +119,19 @@ class LitBenchmarkCNN(LightningModule):
         """Perform a single model step on a batch of data.
 
         :param batch: A batch of data (a tuple) containing the input tensor of images and target labels.
-
         :return: A tuple containing (in order):
             - A tensor of losses.
             - A tensor of predictions.
             - A tensor of target labels.
         """
-        x, y = batch
-        logits = self.forward(x)
-        loss = self.criterion(logits, y)
+        input_ids = batch["input_ids"]
+        input_quals = batch["input_quals"]
+        logits = self.forward(input_ids, input_quals)
+        loss = self.criterion(logits, batch["label"])
         preds = torch.argmax(logits, dim=1)
-        return loss, preds, y
+        return loss, preds, batch["label"]
 
-    def training_step(
-        self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
-    ) -> torch.Tensor:
+    def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Perform a single training step on a batch of data from the training set.
 
         :param batch: A batch of data (a tuple) containing the input tensor of images and target
