@@ -19,6 +19,10 @@ from .utils import (
 if TYPE_CHECKING:
     from lightning.pytorch.loggers import Logger
 
+import torch
+
+torch.set_float32_matmul_precision("medium" | "high")
+
 log = RankedLogger(__name__, rank_zero_only=True)
 
 
