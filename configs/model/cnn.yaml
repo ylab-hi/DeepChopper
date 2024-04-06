@@ -18,8 +18,8 @@ net:
   _target_: deepchopper.models.cnn.BenchmarkCNN
   number_of_classes: 2
   vocab_size: 11
-  num_filters: 2
-  filter_sizes: [5, 15]
+  num_filters: [256, 1024, 256]
+  filter_sizes: [15, 15, 15]
   embedding_dim: 100
 
 # compile model for faster training with pytorch 2.0
