@@ -3,16 +3,14 @@
 Adapted from https://github.com/ML-Bioinfo-CEITEC/genomic_benchmarks/blob/main/src/genomic_benchmarks/models/torch.py
 """
 
-import lightning as L
+import lightning as L  # noqa: N812
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
 from torch import nn
 
 
 class BenchmarkCNN(nn.Module):
-    def __init__(
-        self, number_of_classes, vocab_size, num_filters, filter_sizes, input_len, embedding_dim=100
-    ):
+    def __init__(self, number_of_classes, vocab_size, num_filters, filter_sizes, embedding_dim=100):
         """Genomics Benchmark CNN model.
 
         `embedding_dim` = 100 comes from:

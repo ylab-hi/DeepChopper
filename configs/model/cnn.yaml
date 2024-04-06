@@ -1,4 +1,4 @@
-_target_: deepchopper.models.mnist_module.MNISTLitModule
+_target_: deepchopper.models.cnn_module.LitBenchmarkCNN
 
 optimizer:
   _target_: torch.optim.Adam
@@ -13,13 +13,14 @@ scheduler:
   factor: 0.1
   patience: 10
 
+  # number_of_classes, vocab_size, num_filters, filter_sizes, embedding_dim=100
 net:
-  _target_: deepchopper.models.components.simple_dense_net.SimpleDenseNet
-  input_size: 784
-  lin1_size: 64
-  lin2_size: 128
-  lin3_size: 64
-  output_size: 10
+  _target_: deepchopper.models.cnn_module.BenchmarkCNN
+  number_of_classes: 2
+  vocab_size: 5
+  num_filters: 2
+  filter_sizes: 15
+  embedding_dim: 100
 
 # compile model for faster training with pytorch 2.0
 compile: false

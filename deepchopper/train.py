@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import os
 from typing import TYPE_CHECKING, Any
 
 import hydra
 import lightning as L  # noqa: N812
 from lightning import Callback, LightningDataModule, LightningModule, Trainer
+from omegaconf import DictConfig
 
 # ------------------------------------------------------------------------------------ #
 # the setup_root above is equivalent to:
@@ -35,7 +34,6 @@ from .utils import (
 
 if TYPE_CHECKING:
     from lightning.pytorch.loggers import Logger
-    from omegaconf import DictConfig
 
 log = RankedLogger(__name__, rank_zero_only=True)
 
