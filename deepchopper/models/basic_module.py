@@ -55,7 +55,7 @@ class TokenClassificationLit(LightningModule):
         :param x: A tensor of images.
         :return: A tensor of logits.
         """
-        return self.net(input_ids)
+        return self.net(input_ids, input_quals)
 
     def on_train_start(self) -> None:
         """Lightning hook that is called when training begins."""

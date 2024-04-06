@@ -14,6 +14,8 @@ from .tokenizer import (
     tokenize_dataset,
 )
 
+from .lit import TokenClassificationModule
+
 __all__ = [
     "compute_metrics",
     "TokenClassification",
@@ -25,4 +27,5 @@ __all__ = [
     "tokenize_dataset",
     "HyenadnaMaxLengths",
     "IGNORE_INDEX",
+    "TokenClassificationModule",
 ]

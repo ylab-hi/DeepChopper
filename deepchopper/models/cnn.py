@@ -42,7 +42,7 @@ class BenchmarkCNN(nn.Module):
             nn.Linear(num_filters * len(filter_sizes), number_of_classes),
         )
 
-    def forward(self, x):  # Adding `state` to be consistent with other models
+    def forward(self, x, input_quals=None):  # Adding `state` to be consistent with other models
         x = self.embeddings(x)
         x = x.transpose(1, 2)  # [batch_size, embedding_dim, input_len]
         x = [F.relu(bn(conv(x))) for conv, bn in zip(self.convs, self.batch_norms, strict=True)]
