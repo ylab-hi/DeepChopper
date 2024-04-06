@@ -3,10 +3,13 @@
 Adapted from https://github.com/ML-Bioinfo-CEITEC/genomic_benchmarks/blob/main/src/genomic_benchmarks/models/torch.py
 """
 
-import lightning as L  # noqa: N812
+from typing import Any
+
 import torch
-import torch.nn.functional as F  # noqa: N812
+from lightning import LightningModule
 from torch import nn
+from torchmetrics import MaxMetric, MeanMetric
+from torchmetrics.classification.accuracy import Accuracy
 
 
 class BenchmarkCNN(nn.Module):
@@ -43,7 +46,7 @@ class BenchmarkCNN(nn.Module):
         return self.dense_model(x)
 
 
-class LitBenchmarkCNN(L.LightningModule):
+class LitBenchmarkCNN(LightningModule):
     def __init__(
         self,
         net: BenchmarkCNN,
@@ -64,16 +67,17 @@ class LitBenchmarkCNN(L.LightningModule):
         self.net = net
         # loss function
         self.criterion = torch.nn.CrossEntropyLoss()
+
         # metric objects for calculating and averaging accuracy across batches
-        self.train_acc = L.Accuracy(task="multiclass", num_classes=net.number_of_classes)
-        self.val_acc = L.Accuracy(task="multiclass", num_classes=net.number_of_classes)
-        self.test_acc = L.Accuracy(task="multiclass", num_classes=net.number_of_classes)
+        self.train_acc = Accuracy(task="multiclass", num_classes=net.number_of_classes)
+        self.val_acc = Accuracy(task="multiclass", num_classes=net.number_of_classes)
+        self.test_acc = Accuracy(task="multiclass", num_classes=net.number_of_classes)
         # for averaging loss across batches
-        self.train_loss = L.MeanMetric()
-        self.val_loss = L.MeanMetric()
-        self.test_loss = L.MeanMetric()
+        self.train_loss = MeanMetric()
+        self.val_loss = MeanMetric()
+        self.test_loss = MeanMetric()
         # for tracking best so far validation accuracy
-        self.val_acc_best = L.MaxMetric()
+        self.val_acc_best = MaxMetric()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Perform a forward pass through the model `self.net`.
