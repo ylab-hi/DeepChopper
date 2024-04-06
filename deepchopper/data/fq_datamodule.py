@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import multiprocessing
 from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from datasets import load_dataset
@@ -18,8 +19,6 @@ from deepchopper.models.hyena import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from transformers import AutoTokenizer
 
 
@@ -126,19 +125,25 @@ class FqDataModule(LightningDataModule):
                     qual_offset=default.QUAL_OFFSET,
                     vectorized_target=default.VECTORIZED_TARGET,
                 )
-            elif data_path.suffix == ".parquet":
+            elif Path(data_path).suffix == ".parquet":
                 pass
             else:
                 msg = f"Data file {data_path} is not in FastQ or Parquet format."
                 raise ValueError(msg)
 
-        self.hparams.train_data_path = self.hparams.train_data_path.with_suffix(".parquet")
+        self.hparams.train_data_path = (
+            Path(self.hparams.train_data_path).with_suffix(".parquet").as_posix()
+        )
 
         if self.hparams.val_data_path is not None:
-            self.hparams.val_data_path = self.hparams.val_data_path.with_suffix(".parquet")
+            self.hparams.val_data_path = (
+                Path(self.hparams.val_data_path).with_suffix(".parquet").as_posix()
+            )
 
         if self.hparams.test_data_path is not None:
-            self.hparams.test_data_path = self.hparams.test_data_path.with_suffix(".parquet")
+            self.hparams.test_data_path = (
+                Path(self.hparams.test_data_path).with_suffix(".parquet").as_posix()
+            )
 
     def setup(self, stage: str | None = None) -> None:
         """Load data. Set variables: `self.data_train`, `self.data_val`, `self.data_test`.
