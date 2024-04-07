@@ -168,7 +168,7 @@ class FqDataModule(LightningDataModule):
 
         # load and split datasets only if not loaded already
         if not self.data_train and not self.data_val and not self.data_test:
-            num_proc = multiprocessing.cpu_count()
+            num_proc = min(self.hparams.num_workers, multiprocessing.cpu_count() - 1)
             data_files = {}
             data_files["train"] = self.hparams.train_data_path
 
@@ -184,27 +184,27 @@ class FqDataModule(LightningDataModule):
                 train_dataset = load_dataset(
                     "parquet",
                     data_files=data_files,
-                    num_proc=num_proc,
+                    num_proc=max(1, num_proc),
                     split=f"train[:{split_percent[0]}%]",
                 ).with_format("torch")
 
                 val_dataset = load_dataset(
                     "parquet",
                     data_files=data_files,
-                    num_proc=num_proc,
+                    num_proc=max(1, num_proc),
                     split=f"train[{split_percent[0]}%:{split_percent[0] + split_percent[1]}%]",
                 ).with_format("torch")
 
                 test_dataset = load_dataset(
                     "parquet",
                     data_files=data_files,
-                    num_proc=num_proc,
+                    num_proc=max(1, num_proc),
                     split=f"train[{split_percent[0] + split_percent[1]}%:]",
                 ).with_format("torch")
 
             else:
                 raw_datasets = load_dataset(
-                    "parquet", data_files=data_files, num_proc=num_proc
+                    "parquet", data_files=data_files, num_proc=max(1, num_proc)
                 ).with_format("torch")
 
                 train_dataset = raw_datasets["train"]
@@ -235,7 +235,7 @@ class FqDataModule(LightningDataModule):
                     tokenizer=self.hparams.tokenizer,
                     max_length=self.hparams.tokenizer.max_len_single_sentence,
                 ),
-                num_proc=multiprocessing.cpu_count(),  # type: ignore
+                num_proc=max(1, num_proc),  # type: ignore
             ).remove_columns(["id", "seq", "qual", "target"])
 
             self.data_val = val_dataset.map(
@@ -244,7 +244,7 @@ class FqDataModule(LightningDataModule):
                     tokenizer=self.hparams.tokenizer,
                     max_length=self.hparams.tokenizer.max_len_single_sentence,
                 ),
-                num_proc=multiprocessing.cpu_count(),  # type: ignore
+                num_proc=max(1, num_proc),  # type: ignore
             ).remove_columns(["id", "seq", "qual", "target"])
 
             self.data_test = test_dataset.map(
@@ -253,7 +253,7 @@ class FqDataModule(LightningDataModule):
                     tokenizer=self.hparams.tokenizer,
                     max_length=self.hparams.tokenizer.max_len_single_sentence,
                 ),
-                num_proc=multiprocessing.cpu_count(),  # type: ignore
+                num_proc=max(1, num_proc),  # type: ignore
             ).remove_columns(["id", "seq", "qual", "target"])
 
             del train_dataset, val_dataset, test_dataset
