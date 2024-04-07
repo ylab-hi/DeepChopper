@@ -7,7 +7,7 @@ defaults:
 
 model_checkpoint:
   dirpath: ${paths.output_dir}/checkpoints
-  filename: "epoch_{epoch:03d}_f1_{val/f1:03d}"
+  filename: "epoch_{epoch:03d}_f1_{val/f1:.4f}"
   monitor: "val/f1"
   mode: "max"
   save_last: True
