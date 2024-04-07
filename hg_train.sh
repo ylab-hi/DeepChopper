@@ -16,7 +16,7 @@ outdirname="sg_data_train_600000_20ep_8b"
 # --resume_from_checkpoint notebooks/$outdirname/checkpoint-213336 \
 
 # accelerate launch
-python train.py \
+python hg_train.py \
 	--hyenadna_model hyenadna-small-32k-seqlen \
 	--train_file $inputdir/train.parquet \
 	--validation_file $inputdir/val.parquet \
