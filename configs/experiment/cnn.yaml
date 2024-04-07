@@ -33,11 +33,11 @@ data:
   train_data_path: ${paths.root_dir}/data/60_0000_samples/train.parquet
   val_data_path: ${paths.root_dir}/data/60_0000_samples/val.parquet
   test_data_path: ${paths.root_dir}/data/60_0000_samples/test.parquet
-  batch_size: 64
+  batch_size: 256
   num_workers: 63
   pin_memory: False
-  max_val_samples: 4000
-  max_test_samples: 4000
+  max_val_samples: 3000
+  max_test_samples: 3000
 
 logger:
   wandb:
