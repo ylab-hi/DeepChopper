@@ -428,6 +428,7 @@ mod tests {
             0.1,
             0.5,
             0.9,
+            None,
         )
         .unwrap();
     }
