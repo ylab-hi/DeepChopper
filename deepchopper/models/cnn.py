@@ -1,3 +1,4 @@
+import torch
 import torch.nn.functional as F  # noqa: N812
 from torch import nn
 
@@ -42,7 +43,9 @@ class BenchmarkCNN(nn.Module):
             nn.Linear(in_channels, number_of_classes),
         )
 
-    def forward(self, input_ids, input_quals):  # Adding `state` to be consistent with other models
+    def forward(
+        self, input_ids: torch.Tensor, input_quals: torch.Tensor
+    ):  # Adding `state` to be consistent with other models
         x = self.embeddings(input_ids)
         x = F.relu(x + self.qual_linear1(input_quals.unsqueeze(-1)))
         x = x.transpose(1, 2)  # [batch_size, embedding_dim, input_len]

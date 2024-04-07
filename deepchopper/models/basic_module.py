@@ -14,7 +14,7 @@ class TokenClassificationLit(LightningModule):
         self,
         net: nn.Module,
         optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler,
+        scheduler: torch.optim.lr_scheduler.LRScheduler,
         *,
         compile: bool,
     ):
