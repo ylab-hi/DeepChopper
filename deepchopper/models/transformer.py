@@ -35,5 +35,4 @@ class TokenClassificationModel(nn.Module):
 
         output = self.transformer_encoder(src, src_key_padding_mask=src_mask)
         output = output.permute(1, 0, 2)  # Convert back to [batch_size, seq_len, d_model]
-        logits = self.classifier(output)
-        return logits
+        return self.classifier(output)

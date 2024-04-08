@@ -31,7 +31,8 @@ class TokenClassificationModule(nn.Module):
         elif "caduceus" in backbone_name:
             model_name = f"kuleshov-group/{backbone_name}"
         else:
-            raise ValueError(f"Unknown backbone model: {backbone_name}")
+            msg = f"Unknown backbone model: {backbone_name}"
+            raise ValueError(msg)
 
         self.backbone = AutoModel.from_pretrained(model_name, trust_remote_code=True)
         self.head = head

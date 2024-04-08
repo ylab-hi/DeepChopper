@@ -1,4 +1,4 @@
-import torch 
+import torch
 from deepchopper.models.cnn import BenchmarkCNN
 
 def cnn():
