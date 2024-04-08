@@ -4,9 +4,9 @@ from .components import (
     HyenadnaMaxLengths,
     TokenClassification,
     TokenClassificationConfig,
-    TokenClassificationHead,
 )
-from .lit import TokenClassificationModule
+from .head import TokenClassificationHead
+from .hyena import TokenClassificationModule
 from .metric import IGNORE_INDEX, compute_metrics
 from .tokenizer import (
     DataCollatorForTokenClassificationWithQual,

@@ -14,11 +14,11 @@ scheduler:
   patience: 10
 
 net:
-  _target_: deepchopper.models.hyena.TokenClassificationModule
+  _target_: deepchopper.models.llm.TokenClassificationModule
   number_of_classes: 2
   hyenadna_model: "hyenadna-small-32k-seqlen"
   head:
-    _target_: deepchopper.models.hyena.TokenClassificationHead
+    _target_: deepchopper.models.llm.TokenClassificationHead
     input_size: 256
     lin1_size: 1024
     lin2_size: 1024
