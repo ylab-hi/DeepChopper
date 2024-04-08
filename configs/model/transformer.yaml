@@ -18,9 +18,9 @@ net:
   vocab_size: 11
   number_of_classes: 2
   d_model: 256
-  nhead: 4
-  num_encoder_layers: 6
-  dim_feedforward: 512
+  nhead: 8
+  num_encoder_layers: 4
+  dim_feedforward: 256
 
 # compile model for faster training with pytorch 2.0
 compile: false
