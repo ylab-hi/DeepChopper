@@ -12,6 +12,8 @@ BACKBONES = [
     "caduceus-ps_seqlen-131k_d_model-256_n_layer-16",
 ]
 
+# https://github.com/kuleshov-group/caduceus
+
 
 class TokenClassificationModule(nn.Module):
     """Token classification model."""
@@ -20,7 +22,7 @@ class TokenClassificationModule(nn.Module):
         self,
         number_of_classes: int,
         head: nn.Module,
-        backbone_name: str = "hyenadna-small-32k-seqlen",
+        backbone_name: str = "caduceus-ph_seqlen-131k_d_model-256_n_layer-16",
     ):
         super().__init__()
         self.number_of_classes = number_of_classes
@@ -48,5 +50,6 @@ class TokenClassificationModule(nn.Module):
             output_hidden_states=None,
             return_dict=None,
         )
+
         hidden_states = transformer_outputs[0]
         return self.head(hidden_states, input_quals)

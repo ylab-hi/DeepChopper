@@ -3,7 +3,7 @@ _target_: deepchopper.models.basic_module.TokenClassificationLit
 optimizer:
   _target_: torch.optim.Adam
   _partial_: true
-  lr: 0.00002
+  lr: 0.001
   weight_decay: 0.0
 
 scheduler:
@@ -14,17 +14,13 @@ scheduler:
   patience: 10
 
 net:
-  _target_: deepchopper.models.llm.TokenClassificationModule
+  _target_: deepchopper.models.transformer.TokenClassificationModule
+  vocab_size: 11
   number_of_classes: 2
-  hyenadna_model: "hyenadna-small-32k-seqlen"
-  head:
-    _target_: deepchopper.models.llm.TokenClassificationHead
-    input_size: 256
-    lin1_size: 1024
-    lin2_size: 1024
-    num_class: 2
-    use_identity_layer_for_qual: true
-    use_qual: bool
+  d_model: 256
+  nhead: 4
+  num_encoder_layers: 6
+  dim_feedforward: 512
 
 # compile model for faster training with pytorch 2.0
 compile: false

@@ -14,9 +14,10 @@ scheduler:
   patience: 10
 
 net:
-  _target_: deepchopper.models.llm.caduceus.TokenClassificationModule
+  _target_: deepchopper.models.llm.hyena.TokenClassificationModule
   number_of_classes: 2
-  backbone_name: "caduceus-ph_seqlen-131k_d_model-256_n_layer-16"
+  backbone_name: "hyenadna-small-32k-seqlen"
+  freeze_backbone: false
   head:
     _target_: deepchopper.models.llm.TokenClassificationHead
     input_size: 256
@@ -24,7 +25,7 @@ net:
     lin2_size: 1024
     num_class: 2
     use_identity_layer_for_qual: true
-    use_qual: bool
+    use_qual: true
 
 # compile model for faster training with pytorch 2.0
 compile: false

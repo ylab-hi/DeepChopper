@@ -8,9 +8,9 @@ class TokenClassificationHead(nn.Module):
     def __init__(
         self,
         input_size: int,
+        num_class: int,
         lin1_size: int,
         lin2_size: int,
-        num_class: int,
         *,
         use_identity_layer_for_qual: bool,
         use_qual: bool,
@@ -25,6 +25,9 @@ class TokenClassificationHead(nn.Module):
             use_identity_layer_for_qual (bool): Whether to use an identity layer for quality.
             use_qual (bool): Whether to use quality in the model.
         """
+        if lin1_size != lin2_size:
+            raise ValueError(f"{lin1_size=} and {lin2_size=} must be equal")
+
         super().__init__()
         self.use_qual = use_qual
         self.activation = nn.ReLU()
