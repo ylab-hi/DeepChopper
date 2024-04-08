@@ -14,7 +14,7 @@ from deepchopper.deepchopper import (
     default,
     encode_fq_path_to_parquet,
 )
-from deepchopper.models.hyena import (
+from deepchopper.models.llm import (
     DataCollatorForTokenClassificationWithQual,
     tokenize_and_align_labels_and_quals,
 )

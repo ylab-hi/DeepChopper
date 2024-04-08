@@ -7,7 +7,7 @@ from rich.text import Text
 from rich.theme import Theme
 
 from deepchopper.deepchopper import summary_predict as rust_summary_predict
-from deepchopper.models.hyena import IGNORE_INDEX
+from deepchopper.models.llm import IGNORE_INDEX
 
 
 def hightlight_predicts(

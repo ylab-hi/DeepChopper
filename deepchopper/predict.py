@@ -20,7 +20,7 @@ from .deepchopper import (
     smooth_label_region,
     write_predicts,
 )
-from .models.hyena import (
+from .models.llm import (
     DataCollatorForTokenClassificationWithQual,
     TokenClassification,
     compute_metrics,

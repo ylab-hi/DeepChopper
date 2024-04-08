@@ -11,7 +11,7 @@ from deepchopper.deepchopper import (
     remove_intervals_and_keep_left,
     smooth_label_region,
 )
-from deepchopper.models.hyena import (
+from deepchopper.models.llm import (
     tokenize_and_align_labels_and_quals,
 )
 from deepchopper.predict import (

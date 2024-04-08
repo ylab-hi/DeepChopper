@@ -9,10 +9,12 @@ def cnn():
 
 def main():
     # Parameters for the model
-    test_input = torch.randn(1, 1000, 100) # [batch_size, input_len, embedding_dim]
-    test_quals = torch.randn(1, 1000) # [batch_size, input_len]
+    test_input = torch.load("./tests/data/input_ids.pt") # [batch_size, input_len]
+    test_quals = torch.load("./tests/data/input_quals.pt") # [batch_size, input_len]
     cnn_model = cnn()
-    onnx_program = torch.onnx.dynamo_export(cnn_model, test_input, test_quals)
+
+    # Assume cnn_model is your model and test_input is the input tensor
+    onnx_export_output = torch.onnx.export(cnn_model, test_input, test_quals, "model.onnx")
 
 
 if __name__ == "__main__":

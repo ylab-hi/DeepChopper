@@ -1,7 +1,7 @@
 _target_: deepchopper.data.fq_datamodule.FqDataModule
 
 tokenizer:
-  _target_: deepchopper.models.hyena.load_tokenizer_from_hyena_model
+  _target_: deepchopper.models.llm.load_tokenizer_from_hyena_model
   model_name: hyenadna-small-32k-seqlen
 
 train_data_path: ${paths.root_dir}/tests/data/6000_train.parquet

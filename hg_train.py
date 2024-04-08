@@ -22,7 +22,7 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import send_example_telemetry
 
 from deepchopper.data import load_and_split_dataset
-from deepchopper.models.hyena import (
+from deepchopper.models.llm import (
     IGNORE_INDEX,
     DataCollatorForTokenClassificationWithQual,
     HyenadnaMaxLengths,
