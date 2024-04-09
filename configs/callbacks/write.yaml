@@ -1,0 +1,4 @@
+write:
+  _target_: deepchopper.models.callbacks.CustomWriter
+  output_dir: ${paths.output_dir}/predicts
+  write_interval: "batch" # epoch batch batch_and_epoch

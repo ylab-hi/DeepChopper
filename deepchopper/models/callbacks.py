@@ -1,0 +1,31 @@
+import torch
+from pathlib import Path
+from lightning.pytorch.callbacks import BasePredictionWriter
+
+
+class CustomWriter(BasePredictionWriter):
+    def __init__(self, output_dir, write_interval="epoch"):
+        super().__init__(write_interval)
+        self.output_dir = Path(output_dir)
+
+    def write_on_batch_end(
+        self, trainer, pl_module, prediction, batch_indices, batch, batch_idx, dataloader_idx
+    ):
+        folder = self.output_dir / str(dataloader_idx)
+        if not folder.exists():
+            folder.mkdir(parents=True)
+
+        save_prediction = {
+            "prediction": prediction[0],
+            "target": prediction[1],
+            "seq": batch["input_ids"],
+            "qual": batch["input_quals"],
+        }
+
+        torch.save(save_prediction, folder / f"{batch_idx}.pt")
+
+    def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):
+        if not self.output_dir.exists():
+            self.output_dir.mkdir(parents=False)
+
+        torch.save(predictions, self.output_dir / "predictions.pt")

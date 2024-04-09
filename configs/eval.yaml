@@ -10,6 +10,8 @@ defaults:
   - extras: default
   - hydra: default
 
+  - callbacks: write
+
   # debugging config (enable through command line, e.g. `python train.py debug=default)
   - debug: null
 

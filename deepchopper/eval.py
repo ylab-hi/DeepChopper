@@ -10,6 +10,7 @@ from .utils import (
     instantiate_loggers,
     log_hyperparameters,
     task_wrapper,
+    instantiate_callbacks,
 )
 
 from .utils import (
@@ -21,7 +22,7 @@ from .utils import (
 
 
 if TYPE_CHECKING:
-    from lightning import LightningDataModule, LightningModule, Trainer
+    from lightning import LightningDataModule, LightningModule, Trainer, Callback
     from lightning.pytorch.loggers import Logger
 
 log = RankedLogger(__name__, rank_zero_only=True)
@@ -45,11 +46,14 @@ def evaluate(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
     log.info(f"Instantiating model <{cfg.model._target_}>")
     model: LightningModule = hydra.utils.instantiate(cfg.model)
 
+    log.info("Instantiating callbacks...")
+    callbacks: list[Callback] = instantiate_callbacks(cfg.get("callbacks"))
+
     log.info("Instantiating loggers...")
     logger: list[Logger] = instantiate_loggers(cfg.get("logger"))
 
     log.info(f"Instantiating trainer <{cfg.trainer._target_}>")
-    trainer: Trainer = hydra.utils.instantiate(cfg.trainer, logger=logger)
+    trainer: Trainer = hydra.utils.instantiate(cfg.trainer, logger=logger, callbacks=callbacks)
 
     object_dict = {
         "cfg": cfg,
@@ -68,11 +72,9 @@ def evaluate(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
         trainer.test(model=model, datamodule=datamodule, ckpt_path=cfg.ckpt_path)
     else:
         # for predictions use trainer.predict(...)
-        predictions = trainer.predict(model=model, dataloaders=datamodule, ckpt_path=cfg.ckpt_path)
-        true_prediction, true_label = summary_predict(
-            predictions=predictions[0][0], labels=predictions[0][1]
+        trainer.predict(
+            model=model, dataloaders=datamodule, ckpt_path=cfg.ckpt_path, return_predictions=False
         )
-        alignment_predict(true_prediction[0], true_label[0])
 
     metric_dict = trainer.callback_metrics
     return metric_dict, object_dict
