@@ -145,6 +145,20 @@ class TokenClassificationLit(LightningModule):
     def on_test_epoch_end(self) -> None:
         """Lightning hook that is called when a test epoch ends."""
 
+    def predict_step(
+        self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
+    ) -> torch.Tensor:
+        """Perform a single prediction step on a batch of data from the test set.
+
+        :param batch: A batch of data (a tuple) containing the input tensor of images and target
+            labels.
+        :param batch_idx: The index of the current batch.
+        """
+        input_ids = batch["input_ids"]
+        input_quals = batch["input_quals"]
+        logits = self.forward(input_ids, input_quals)
+        return logits, batch["labels"]
+
     def setup(self, stage: str) -> None:
         """Lightning hook that is called at the beginning of fit (train + validate), validate, test, or predict.
 

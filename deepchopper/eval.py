@@ -12,6 +12,14 @@ from .utils import (
     task_wrapper,
 )
 
+from .utils import (
+    alignment_predict,
+    highlight_target,
+    hightlight_predicts,
+    summary_predict,
+)
+
+
 if TYPE_CHECKING:
     from lightning import LightningDataModule, LightningModule, Trainer
     from lightning.pytorch.loggers import Logger
@@ -55,14 +63,18 @@ def evaluate(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
         log.info("Logging hyperparameters!")
         log_hyperparameters(object_dict)
 
-    log.info("Starting testing!")
-    trainer.test(model=model, datamodule=datamodule, ckpt_path=cfg.ckpt_path)
-
-    # for predictions use trainer.predict(...)
-    # predictions = trainer.predict(model=model, dataloaders=dataloaders, ckpt_path=cfg.ckpt_path) # noqa: ERA001
+    if datamodule.hparams.predict_data_path is None:
+        log.info("Starting testing!")
+        trainer.test(model=model, datamodule=datamodule, ckpt_path=cfg.ckpt_path)
+    else:
+        # for predictions use trainer.predict(...)
+        predictions = trainer.predict(model=model, dataloaders=datamodule, ckpt_path=cfg.ckpt_path)
+        true_prediction, true_label = summary_predict(
+            predictions=predictions[0][0], labels=predictions[0][1]
+        )
+        alignment_predict(true_prediction[0], true_label[0])
 
     metric_dict = trainer.callback_metrics
-
     return metric_dict, object_dict
 
 

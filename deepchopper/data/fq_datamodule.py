@@ -74,12 +74,14 @@ class FqDataModule(LightningDataModule):
         train_data_path: Path,
         val_data_path: Path | None = None,
         test_data_path: Path | None = None,
+        predict_data_path: Path | None = None,
         train_val_test_split: tuple[float, float, float] = (0.8, 0.1, 0.1),
         batch_size: int = 12,
         num_workers: int = 0,
         max_train_samples: int | None = None,
         max_val_samples: int | None = None,
         max_test_samples: int | None = None,
+        max_predict_samples: int | None = None,
         *,
         pin_memory: bool = False,
     ) -> None:
@@ -120,6 +122,9 @@ class FqDataModule(LightningDataModule):
         if self.hparams.test_data_path is not None:
             data_paths.append(self.hparams.test_data_path)
 
+        if self.hparams.predict_data_path is not None:
+            data_paths.append(self.hparams.predict_data_path)
+
         for data_path in data_paths:
             if data_path in (".fq", ".fastq"):
                 encode_fq_path_to_parquet(
@@ -149,6 +154,11 @@ class FqDataModule(LightningDataModule):
                 Path(self.hparams.test_data_path).with_suffix(".parquet").as_posix()
             )
 
+        if self.hparams.predict_data_path is not None:
+            self.hparams.predict_data_path = (
+                Path(self.hparams.predict_data_path).with_suffix(".parquet").as_posix()
+            )
+
     def setup(self, stage: str | None = None) -> None:
         """Load data. Set variables: `self.data_train`, `self.data_val`, `self.data_test`.
 
@@ -165,6 +175,37 @@ class FqDataModule(LightningDataModule):
                 msg = f"Batch size ({self.hparams.batch_size}) is not divisible by the number of devices ({self.trainer.world_size})."
                 raise RuntimeError(msg)
             self.batch_size_per_device = self.hparams.batch_size // self.trainer.world_size
+
+        if stage == "predict":
+            if not self.hparams.predict_data_path:
+                msg = "Predict data path is required for prediction stage."
+                raise ValueError(msg)
+
+            num_proc = min(self.hparams.num_workers, multiprocessing.cpu_count() - 1)
+            data_files = {"predict": self.hparams.predict_data_path}
+            predict_dataset = load_dataset(
+                "parquet",
+                data_files=data_files,
+                num_proc=max(1, num_proc),
+            ).with_format("torch")
+
+            predict_dataset = predict_dataset["predict"]
+            if self.hparams.max_predict_samples is not None:
+                max_predict_samples = min(self.hparams.max_predict_samples, len(predict_dataset))
+                predict_dataset = HuggingFaceDataset.from_dict(
+                    predict_dataset[:max_predict_samples]
+                ).with_format("torch")
+
+            self.data_predict = predict_dataset.map(
+                partial(
+                    tokenize_and_align_labels_and_quals,
+                    tokenizer=self.hparams.tokenizer,
+                    max_length=self.hparams.tokenizer.max_len_single_sentence,
+                ),
+                num_proc=max(1, num_proc),  # type: ignore
+            ).remove_columns(["id", "seq", "qual", "target"])
+            del predict_dataset
+            return
 
         # load and split datasets only if not loaded already
         if not self.data_train and not self.data_val and not self.data_test:
@@ -293,6 +334,20 @@ class FqDataModule(LightningDataModule):
         """
         return DataLoader(
             dataset=self.data_test,
+            batch_size=self.batch_size_per_device,
+            num_workers=self.hparams.num_workers,
+            pin_memory=self.hparams.pin_memory,
+            collate_fn=self.data_collator.torch_call,
+            shuffle=False,
+        )
+
+    def predict_dataloader(self) -> DataLoader[Any]:
+        """Create and return the predict dataloader.
+
+        :return: The predict dataloader.
+        """
+        return DataLoader(
+            dataset=self.data_predict,
             batch_size=self.batch_size_per_device,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,

@@ -10,6 +10,9 @@ defaults:
   - extras: default
   - hydra: default
 
+  # debugging config (enable through command line, e.g. `python train.py debug=default)
+  - debug: null
+
 task_name: "eval"
 
 tags: ["dev"]
