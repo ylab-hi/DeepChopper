@@ -16,10 +16,10 @@ class CustomWriter(BasePredictionWriter):
             folder.mkdir(parents=True)
 
         save_prediction = {
-            "prediction": prediction[0],
-            "target": prediction[1],
-            "seq": batch["input_ids"],
-            "qual": batch["input_quals"],
+            "prediction": prediction[0].cpu(),
+            "target": prediction[1].cpu(),
+            "seq": batch["input_ids"].cpu(),
+            "qual": batch["input_quals"].cpu(),
         }
 
         torch.save(save_prediction, folder / f"{batch_idx}.pt")
