@@ -93,7 +93,7 @@ class DataCollatorForTokenClassificationWithQual(DataCollatorForTokenClassificat
         batch[label_name] = torch.tensor(batch[label_name], dtype=torch.int8)
         batch[qual_name] = torch.tensor(batch[qual_name], dtype=torch.float32)
 
-        # for predction dataset
+        # for predction dataset and save id feature
         if id_name in features[0]:
             batch[id_name] = torch.tensor(
                 [to_list(feature[id_name]) for feature in features], dtype=torch.int8
@@ -147,7 +147,8 @@ def tokenize_and_align_labels_and_quals_ids(
     normalized_quals = torch.nn.functional.normalize(quals, dim=0)
 
     # change id to ascii values
-    new_id = [ord(char) for char in data["id"]]
+    new_id = [len(data["id"])]
+    new_id += [ord(char) for char in data["id"]]
     if len(new_id) > max_id_length:
         new_id = new_id[:max_id_length]
     if len(new_id) < max_id_length:
