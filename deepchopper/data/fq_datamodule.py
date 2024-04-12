@@ -17,6 +17,7 @@ from deepchopper.deepchopper import (
 from deepchopper.models.llm import (
     DataCollatorForTokenClassificationWithQual,
     tokenize_and_align_labels_and_quals,
+    tokenize_and_align_labels_and_quals_ids,
 )
 
 if TYPE_CHECKING:
@@ -198,12 +199,12 @@ class FqDataModule(LightningDataModule):
 
             self.data_predict = predict_dataset.map(
                 partial(
-                    tokenize_and_align_labels_and_quals,
+                    tokenize_and_align_labels_and_quals_ids,
                     tokenizer=self.hparams.tokenizer,
                     max_length=self.hparams.tokenizer.max_len_single_sentence,
                 ),
                 num_proc=max(1, num_proc),  # type: ignore
-            ).remove_columns(["id", "seq", "qual", "target"])
+            ).remove_columns(["seq", "qual", "target"])
             del predict_dataset
             return
 

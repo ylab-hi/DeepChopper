@@ -12,6 +12,7 @@ from .tokenizer import (
     DataCollatorForTokenClassificationWithQual,
     load_tokenizer_from_hyena_model,
     tokenize_and_align_labels_and_quals,
+    tokenize_and_align_labels_and_quals_ids,
     tokenize_dataset,
 )
 
@@ -23,6 +24,7 @@ __all__ = [
     "DataCollatorForTokenClassificationWithQual",
     "load_tokenizer_from_hyena_model",
     "tokenize_and_align_labels_and_quals",
+    "tokenize_and_align_labels_and_quals_ids",
     "tokenize_dataset",
     "HyenadnaMaxLengths",
     "IGNORE_INDEX",

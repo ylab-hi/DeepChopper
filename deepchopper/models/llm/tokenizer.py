@@ -44,8 +44,10 @@ class DataCollatorForTokenClassificationWithQual(DataCollatorForTokenClassificat
         qual_pad_token_id = 0
         input_quals = [feature[qual_name] for feature in features]
 
+        id_name = "id"  # for predction dataset
+
         no_labels_features = [
-            {k: v for k, v in feature.items() if k not in [qual_name, label_name]}
+            {k: v for k, v in feature.items() if k not in [qual_name, label_name, id_name]}
             for feature in features
         ]
 
@@ -88,8 +90,15 @@ class DataCollatorForTokenClassificationWithQual(DataCollatorForTokenClassificat
                 for qual in input_quals
             ]
 
-        batch[label_name] = torch.tensor(batch[label_name], dtype=torch.int64)
+        batch[label_name] = torch.tensor(batch[label_name], dtype=torch.int8)
         batch[qual_name] = torch.tensor(batch[qual_name], dtype=torch.float32)
+
+        # for predction dataset
+        if id_name in features[0]:
+            batch[id_name] = torch.tensor(
+                [to_list(feature[id_name]) for feature in features], dtype=torch.int8
+            )
+
         return batch
 
 
@@ -124,6 +133,27 @@ def tokenize_and_align_labels_and_quals(
     quals = torch.cat((data["qual"], torch.tensor([pad_qual]))).float()
     normalized_quals = torch.nn.functional.normalize(quals, dim=0)
     tokenized_inputs.update({"labels": labels, "input_quals": normalized_quals})
+    return tokenized_inputs
+
+
+def tokenize_and_align_labels_and_quals_ids(
+    data, tokenizer, max_length, pad_qual=0, pad_label=IGNORE_INDEX, max_id_length=512
+):
+    tokenized_inputs = tokenizer(data["seq"], max_length=max_length, truncation=True, padding=True)
+    labels = torch.tensor(
+        [*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label]
+    )
+    quals = torch.cat((data["qual"], torch.tensor([pad_qual]))).float()
+    normalized_quals = torch.nn.functional.normalize(quals, dim=0)
+
+    # change id to ascii values
+    new_id = [ord(char) for char in data["id"]]
+    if len(new_id) > max_id_length:
+        new_id = new_id[:max_id_length]
+    if len(new_id) < max_id_length:
+        new_id += [0] * (max_id_length - len(new_id))
+
+    tokenized_inputs.update({"labels": labels, "input_quals": normalized_quals, "id": new_id})
     return tokenized_inputs
 
 

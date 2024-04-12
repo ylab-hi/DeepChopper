@@ -20,6 +20,7 @@ class CustomWriter(BasePredictionWriter):
             "target": prediction[1].cpu(),
             "seq": batch["input_ids"].cpu(),
             "qual": batch["input_quals"].cpu(),
+            "id": batch["id"],
         }
 
         torch.save(save_prediction, folder / f"{batch_idx}.pt")
