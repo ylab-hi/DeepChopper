@@ -127,31 +127,58 @@ def tokenize_and_align_labels_and_quals(
     data, tokenizer, max_length, pad_qual=0, pad_label=IGNORE_INDEX
 ):
     tokenized_inputs = tokenizer(data["seq"], max_length=max_length, truncation=True, padding=True)
-    labels = torch.tensor(
-        [*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label]
-    )
-    quals = torch.cat((data["qual"], torch.tensor([pad_qual]))).float()
-    normalized_quals = torch.nn.functional.normalize(quals, dim=0)
+
+    if len(data["seq"]) > max_length:
+        if data["target"][1] + 1 > max_length:
+            labels = torch.tensor([*deepchopper.vertorize_target(0, 0, max_length), pad_label])
+            quals = torch.cat((data["qual"][:max_length], torch.tensor([pad_qual]))).float()
+            normalized_quals = torch.nn.functional.normalize(quals, dim=0)
+        else:
+            labels = torch.tensor(
+                [*deepchopper.vertorize_target(*data["target"], max_length), pad_label]
+            )
+            quals = torch.cat((data["qual"][:max_length], torch.tensor([pad_qual]))).float()
+            normalized_quals = torch.nn.functional.normalize(quals, dim=0)
+    else:
+        labels = torch.tensor(
+            [*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label]
+        )
+        quals = torch.cat((data["qual"], torch.tensor([pad_qual]))).float()
+        normalized_quals = torch.nn.functional.normalize(quals, dim=0)
+
     tokenized_inputs.update({"labels": labels, "input_quals": normalized_quals})
     return tokenized_inputs
 
 
 def tokenize_and_align_labels_and_quals_ids(
-    data, tokenizer, max_length, pad_qual=0, pad_label=IGNORE_INDEX, max_id_length=512
+    data, tokenizer, max_length, pad_qual=0, pad_label=IGNORE_INDEX, max_id_length=256
 ):
     tokenized_inputs = tokenizer(data["seq"], max_length=max_length, truncation=True, padding=True)
-    labels = torch.tensor(
-        [*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label]
-    )
-    quals = torch.cat((data["qual"], torch.tensor([pad_qual]))).float()
-    normalized_quals = torch.nn.functional.normalize(quals, dim=0)
+
+    if len(data["seq"]) > max_length:
+        if data["target"][1] + 1 > max_length:
+            labels = torch.tensor([*deepchopper.vertorize_target(0, 0, max_length), pad_label])
+            quals = torch.cat((data["qual"][:max_length], torch.tensor([pad_qual]))).float()
+            normalized_quals = torch.nn.functional.normalize(quals, dim=0)
+        else:
+            labels = torch.tensor(
+                [*deepchopper.vertorize_target(*data["target"], max_length), pad_label]
+            )
+            quals = torch.cat((data["qual"][:max_length], torch.tensor([pad_qual]))).float()
+            normalized_quals = torch.nn.functional.normalize(quals, dim=0)
+    else:
+        labels = torch.tensor(
+            [*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label]
+        )
+        quals = torch.cat((data["qual"], torch.tensor([pad_qual]))).float()
+        normalized_quals = torch.nn.functional.normalize(quals, dim=0)
 
     # change id to ascii values
     new_id = [len(data["id"])]
     new_id += [ord(char) for char in data["id"]]
     if len(new_id) > max_id_length:
         new_id = new_id[:max_id_length]
-    if len(new_id) < max_id_length:
+    elif len(new_id) < max_id_length:
         new_id += [0] * (max_id_length - len(new_id))
 
     tokenized_inputs.update({"labels": labels, "input_quals": normalized_quals, "id": new_id})
