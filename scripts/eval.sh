@@ -7,8 +7,8 @@ cnn_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-
 
 # Default model selection
 model="hyena"
-# data_folder="data/eval/real_data/dorado_without_trim_fqs/VCaP.fastq_chunks"
-data_path="data/eval/real_data/dorado_without_trim_fqs/VCaP.fastq_chunks/VCaP.fastq_5.parquet"
+data_folder="data/eval/real_data/dorado_without_trim_fqs/VCaP.fastq_chunks"
+# data_path="data/eval/real_data/dorado_without_trim_fqs/VCaP.fastq_chunks/VCaP.fastq_9.parquet"
 num_workers=60
 batch_size=64
 
@@ -23,14 +23,26 @@ else
 fi
 
 # Iterate over each .parquet file in the data folder and evaluate
-# for data_path in "$data_folder"/*.parquet; do
-echo "Evaluating file: $data_path"
-poe eval \
-	ckpt_path="$ckpt_path" \
-	model="$model" \
-	+data.predict_data_path="$data_path" \
-	trainer=gpu \
-	data.num_workers=$num_workers \
-	data.batch_size=$batch_size \
-	extras.print_config=False
-# done
+for data_path in "$data_folder"/*.parquet; do
+	# Extract filename without extension
+	filename=$(basename -- "$data_path")
+	filename="${filename%.*}"
+
+	# Define output directory using the filename
+	output_dir="/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/${filename}"
+
+	echo "Evaluating file: $data_path"
+	echo "Output directory: $output_dir"
+
+	poe eval \
+		ckpt_path="$ckpt_path" \
+		model="$model" \
+		+data.predict_data_path="$data_path" \
+		trainer=gpu \
+		data.num_workers=$num_workers \
+		data.batch_size=$batch_size \
+		paths.output_dir="$output_dir" \
+		paths.log_dir="$output_dir" \
+		tags=["eval"]
+	# extras.print_config=False \
+done
