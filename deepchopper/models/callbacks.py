@@ -13,7 +13,7 @@ class CustomWriter(BasePredictionWriter):
     ):
         folder = self.output_dir / str(dataloader_idx)
         if not folder.exists():
-            folder.mkdir(parents=True)
+            folder.mkdir(parents=True, exist_ok=True)
 
         save_prediction = {
             "prediction": prediction[0].cpu(),
@@ -23,10 +23,10 @@ class CustomWriter(BasePredictionWriter):
             "id": batch["id"].cpu(),
         }
 
-        torch.save(save_prediction, folder / f"{batch_idx}.pt")
+        torch.save(save_prediction, folder / f"{trainer.global_rank}_{batch_idx}.pt")
 
     def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):
         if not self.output_dir.exists():
-            self.output_dir.mkdir(parents=False)
+            self.output_dir.mkdir(parents=False, exist_ok=True)
 
         torch.save(predictions, self.output_dir / "predictions.pt")

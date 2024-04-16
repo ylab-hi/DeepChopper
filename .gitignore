@@ -586,3 +586,4 @@ notebooks/ont*
 notebooks/sg*
 test_predict*
 cnn.onnx
+tmp
