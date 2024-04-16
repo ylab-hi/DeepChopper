@@ -7,9 +7,10 @@ cnn_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-
 
 # Default model selection
 model="hyena"
-data_path="data/eval/real_data/dorado_without_trim_fqs/K562.fastq_chunks/K562.fastq_2.parquet"
-num_workers=60
-batch_size=24
+# data_folder="data/eval/real_data/dorado_without_trim_fqs/VCaP.fastq_chunks"
+data_path="data/eval/real_data/dorado_without_trim_fqs/VCaP.fastq_chunks/VCaP.fastq_4.parquet"
+num_workers=50
+batch_size=64
 
 # Set the checkpoint path based on the selected model
 if [ "$model" = "cnn" ]; then
@@ -21,7 +22,9 @@ else
 	exit 1
 fi
 
-# Evaluate the model
+# Iterate over each .parquet file in the data folder and evaluate
+# for data_path in "$data_folder"/*.parquet; do
+echo "Evaluating file: $data_path"
 poe eval \
 	ckpt_path="$ckpt_path" \
 	model="$model" \
@@ -29,4 +32,5 @@ poe eval \
 	trainer=gpu \
 	data.num_workers=$num_workers \
 	data.batch_size=$batch_size \
-	tags=["eval", "hyena", "k562"]
+	extras.print_config=False
+# done

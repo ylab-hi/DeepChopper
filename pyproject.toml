@@ -123,6 +123,7 @@ hydra-submitit-launcher = "^1.2.0"
 hydra-optuna-sweeper = "^1.2.0"
 onnx = "^1.16.0"
 onnxscript = "^0.1.0.dev20240407"
+plotly = "^5.20.0"
 
 
 [project.urls]
