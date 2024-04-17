@@ -734,6 +734,10 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
     )?)?;
 
     // add smooth utils
+    m.add_function(wrap_pyfunction!(
+        smooth::py_collect_statistics_for_predicts,
+        m
+    )?)?;
     m.add_function(wrap_pyfunction!(smooth::test_predicts, m)?)?;
     m.add_function(wrap_pyfunction!(id_list2seq, m)?)?;
     m.add_function(wrap_pyfunction!(majority_voting, m)?)?;

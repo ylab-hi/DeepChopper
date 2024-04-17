@@ -161,16 +161,24 @@ impl Predict {
 pub fn load_predicts_from_batch_pts(
     pt_path: PathBuf,
     ignore_label: i64,
+    max_predicts: Option<usize>,
 ) -> Result<HashMap<String, Predict>> {
     // iter over the pt files under the path
     // make sure there is only one pt file
-    let pt_files: Vec<_> = WalkDir::new(pt_path)
+    let mut pt_files: Vec<_> = WalkDir::new(pt_path)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().map_or(false, |ext| ext == "pt"))
         .collect();
 
     info!("Found {} pt files", pt_files.len());
+
+    if let Some(max_predicts) = max_predicts {
+        if pt_files.len() > max_predicts {
+            info!("only load first {} files", max_predicts);
+            pt_files.truncate(max_predicts);
+        }
+    }
 
     // Use Rayon to process files in parallel
     let result: Result<Vec<_>> = pt_files
