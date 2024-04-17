@@ -3,6 +3,30 @@ use noodles::fastq;
 use rayon::prelude::*;
 use std::{fs::File, io::BufReader, ops::Range, path::Path};
 
+pub fn summary_predict_generic<D: PartialEq + Send + Sync + Copy>(
+    predictions: &[Vec<D>],
+    labels: &[Vec<D>],
+    ignore_label: D,
+) -> (Vec<Vec<D>>, Vec<Vec<D>>) {
+    predictions
+        .par_iter()
+        .zip(labels.par_iter())
+        .map(|(prediction, label)| {
+            let (filter_predictions, filter_labels): (Vec<D>, Vec<D>) = prediction
+                .iter()
+                .zip(label.iter())
+                .fold((vec![], vec![]), |mut acc, (&p, &l)| {
+                    if l != ignore_label {
+                        acc.1.push(l);
+                        acc.0.push(p);
+                    }
+                    acc
+                });
+            (filter_predictions, filter_labels)
+        })
+        .unzip()
+}
+
 pub fn summary_predict(
     predictions: &[Vec<i8>],
     labels: &[Vec<i8>],
@@ -26,68 +50,6 @@ pub fn summary_predict(
         })
         .unzip()
 }
-
-// pub fn summary_predict_seq_qual(
-//     predictions: &[Vec<i8>],
-//     seqs: &[Vec<i8>],
-//     quals: &[Vec<f32>],
-//     labels: &[Vec<i8>],
-//     ignore_label: i8,
-// ) -> (Vec<Vec<i8>>, Vec<Vec<i8>>, Vec<Vec<f32>>, Vec<Vec<i8>>) {
-//     let (filter_predictions, filter_seqs, filter_quals, filter_labels): (
-//         Vec<Vec<i8>>,
-//         Vec<Vec<i8>>,
-//         Vec<Vec<f32>>,
-//         Vec<Vec<i8>>,
-//     ) = predictions
-//         .par_iter()
-//         .zip(seqs)
-//         .zip(quals)
-//         .zip(labels)
-//         .map(|(((prediction, seq), qual), label)| {
-//             prediction
-//                 .iter()
-//                 .zip(seq)
-//                 .zip(qual)
-//                 .zip(label)
-//                 .filter(|&(((&p, &s), &q), &l)| l != ignore_label)
-//                 .fold(
-//                     (Vec::new(), Vec::new(), Vec::new(), Vec::new()),
-//                     |(mut preds, mut seqs, mut quals, mut labels), (((&p, &s), &q), &l)| {
-//                         preds.push(p);
-//                         seqs.push(s);
-//                         quals.push(q);
-//                         labels.push(l);
-//                         (preds, seqs, quals, labels)
-//                     },
-//                 )
-//         })
-//         .reduce(
-//             || (Vec::new(), Vec::new(), Vec::new(), Vec::new()),
-//             |(mut acc_preds, mut acc_seqs, mut acc_quals, mut acc_labels),
-//              (preds, seqs, quals, labels)| {
-//                 // Combine each thread's results into vectors of vectors
-//                 let mut combined_preds = Vec::new();
-//                 let mut combined_seqs = Vec::new();
-//                 let mut combined_quals = Vec::new();
-//                 let mut combined_labels = Vec::new();
-
-//                 combined_preds.push(preds);
-//                 combined_seqs.push(seqs);
-//                 combined_quals.push(quals);
-//                 combined_labels.push(labels);
-
-//                 acc_preds.extend(combined_preds);
-//                 acc_seqs.extend(combined_seqs);
-//                 acc_quals.extend(combined_quals);
-//                 acc_labels.extend(combined_labels);
-
-//                 (acc_preds, acc_seqs, acc_quals, acc_labels)
-//             },
-//         );
-
-//     (filter_predictions, filter_seqs, filter_quals, filter_labels)
-// }
 
 #[allow(clippy::too_many_arguments)]
 pub fn collect_and_split_dataset<P: AsRef<Path>>(
@@ -403,7 +365,7 @@ pub fn smooth_label(labels: &[u8]) -> Vec<u8> {
 }
 
 /// find 1s regions in the labels e.g. 00110011100
-pub fn get_label_region(labels: &[u8]) -> Vec<Range<usize>> {
+pub fn get_label_region(labels: &[i8]) -> Vec<Range<usize>> {
     let mut regions = vec![];
 
     let mut start = 0;
@@ -432,12 +394,45 @@ pub fn get_label_region(labels: &[u8]) -> Vec<Range<usize>> {
 /// merge 1s regions that are close to each other
 /// e.g. 00110011100 -> 0011111100
 pub fn smooth_label_region(
-    labels: &[u8],
+    labels: &[i8],
     length_between_intervals_for_merge: usize,
     min_interval_length_threshold: usize,
     min_interval_length_for_discard: usize,
 ) -> Vec<Range<usize>> {
     let labels_region = get_label_region(labels);
+    let mut smoothed_regions = vec![];
+
+    for region in labels_region {
+        if region.len() < min_interval_length_threshold {
+            continue;
+        }
+
+        if smoothed_regions.is_empty() {
+            smoothed_regions.push(region);
+            continue;
+        }
+
+        let last_region = smoothed_regions.last_mut().unwrap();
+        if region.start - last_region.end <= length_between_intervals_for_merge {
+            last_region.end = region.end;
+        } else {
+            smoothed_regions.push(region);
+        }
+    }
+
+    // remove regions that are too short
+    smoothed_regions.retain(|region| region.len() >= min_interval_length_for_discard);
+    smoothed_regions
+}
+pub fn smooth_label_region_u8(
+    labels: &[u8],
+    length_between_intervals_for_merge: usize,
+    min_interval_length_threshold: usize,
+    min_interval_length_for_discard: usize,
+) -> Vec<Range<usize>> {
+    let labels = labels.par_iter().map(|x| *x as i8).collect::<Vec<i8>>();
+    let labels_region = get_label_region(&labels);
+
     let mut smoothed_regions = vec![];
 
     for region in labels_region {

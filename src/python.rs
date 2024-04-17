@@ -3,7 +3,7 @@ use crate::{
     fq_encode::{self, Encoder},
     kmer::{self, vertorize_target},
     output::{self, write_json, write_parquet},
-    stat,
+    smooth, stat,
     types::{Element, Id2KmerTable, Kmer2IdTable},
     utils,
 };
@@ -540,7 +540,7 @@ fn collect_and_split_dataset_with_natural_terminal_adapters(
 }
 
 #[pyfunction]
-fn get_label_region(labels: Vec<u8>) -> Vec<(usize, usize)> {
+fn get_label_region(labels: Vec<i8>) -> Vec<(usize, usize)> {
     utils::get_label_region(&labels)
         .par_iter()
         .map(|r| (r.start, r.end))
@@ -549,7 +549,7 @@ fn get_label_region(labels: Vec<u8>) -> Vec<(usize, usize)> {
 
 #[pyfunction]
 fn smooth_label_region(
-    labels: Vec<u8>,
+    labels: Vec<i8>,
     length_between_intervals_for_merge: usize,
     min_interval_length_threshold: usize,
     min_interval_length_for_discard: usize,
@@ -605,7 +605,7 @@ fn write_predicts(
     let result = (0..record_batch.num_rows())
         .into_par_iter()
         .map(|i| {
-            let predict = &predicts[i];
+            let predict = &predicts[i].iter().map(|x| *x as i8).collect::<Vec<_>>();
             let smooth_predict = utils::smooth_label_region(
                 predict,
                 length_between_intervals_for_merge,
@@ -675,6 +675,16 @@ fn convert_multiple_fqs_to_one_fq(
     Ok(())
 }
 
+#[pyfunction]
+fn id_list2seq(ids: Vec<u8>) -> String {
+    smooth::id_list2seq(&ids)
+}
+
+#[pyfunction]
+fn majority_voting(labels: Vec<i8>, window_size: usize) -> Vec<i8> {
+    smooth::majority_voting(&labels, window_size)
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -723,11 +733,18 @@ fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
         m
     )?)?;
 
+    // add smooth utils
+    m.add_function(wrap_pyfunction!(id_list2seq, m)?)?;
+    m.add_function(wrap_pyfunction!(majority_voting, m)?)?;
+    m.add_function(wrap_pyfunction!(smooth::load_predicts_from_batch_pt, m)?)?;
+    m.add_function(wrap_pyfunction!(smooth::load_predicts_from_batch_pts, m)?)?;
+
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;
     m.add_class::<fq_encode::TensorEncoder>()?;
     m.add_class::<fq_encode::JsonEncoder>()?;
     m.add_class::<fq_encode::ParquetEncoder>()?;
+    m.add_class::<smooth::Predict>()?;
 
     Ok(())
 }
