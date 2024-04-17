@@ -2,11 +2,11 @@ use std::ops::Range;
 use std::path::PathBuf;
 
 use crate::smooth::{ascii_list2str, id_list2seq_i64};
-use crate::utils::{get_label_region, summary_predict_generic};
+use crate::utils::{get_label_region, summary_predict_i64};
 
 use super::majority_voting;
 use anyhow::Result;
-use candle_core::pickle;
+use candle_core::{self, pickle};
 use log::info;
 use pyo3::prelude::*;
 use rayon::prelude::*;
@@ -116,7 +116,7 @@ impl Predict {
             return vec![];
         }
 
-        return results;
+        results
     }
 }
 
@@ -163,18 +163,21 @@ pub fn load_predicts_from_batch_pt(pt_path: PathBuf, ignore_label: i64) -> Resul
         tensors_map.insert(key, value);
     }
 
-    let predictions = tensors_map.get("prediction").unwrap().argmax(2).unwrap(); // shape batch, seq_len
+    let _predictions = tensors_map.get("prediction").unwrap().argmax(2)?; // shape batch, seq_len
+    let predictions = _predictions.to_dtype(candle_core::DType::I64)?;
+
     let targets = tensors_map.get("target").unwrap(); // shape batch, seq_len
+    let seq = tensors_map.get("seq").unwrap();
+    let id = tensors_map.get("id").unwrap();
 
     let predictions_vec = predictions.to_vec2::<i64>()?;
     let targets_vec = targets.to_vec2::<i64>()?;
-    let seq_vec = tensors_map.get("seq").unwrap().to_vec2::<i64>()?;
-    let id_vec = tensors_map.get("id").unwrap().to_vec2::<u32>()?;
+    let seq_vec = seq.to_vec2::<i64>()?;
+    let id_vec = id.to_vec2::<i64>()?;
 
     let (true_predictions, _true_label) =
-        summary_predict_generic(&predictions_vec, &targets_vec, ignore_label);
-
-    let (true_seqs, _) = summary_predict_generic(&seq_vec, &targets_vec, ignore_label);
+        summary_predict_i64(&predictions_vec, &targets_vec, ignore_label);
+    let (true_seqs, _) = summary_predict_i64(&seq_vec, &targets_vec, ignore_label);
 
     let batch_size = true_predictions.len();
 
@@ -199,4 +202,16 @@ pub fn load_predicts_from_batch_pt(pt_path: PathBuf, ignore_label: i64) -> Resul
             }
         })
         .collect::<Vec<_>>())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load_predict() {
+        let data_path = PathBuf::from("./tests/data/eval/chunk0/0.pt");
+        let _predicts = load_predicts_from_batch_pt(data_path, -100).unwrap();
+        assert_eq!(_predicts.len(), 12);
+    }
 }

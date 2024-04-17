@@ -23,10 +23,10 @@ lazy_static! {
     };
 }
 
-pub fn ascii_list2str(ascii_list: &[u32]) -> String {
+pub fn ascii_list2str(ascii_list: &[i64]) -> String {
     ascii_list
         .par_iter()
-        .map(|&c| char::from_u32(c).unwrap())
+        .map(|&c| char::from_u32(c as u32).unwrap())
         .collect()
 }
 
@@ -135,5 +135,11 @@ mod tests {
         let seq = id_list2seq(&id);
         let expected = "ACGTN".to_string();
         assert_eq!(seq, expected);
+    }
+
+    #[test]
+    fn test_id_list2seq_i64() {
+        let id = vec![7, 8, 9, 10, 11];
+        assert_eq!(id_list2seq_i64(&id), "ACGTN");
     }
 }
