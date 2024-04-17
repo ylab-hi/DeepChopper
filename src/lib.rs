@@ -5,6 +5,7 @@ pub mod kmer;
 pub mod output;
 pub mod python;
 // pub mod tokenizer;
+pub mod smooth;
 pub mod stat;
 pub mod types;
 pub mod utils;
