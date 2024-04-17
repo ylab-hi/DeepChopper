@@ -2,7 +2,7 @@ use std::ops::Range;
 use std::path::PathBuf;
 
 use crate::smooth::{ascii_list2str, id_list2seq_i64};
-use crate::utils::{get_label_region, summary_predict_i64};
+use crate::utils::{get_label_region, summary_predict_generic};
 
 use super::majority_voting;
 use anyhow::Result;
@@ -16,10 +16,15 @@ use walkdir::WalkDir;
 #[pyclass]
 #[derive(Debug, Default)]
 pub struct Predict {
+    #[pyo3(get, set)]
     prediction: Vec<i8>,
+    #[pyo3(get, set)]
     seq: String,
+    #[pyo3(get, set)]
     id: String,
+    #[pyo3(get, set)]
     is_truncated: bool,
+    #[pyo3(get, set)]
     qual: Option<String>,
 }
 
@@ -176,8 +181,8 @@ pub fn load_predicts_from_batch_pt(pt_path: PathBuf, ignore_label: i64) -> Resul
     let id_vec = id.to_vec2::<i64>()?;
 
     let (true_predictions, _true_label) =
-        summary_predict_i64(&predictions_vec, &targets_vec, ignore_label);
-    let (true_seqs, _) = summary_predict_i64(&seq_vec, &targets_vec, ignore_label);
+        summary_predict_generic(&predictions_vec, &targets_vec, ignore_label);
+    let (true_seqs, _) = summary_predict_generic(&seq_vec, &targets_vec, ignore_label);
 
     let batch_size = true_predictions.len();
 

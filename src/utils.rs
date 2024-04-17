@@ -27,30 +27,6 @@ pub fn summary_predict_generic<D: PartialEq + Send + Sync + Copy>(
         .unzip()
 }
 
-pub fn summary_predict_i64(
-    predictions: &[Vec<i64>],
-    labels: &[Vec<i64>],
-    ignore_label: i64,
-) -> (Vec<Vec<i64>>, Vec<Vec<i64>>) {
-    predictions
-        .par_iter()
-        .zip(labels.par_iter())
-        .map(|(prediction, label)| {
-            let (filter_predictions, filter_labels): (Vec<i64>, Vec<i64>) = prediction
-                .iter()
-                .zip(label.iter())
-                .fold((vec![], vec![]), |mut acc, (&p, &l)| {
-                    if l != ignore_label {
-                        acc.1.push(l);
-                        acc.0.push(p);
-                    }
-                    acc
-                });
-            (filter_predictions, filter_labels)
-        })
-        .unzip()
-}
-
 pub fn summary_predict(
     predictions: &[Vec<i8>],
     labels: &[Vec<i8>],
