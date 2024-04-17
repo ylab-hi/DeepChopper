@@ -17,10 +17,10 @@ class CustomWriter(BasePredictionWriter):
 
         save_prediction = {
             "prediction": prediction[0].cpu(),
-            "target": prediction[1].cpu(),
+            "target": prediction[1].to(torch.int64).cpu(),
             "seq": batch["input_ids"].cpu(),
             "qual": batch["input_quals"].cpu(),
-            "id": batch["id"].cpu(),
+            "id": batch["id"].to(torch.int64).cpu(),
         }
 
         torch.save(save_prediction, folder / f"{trainer.global_rank}_{batch_idx}.pt")

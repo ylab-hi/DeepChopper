@@ -1,6 +1,7 @@
 use std::ops::Range;
 use std::path::PathBuf;
 
+use crate::default;
 use crate::smooth::{ascii_list2str, id_list2seq_i64};
 use crate::utils::{get_label_region, summary_predict_generic};
 
@@ -13,19 +14,29 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 use walkdir::WalkDir;
 
+#[pyfunction]
+pub fn test_predicts(predicts: Vec<PyRef<Predict>>) {
+    for predict in predicts {
+        println!("id: {}", predict.id);
+        println!("seq: {}", predict.seq);
+        println!("prediction: {:?}", predict.prediction);
+        println!("is_truncated: {}", predict.is_truncated);
+    }
+}
+
 #[pyclass]
 #[derive(Debug, Default)]
 pub struct Predict {
     #[pyo3(get, set)]
-    prediction: Vec<i8>,
+    pub prediction: Vec<i8>,
     #[pyo3(get, set)]
-    seq: String,
+    pub seq: String,
     #[pyo3(get, set)]
-    id: String,
+    pub id: String,
     #[pyo3(get, set)]
-    is_truncated: bool,
+    pub is_truncated: bool,
     #[pyo3(get, set)]
-    qual: Option<String>,
+    pub qual: Option<String>,
 }
 
 #[pymethods]
@@ -45,6 +56,13 @@ impl Predict {
             is_truncated,
             qual,
         }
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "Predict(prediction: {:?}, seq: {}, id: {}, is_truncated: {}, qual: {:?})",
+            self.prediction, self.seq, self.id, self.is_truncated, self.qual
+        )
     }
 
     #[pyo3(name = "prediction_region")]
@@ -68,7 +86,7 @@ impl Predict {
         majority_voting(&self.prediction, window_size)
     }
 
-    #[pyo3(name = "smooth_and_slect_intervals")]
+    #[pyo3(name = "smooth_and_select_intervals")]
     pub fn py_smooth_and_slect_intervals(
         &self,
         smooth_window_size: usize,
@@ -83,6 +101,20 @@ impl Predict {
         .par_iter()
         .map(|r| (r.start, r.end))
         .collect()
+    }
+
+    pub fn seq_len(&self) -> usize {
+        self.seq.len()
+    }
+
+    pub fn qual_array(&self) -> Vec<u8> {
+        if let Some(qual) = &self.qual {
+            qual.chars()
+                .map(|c| c as u8 - default::QUAL_OFFSET)
+                .collect()
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -126,7 +158,10 @@ impl Predict {
 }
 
 #[pyfunction]
-pub fn load_predicts_from_batch_pts(pt_path: PathBuf, ignore_label: i64) -> Result<Vec<Predict>> {
+pub fn load_predicts_from_batch_pts(
+    pt_path: PathBuf,
+    ignore_label: i64,
+) -> Result<HashMap<String, Predict>> {
     // iter over the pt files under the path
     // make sure there is only one pt file
     let pt_files: Vec<_> = WalkDir::new(pt_path)
@@ -138,7 +173,7 @@ pub fn load_predicts_from_batch_pts(pt_path: PathBuf, ignore_label: i64) -> Resu
     info!("Found {} pt files", pt_files.len());
 
     // Use Rayon to process files in parallel
-    let result: Result<Vec<_>, _> = pt_files
+    let result: Result<Vec<_>> = pt_files
         .into_par_iter()
         .filter_map(|entry| {
             let path = entry.path();
@@ -155,12 +190,14 @@ pub fn load_predicts_from_batch_pts(pt_path: PathBuf, ignore_label: i64) -> Resu
             }
         })
         .collect();
-
-    result.map(|vectors| vectors.into_iter().flatten().collect())
+    result.map(|vectors| vectors.into_par_iter().flatten().collect())
 }
 
 #[pyfunction]
-pub fn load_predicts_from_batch_pt(pt_path: PathBuf, ignore_label: i64) -> Result<Vec<Predict>> {
+pub fn load_predicts_from_batch_pt(
+    pt_path: PathBuf,
+    ignore_label: i64,
+) -> Result<HashMap<String, Predict>> {
     let tensors = pickle::read_all(pt_path).unwrap();
     let mut tensors_map = HashMap::new();
 
@@ -198,15 +235,18 @@ pub fn load_predicts_from_batch_pt(pt_path: PathBuf, ignore_label: i64) -> Resul
             let prediction = true_predictions[i].par_iter().map(|&x| x as i8).collect();
 
             let qual = None;
-            Predict {
-                prediction,
-                seq,
-                id,
-                is_truncated,
-                qual,
-            }
+            (
+                id.clone(),
+                Predict {
+                    prediction,
+                    seq,
+                    id,
+                    is_truncated,
+                    qual,
+                },
+            )
         })
-        .collect::<Vec<_>>())
+        .collect::<HashMap<_, _>>())
 }
 
 #[cfg(test)]
@@ -218,5 +258,7 @@ mod tests {
         let data_path = PathBuf::from("./tests/data/eval/chunk0/0.pt");
         let _predicts = load_predicts_from_batch_pt(data_path, -100).unwrap();
         assert_eq!(_predicts.len(), 12);
+        let s = _predicts.values().next().unwrap().seq_len();
+        println!("seq_len: {}", s);
     }
 }

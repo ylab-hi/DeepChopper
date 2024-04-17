@@ -9,7 +9,7 @@ def main():
     pt_path = Path(sys.argv[1])
     all_files = list(pt_path.rglob("*.pt"))
 
-    for file in track(all_files, description=f"Converting {all_files} files..."):
+    for file in track(all_files, description=f"Converting {len(all_files)} files..."):
         try:
             data = torch.load(file)
             data['id'] = data['id'].to(torch.int64)
