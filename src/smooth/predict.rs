@@ -135,7 +135,7 @@ impl Predict {
         &self,
         smooth_window_size: usize,
         min_interval_size: usize,
-        append_interval_number: usize,
+        approved_interval_number: usize,
     ) -> Vec<Range<usize>> {
         let chop_interals = self.smooth_prediction(smooth_window_size);
 
@@ -149,7 +149,7 @@ impl Predict {
             })
             .collect::<Vec<_>>();
 
-        if results.len() > append_interval_number {
+        if results.len() > approved_interval_number {
             return vec![];
         }
 
