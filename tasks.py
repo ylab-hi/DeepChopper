@@ -164,7 +164,3 @@ def summary(c, file):
     print(f"len_list: {len_list}")
     np.save(file.with_suffix(".npy"), len_list)
 
-
-
-
-

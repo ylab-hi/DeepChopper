@@ -28,6 +28,9 @@ pub struct StatResult {
 
     #[pyo3(get, set)]
     pub smooth_only_one_with_ploya: Vec<String>,
+
+    #[pyo3(get, set)]
+    pub total_predicts: usize,
 }
 
 #[pymethods]
@@ -41,6 +44,7 @@ impl StatResult {
         total_truncated: usize,
         smooth_only_one: Vec<String>,
         smooth_only_one_with_ploya: Vec<String>,
+        total_predicts: usize,
     ) -> Self {
         Self {
             predicts_with_chop,
@@ -50,6 +54,7 @@ impl StatResult {
             total_truncated,
             smooth_only_one,
             smooth_only_one_with_ploya,
+            total_predicts,
         }
     }
 
@@ -100,7 +105,9 @@ impl StatResult {
 
     fn __repr__(&self) -> String {
         format!(
-            "StatResult(predicts_with_chop: {}, smooth_predicts_with_chop: {}, total_truncated: {}, smooth_only_one: {}, smooth_ploya_only_one: {})",
+            "StatResult(total_predicts: {},  predicts_with_chop: {}, smooth_predicts_with_chop: {},
+                        total_truncated: {}, smooth_only_one: {},    smooth_ploya_only_one: {})",
+            self.total_predicts,
             self.predicts_with_chop.len(),
             self.smooth_predicts_with_chop.len(),
             self.total_truncated,
@@ -122,6 +129,7 @@ impl StatResult {
         self.smooth_only_one.extend(other.smooth_only_one);
         self.smooth_only_one_with_ploya
             .extend(other.smooth_only_one_with_ploya);
+        self.total_predicts += other.total_predicts;
     }
 }
 
@@ -142,8 +150,10 @@ pub fn py_collect_statistics_for_predicts(
 
     let mut smooth_only_one = Vec::new();
     let mut smooth_ploya_only_one = Vec::new();
+    let mut total_predicts = 0;
 
     for predict in predicts {
+        total_predicts += 1;
         if predict.is_truncated {
             total_truncated += 1;
         }
@@ -203,6 +213,7 @@ pub fn py_collect_statistics_for_predicts(
         total_truncated,
         smooth_only_one,
         smooth_ploya_only_one,
+        total_predicts,
     ))
 }
 
@@ -218,6 +229,7 @@ pub fn collect_statistics_for_predicts(
         .par_iter()
         .map(|predict| {
             let mut result = StatResult::default();
+            result.total_predicts += 1;
 
             if predict.is_truncated {
                 result.total_truncated += 1;
