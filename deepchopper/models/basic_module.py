@@ -85,7 +85,7 @@ class TokenClassificationLit(LightningModule):
         input_ids = batch["input_ids"]
         input_quals = batch["input_quals"]
         logits = self.forward(input_ids, input_quals)
-        loss = self.criterion(logits.reshape(-1, logits.size(-1)), batch["labels"].view(-1))
+        loss = self.criterion(logits.reshape(-1, logits.size(-1)), batch["labels"].long().view(-1))
         preds = torch.argmax(logits, dim=-1)
         return loss, preds, batch["labels"]
 

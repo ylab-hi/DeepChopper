@@ -4,19 +4,18 @@ use rayon::prelude::*;
 
 use super::Predict;
 use std::collections::HashMap;
-use std::collections::HashSet;
 
 #[pyclass]
 #[derive(Debug, Default)]
 pub struct StatResult {
     #[pyo3(get, set)]
-    pub predicts_with_chop: HashSet<String>,
+    pub predicts_with_chop: Vec<String>,
 
     #[pyo3(get, set)]
-    pub smooth_predicts_with_chop: HashSet<String>,
+    pub smooth_predicts_with_chop: Vec<String>,
 
     #[pyo3(get, set)]
-    pub smooth_internal_predicts: HashSet<String>,
+    pub smooth_internal_predicts: Vec<String>,
 
     #[pyo3(get, set)]
     pub smooth_intervals: HashMap<String, Vec<(usize, usize)>>,
@@ -25,10 +24,10 @@ pub struct StatResult {
     pub total_truncated: usize,
 
     #[pyo3(get, set)]
-    pub smooth_only_one: HashSet<String>,
+    pub smooth_only_one: Vec<String>,
 
     #[pyo3(get, set)]
-    pub smooth_only_one_with_ploya: HashSet<String>,
+    pub smooth_only_one_with_ploya: Vec<String>,
 
     #[pyo3(get, set)]
     pub total_predicts: usize,
@@ -38,13 +37,13 @@ pub struct StatResult {
 impl StatResult {
     #[new]
     pub fn new(
-        predicts_with_chop: HashSet<String>,
-        smooth_predicts_with_chop: HashSet<String>,
-        smooth_internal_predicts: HashSet<String>,
+        predicts_with_chop: Vec<String>,
+        smooth_predicts_with_chop: Vec<String>,
+        smooth_internal_predicts: Vec<String>,
         smooth_intervals: HashMap<String, Vec<(usize, usize)>>,
         total_truncated: usize,
-        smooth_only_one: HashSet<String>,
-        smooth_only_one_with_ploya: HashSet<String>,
+        smooth_only_one: Vec<String>,
+        smooth_only_one_with_ploya: Vec<String>,
         total_predicts: usize,
     ) -> Self {
         Self {
@@ -107,7 +106,7 @@ impl StatResult {
     fn __repr__(&self) -> String {
         format!(
             "StatResult(total_predicts: {},  predicts_with_chop: {}, smooth_predicts_with_chop: {},
-                        total_truncated: {}, smooth_only_one: {},    smooth_ploya_only_one: {})",
+                        total_truncated: {}, smooth_only_one: {}, smooth_ploya_only_one: {})",
             self.total_predicts,
             self.predicts_with_chop.len(),
             self.smooth_predicts_with_chop.len(),
@@ -143,14 +142,14 @@ pub fn py_collect_statistics_for_predicts(
     internal_threshold: f32,
     ploya_threshold: usize, // 3
 ) -> Result<StatResult> {
-    let mut predicts_with_chop = HashSet::new();
-    let mut smooth_predicts_with_chop = HashSet::new();
+    let mut predicts_with_chop = Vec::new();
+    let mut smooth_predicts_with_chop = Vec::new();
     let mut smooth_intervals = HashMap::new();
-    let mut smooth_internal_predicts = HashSet::new();
+    let mut smooth_internal_predicts = Vec::new();
     let mut total_truncated = 0;
 
-    let mut smooth_only_one = HashSet::new();
-    let mut smooth_ploya_only_one = HashSet::new();
+    let mut smooth_only_one = Vec::new();
+    let mut smooth_ploya_only_one = Vec::new();
     let mut total_predicts = 0;
 
     for predict in predicts {
@@ -160,7 +159,7 @@ pub fn py_collect_statistics_for_predicts(
         }
 
         if !predict.prediction_region().is_empty() {
-            predicts_with_chop.insert(predict.id.clone());
+            predicts_with_chop.push(predict.id.clone());
         }
 
         let smooth_regions: Vec<(usize, usize)> = predict
@@ -174,10 +173,10 @@ pub fn py_collect_statistics_for_predicts(
             .collect();
 
         if !smooth_regions.is_empty() {
-            smooth_predicts_with_chop.insert(predict.id.clone());
+            smooth_predicts_with_chop.push(predict.id.clone());
 
             if smooth_regions.len() == 1 {
-                smooth_only_one.insert(predict.id.clone());
+                smooth_only_one.push(predict.id.clone());
 
                 let flank_size = 5;
 
@@ -193,13 +192,13 @@ pub fn py_collect_statistics_for_predicts(
                     }
                 }
                 if count >= ploya_threshold {
-                    smooth_ploya_only_one.insert(predict.id.clone());
+                    smooth_ploya_only_one.push(predict.id.clone());
                 }
             }
 
             for region in &smooth_regions {
                 if (region.1 as f32 / predict.seq_len() as f32) < internal_threshold {
-                    smooth_internal_predicts.insert(predict.id.clone());
+                    smooth_internal_predicts.push(predict.id.clone());
                 }
             }
             smooth_intervals.insert(predict.id.clone(), smooth_regions);
@@ -237,7 +236,7 @@ pub fn collect_statistics_for_predicts(
             }
 
             if !predict.prediction_region().is_empty() {
-                result.predicts_with_chop.insert(predict.id.clone());
+                result.predicts_with_chop.push(predict.id.clone());
             }
 
             let smooth_regions: Vec<(usize, usize)> = predict
@@ -251,13 +250,13 @@ pub fn collect_statistics_for_predicts(
                 .collect();
 
             if !smooth_regions.is_empty() {
-                result.smooth_predicts_with_chop.insert(predict.id.clone());
+                result.smooth_predicts_with_chop.push(predict.id.clone());
                 result
                     .smooth_intervals
                     .insert(predict.id.clone(), smooth_regions.clone());
 
                 if smooth_regions.len() == 1 {
-                    result.smooth_only_one.insert(predict.id.clone());
+                    result.smooth_only_one.push(predict.id.clone());
 
                     let flank_size = 5;
                     // count first 10 bp of start, if has 3 A
@@ -268,13 +267,13 @@ pub fn collect_statistics_for_predicts(
                         .count();
 
                     if count >= ploya_threshold {
-                        result.smooth_only_one_with_ploya.insert(predict.id.clone());
+                        result.smooth_only_one_with_ploya.push(predict.id.clone());
                     }
                 }
 
                 for region in &smooth_regions {
                     if (region.1 as f32 / predict.seq_len() as f32) < internal_threshold {
-                        result.smooth_internal_predicts.insert(predict.id.clone());
+                        result.smooth_internal_predicts.push(predict.id.clone());
                     }
                 }
             }
