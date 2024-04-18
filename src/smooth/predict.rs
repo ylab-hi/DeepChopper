@@ -14,6 +14,8 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 use walkdir::WalkDir;
 
+use crate::vis;
+
 #[pyfunction]
 pub fn test_predicts(predicts: Vec<PyRef<Predict>>) {
     for predict in predicts {
@@ -115,6 +117,30 @@ impl Predict {
         } else {
             vec![]
         }
+    }
+
+    pub fn show_info(
+        &self,
+        smooth_intervals: HashMap<String, Vec<(usize, usize)>>,
+        text_width: Option<usize>,
+    ) -> String {
+        let oreg = self.py_prediction_region();
+        let tmp = vec![];
+        let sreg = smooth_intervals.get(&self.id).unwrap_or(&tmp);
+
+        let oreg_str = vis::highlight_targets(&self.seq, oreg, text_width);
+        let sreg_str = vis::highlight_targets(&self.seq, sreg.clone(), text_width);
+
+        let result = format!(
+            "id: {}\nprediction: {:?}\nsmooth_intervals: {:?}\n{}\n{}",
+            self.id,
+            self.prediction_region(),
+            smooth_intervals.get(&self.id),
+            oreg_str,
+            sreg_str
+        );
+
+        result
     }
 }
 

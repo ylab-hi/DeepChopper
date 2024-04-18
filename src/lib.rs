@@ -9,3 +9,4 @@ pub mod smooth;
 pub mod stat;
 pub mod types;
 pub mod utils;
+pub mod vis;
