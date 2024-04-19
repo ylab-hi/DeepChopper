@@ -106,10 +106,12 @@ impl StatResult {
     fn __repr__(&self) -> String {
         format!(
             "StatResult(total_predicts: {},  predicts_with_chop: {}, smooth_predicts_with_chop: {},
-                        total_truncated: {}, smooth_only_one: {}, smooth_ploya_only_one: {})",
+                        smooth_internal_predicts: {}, total_truncated: {}, smooth_only_one: {},
+                        smooth_ploya_only_one: {})",
             self.total_predicts,
             self.predicts_with_chop.len(),
             self.smooth_predicts_with_chop.len(),
+            self.smooth_internal_predicts.len(),
             self.total_truncated,
             self.smooth_only_one.len(),
             self.smooth_only_one_with_ploya.len(),

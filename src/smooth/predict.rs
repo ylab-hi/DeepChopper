@@ -121,25 +121,21 @@ impl Predict {
 
     pub fn show_info(
         &self,
-        smooth_intervals: HashMap<String, Vec<(usize, usize)>>,
+        smooth_interval: Vec<(usize, usize)>,
         text_width: Option<usize>,
     ) -> String {
         let oreg = self.py_prediction_region();
-        let tmp = vec![];
-        let sreg = smooth_intervals.get(&self.id).unwrap_or(&tmp);
-
         let oreg_str = vis::highlight_targets(&self.seq, oreg, text_width);
-        let sreg_str = vis::highlight_targets(&self.seq, sreg.clone(), text_width);
+        let sreg_str = vis::highlight_targets(&self.seq, smooth_interval.clone(), text_width);
 
         let result = format!(
-            "id: {}\nprediction: {:?}\nsmooth_intervals: {:?}\n{}\n{}",
+            "id: {}\nprediction: {:?}\nsmooth_intervals: {:?}\n{}\n\n{}",
             self.id,
             self.prediction_region(),
-            smooth_intervals.get(&self.id),
+            smooth_interval,
             oreg_str,
             sreg_str
         );
-
         result
     }
 }
