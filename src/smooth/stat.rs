@@ -5,6 +5,8 @@ use rayon::prelude::*;
 use super::Predict;
 use std::collections::HashMap;
 
+use crate::default;
+
 #[pyclass]
 #[derive(Debug, Default)]
 pub struct StatResult {
@@ -155,6 +157,10 @@ pub fn py_collect_statistics_for_predicts(
     let mut total_predicts = 0;
 
     for predict in predicts {
+        if predict.seq.len() < default::MIN_READ_LEN {
+            continue;
+        }
+
         total_predicts += 1;
         if predict.is_truncated {
             total_truncated += 1;
@@ -229,6 +235,12 @@ pub fn collect_statistics_for_predicts(
 ) -> Result<StatResult> {
     Ok(predicts
         .par_iter()
+        .filter_map(|predict| {
+            if predict.seq.len() < default::MIN_READ_LEN {
+                return None;
+            }
+            Some(predict)
+        })
         .map(|predict| {
             let mut result = StatResult::default();
             result.total_predicts += 1;

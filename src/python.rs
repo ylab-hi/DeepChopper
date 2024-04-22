@@ -39,7 +39,7 @@ fn test_log() {
 }
 
 #[pymodule]
-fn default(_py: Python, m: &PyModule) -> PyResult<()> {
+fn default(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("QUAL_OFFSET", QUAL_OFFSET)?;
     m.add("BASES", String::from_utf8_lossy(BASES))?;
     m.add("KMER_SIZE", KMER_SIZE)?;
@@ -95,11 +95,10 @@ impl From<fq_encode::RecordData> for PyRecordData {
 }
 
 // Implement FromPyObject for PyRecordData
-impl<'source> FromPyObject<'source> for PyRecordData {
-    fn extract(obj: &'source PyAny) -> PyResult<Self> {
-        // Example extraction logic:
+impl<'py> FromPyObject<'py> for PyRecordData {
+    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
         // Assuming Python objects are tuples of (id, seq, qual)
-        let (id, seq, qual): (&str, &str, &str) = obj.extract()?;
+        let (id, seq, qual): (String, String, String) = ob.extract()?;
         Ok(PyRecordData(fq_encode::RecordData {
             id: id.into(),
             seq: seq.into(),
@@ -278,9 +277,9 @@ fn encode_fq_paths_to_tensor(
     max_width: Option<usize>,
     max_seq_len: Option<usize>,
 ) -> Result<(
-    &PyArray3<Element>,
-    &PyArray3<Element>,
-    &PyArray2<Element>,
+    Bound<'_, PyArray3<Element>>,
+    Bound<'_, PyArray3<Element>>,
+    Bound<'_, PyArray2<Element>>,
     HashMap<String, Element>,
 )> {
     let option = fq_encode::FqEncoderOptionBuilder::default()
@@ -305,9 +304,9 @@ fn encode_fq_paths_to_tensor(
         .collect();
 
     Ok((
-        input.into_pyarray(py),
-        target.into_pyarray(py),
-        qual.into_pyarray(py),
+        input.into_pyarray_bound(py),
+        target.into_pyarray_bound(py),
+        qual.into_pyarray_bound(py),
         kmer2id,
     ))
 }
@@ -324,9 +323,9 @@ fn encode_fq_path_to_tensor(
     max_width: Option<usize>,
     max_seq_len: Option<usize>,
 ) -> Result<(
-    &PyArray3<Element>,
-    &PyArray3<Element>,
-    &PyArray2<Element>,
+    Bound<'_, PyArray3<Element>>,
+    Bound<'_, PyArray3<Element>>,
+    Bound<'_, PyArray2<Element>>,
     HashMap<String, Element>,
 )> {
     let option = fq_encode::FqEncoderOptionBuilder::default()
@@ -351,9 +350,9 @@ fn encode_fq_path_to_tensor(
         .collect();
 
     Ok((
-        input.into_pyarray(py),
-        target.into_pyarray(py),
-        qual.into_pyarray(py),
+        input.into_pyarray_bound(py),
+        target.into_pyarray_bound(py),
+        qual.into_pyarray_bound(py),
         kmer2id,
     ))
 }
@@ -687,12 +686,12 @@ fn majority_voting(labels: Vec<i8>, window_size: usize) -> Vec<i8> {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn deepchopper(_py: Python, m: &PyModule) -> PyResult<()> {
+fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     pyo3_log::init();
 
-    let default_module = PyModule::new(_py, "default")?;
-    default(_py, default_module)?;
-    m.add_submodule(default_module)?;
+    let default_module = PyModule::new_bound(m.py(), "default")?;
+    default(m)?;
+    m.add_submodule(&default_module)?;
 
     m.add_function(wrap_pyfunction!(splite_qual_by_offsets, m)?)?;
     m.add_function(wrap_pyfunction!(vertorize_target, m)?)?;

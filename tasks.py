@@ -133,22 +133,28 @@ def readq(c, file):
     print(df_pd.shape)
     print(df_pd.head())
 
-
     from pyarrow import json
     import json
+
     df_dict = df.to_pydict()
     json.dump(df_dict, open("df.json", "w"))
-
 
 
 @task
 def test(c, file=None):
     from datasets import load_dataset
+
     data_files = {"train": "tests/data/test_input.parquet"}
     num_proc = 8
-    train_dataset = load_dataset("parquet", data_files=data_files, num_proc=num_proc, split='train[:70%]')
-    val_dataset = load_dataset("parquet", data_files=data_files, num_proc=num_proc, split='train[70%:90%]')
-    test_dataset = load_dataset("parquet", data_files=data_files, num_proc=num_proc, split='train[90%:]')
+    train_dataset = load_dataset(
+        "parquet", data_files=data_files, num_proc=num_proc, split="train[:70%]"
+    )
+    val_dataset = load_dataset(
+        "parquet", data_files=data_files, num_proc=num_proc, split="train[70%:90%]"
+    )
+    test_dataset = load_dataset(
+        "parquet", data_files=data_files, num_proc=num_proc, split="train[90%:]"
+    )
 
     print(f"train_dataset: {train_dataset}")
     print(f"val_dataset: {val_dataset}")
@@ -159,8 +165,8 @@ def test(c, file=None):
 def summary(c, file):
     import deepchopper
     import numpy as np
+
     file = Path(file)
     len_list = deepchopper.summary_bam_record_len(file)
     print(f"len_list: {len_list}")
     np.save(file.with_suffix(".npy"), len_list)
-
