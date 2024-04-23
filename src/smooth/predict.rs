@@ -18,16 +18,16 @@ use crate::vis;
 
 #[pyfunction]
 pub fn test_predicts(predicts: Vec<PyRef<Predict>>) {
-    for predict in predicts {
+    predicts.iter().for_each(|predict| {
         println!("id: {}", predict.id);
         println!("seq: {}", predict.seq);
         println!("prediction: {:?}", predict.prediction);
         println!("is_truncated: {}", predict.is_truncated);
-    }
+    });
 }
 
 #[pyclass]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, FromPyObject)]
 pub struct Predict {
     #[pyo3(get, set)]
     pub prediction: Vec<i8>,
@@ -189,6 +189,7 @@ pub fn load_predicts_from_batch_pts(
     // make sure there is only one pt file
     let mut pt_files: Vec<_> = WalkDir::new(pt_path)
         .into_iter()
+        .par_bridge()
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().map_or(false, |ext| ext == "pt"))
         .collect();
@@ -197,7 +198,7 @@ pub fn load_predicts_from_batch_pts(
 
     if let Some(max_predicts) = max_predicts {
         if pt_files.len() > max_predicts {
-            info!("only load first {} files", max_predicts);
+            info!("only load first {} pt files", max_predicts);
             pt_files.truncate(max_predicts);
         }
     }
@@ -220,6 +221,7 @@ pub fn load_predicts_from_batch_pts(
             }
         })
         .collect();
+
     result.map(|vectors| vectors.into_par_iter().flatten().collect())
 }
 

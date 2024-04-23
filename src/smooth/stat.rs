@@ -1,36 +1,32 @@
 use anyhow::Result;
 use pyo3::prelude::*;
 use rayon::prelude::*;
+use std::ops::Deref; // Import the Deref trait
 
 use super::Predict;
 use std::collections::HashMap;
 
 use crate::default;
 
+const FLANK_SIZE_COUNT_PLOYA: usize = 5;
+
 #[pyclass]
 #[derive(Debug, Default)]
 pub struct StatResult {
     #[pyo3(get, set)]
     pub predicts_with_chop: Vec<String>,
-
     #[pyo3(get, set)]
     pub smooth_predicts_with_chop: Vec<String>,
-
     #[pyo3(get, set)]
     pub smooth_internal_predicts: Vec<String>,
-
     #[pyo3(get, set)]
     pub smooth_intervals: HashMap<String, Vec<(usize, usize)>>,
-
     #[pyo3(get, set)]
     pub total_truncated: usize,
-
     #[pyo3(get, set)]
     pub smooth_only_one: Vec<String>,
-
     #[pyo3(get, set)]
     pub smooth_only_one_with_ploya: Vec<String>,
-
     #[pyo3(get, set)]
     pub total_predicts: usize,
 }
@@ -64,8 +60,13 @@ impl StatResult {
         &self,
         predicts: HashMap<String, PyRef<Predict>>,
     ) -> Vec<usize> {
-        self.predicts_with_chop
+        let predicts = predicts
             .iter()
+            .map(|(id, cell)| (id.clone(), cell.deref()))
+            .collect::<HashMap<String, &Predict>>();
+
+        self.predicts_with_chop
+            .par_iter()
             .flat_map(|id| {
                 predicts[id]
                     .prediction_region()
@@ -80,15 +81,20 @@ impl StatResult {
         &self,
         predicts: HashMap<String, PyRef<Predict>>,
     ) -> Vec<usize> {
-        self.predicts_with_chop
+        let predicts = predicts
             .iter()
+            .map(|(id, cell)| (id.clone(), cell.deref()))
+            .collect::<HashMap<String, &Predict>>();
+
+        self.predicts_with_chop
+            .par_iter()
             .map(|id| predicts[id].prediction_region().len())
             .collect()
     }
 
     pub fn lenghth_smooth_predicts_with_chop(&self) -> Vec<usize> {
         self.smooth_predicts_with_chop
-            .iter()
+            .par_iter()
             .flat_map(|id| {
                 self.smooth_intervals[id]
                     .iter()
@@ -100,7 +106,7 @@ impl StatResult {
 
     pub fn number_smooth_predicts_with_chop(&self) -> Vec<usize> {
         self.smooth_predicts_with_chop
-            .iter()
+            .par_iter()
             .map(|id| self.smooth_intervals[id].len())
             .collect()
     }
@@ -135,6 +141,86 @@ impl StatResult {
             .extend(other.smooth_only_one_with_ploya);
         self.total_predicts += other.total_predicts;
     }
+}
+
+#[pyfunction]
+pub fn py_collect_statistics_for_predicts_parallel(
+    predicts: Vec<PyRef<Predict>>,
+    smooth_window_size: usize,
+    min_interval_size: usize,
+    approved_interval_number: usize,
+    internal_threshold: f32,
+    ploya_threshold: usize, // 3
+) -> Result<StatResult> {
+    let predicts = predicts
+        .iter()
+        .map(|cell| cell.deref())
+        .collect::<Vec<&Predict>>();
+
+    Ok(predicts
+        .par_iter()
+        .filter_map(|predict| {
+            if predict.seq.len() < default::MIN_READ_LEN {
+                return None;
+            }
+            Some(predict)
+        })
+        .map(|predict| {
+            let mut result = StatResult::default();
+            result.total_predicts += 1;
+
+            if predict.is_truncated {
+                result.total_truncated += 1;
+            }
+
+            if !predict.prediction_region().is_empty() {
+                result.predicts_with_chop.push(predict.id.clone());
+            }
+
+            let smooth_regions: Vec<(usize, usize)> = predict
+                .smooth_and_slect_intervals(
+                    smooth_window_size,
+                    min_interval_size,
+                    approved_interval_number,
+                )
+                .par_iter()
+                .map(|r| (r.start, r.end))
+                .collect();
+
+            if !smooth_regions.is_empty() {
+                result.smooth_predicts_with_chop.push(predict.id.clone());
+                result
+                    .smooth_intervals
+                    .insert(predict.id.clone(), smooth_regions.clone());
+
+                if smooth_regions.len() == 1 {
+                    result.smooth_only_one.push(predict.id.clone());
+
+                    let flank_size = FLANK_SIZE_COUNT_PLOYA;
+                    // count first 10 bp of start, if has 3 A
+                    let count = predict.seq
+                        [(smooth_regions[0].0 - flank_size).max(0)..smooth_regions[0].0]
+                        .chars()
+                        .filter(|&c| c == 'A')
+                        .count();
+
+                    if count >= ploya_threshold {
+                        result.smooth_only_one_with_ploya.push(predict.id.clone());
+                    }
+                }
+
+                for region in &smooth_regions {
+                    if (region.1 as f32 / predict.seq_len() as f32) < internal_threshold {
+                        result.smooth_internal_predicts.push(predict.id.clone());
+                    }
+                }
+            }
+            result
+        })
+        .reduce(StatResult::default, |mut a, b| {
+            a.merge(b);
+            a
+        }))
 }
 
 #[pyfunction]
@@ -186,19 +272,15 @@ pub fn py_collect_statistics_for_predicts(
             if smooth_regions.len() == 1 {
                 smooth_only_one.push(predict.id.clone());
 
-                let flank_size = 5;
+                let flank_size = FLANK_SIZE_COUNT_PLOYA;
 
-                // count first 10 bp of start, if has 3 A
-                let mut count = 0;
-                let selected_seq =
-                    predict.seq[smooth_regions[0].0 - flank_size..smooth_regions[0].0].to_string();
+                // count first 5 bp of start, if has 3 A
+                let count = predict.seq
+                    [(smooth_regions[0].0 - flank_size).max(0)..smooth_regions[0].0]
+                    .chars()
+                    .filter(|&c| c == 'A')
+                    .count();
 
-                // count A
-                for c in selected_seq.chars() {
-                    if c == 'A' {
-                        count += 1;
-                    }
-                }
                 if count >= ploya_threshold {
                     smooth_ploya_only_one.push(predict.id.clone());
                 }
@@ -272,7 +354,7 @@ pub fn collect_statistics_for_predicts(
                 if smooth_regions.len() == 1 {
                     result.smooth_only_one.push(predict.id.clone());
 
-                    let flank_size = 5;
+                    let flank_size = FLANK_SIZE_COUNT_PLOYA;
                     // count first 10 bp of start, if has 3 A
                     let count = predict.seq
                         [(smooth_regions[0].0 - flank_size).max(0)..smooth_regions[0].0]

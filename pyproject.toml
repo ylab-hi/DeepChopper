@@ -125,6 +125,7 @@ onnx = "^1.16.0"
 onnxscript = "^0.1.0.dev20240407"
 plotly = "^5.20.0"
 gget = "^0.28.4"
+joblib = "^1.4.0"
 
 
 [project.urls]
