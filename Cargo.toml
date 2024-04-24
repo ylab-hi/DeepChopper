@@ -35,12 +35,13 @@ pyo3 = { version = "0.21.2", features = [
 ctrlc = "3.4"
 log = "0.4"
 pyo3-log = "0.10"
-noodles = { version = "0.69.0", features = [
+noodles = { version = "0.70.0", features = [
     "bgzf",
     "core",
     "csi",
     "fasta",
     "fastq",
+    "sam",
     "bam",
 ] }
 

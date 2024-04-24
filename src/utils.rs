@@ -3,6 +3,46 @@ use noodles::fastq;
 use rayon::prelude::*;
 use std::{fs::File, io::BufReader, ops::Range, path::Path};
 
+use pyo3::prelude::*;
+
+use noodles::sam::alignment::record::cigar::op::{Kind, Op};
+use noodles::sam::record::Cigar;
+
+fn calc_softclips(cigar: &Cigar) -> Result<(usize, usize)> {
+    let ops: Vec<Op> = cigar.iter().collect::<Result<Vec<_>, _>>()?;
+
+    let len = ops.len();
+
+    // Calculate leading soft clips
+    let left_softclips = if len > 0 && ops[0].kind() == Kind::SoftClip {
+        ops[0].len()
+    } else if len > 1 && ops[0].kind() == Kind::HardClip && ops[1].kind() == Kind::SoftClip {
+        ops[1].len()
+    } else {
+        0
+    };
+
+    // Calculate trailing soft clips
+    let right_softclips = if len > 0 && ops[len - 1].kind() == Kind::SoftClip {
+        ops[len - 1].len()
+    } else if len > 1
+        && ops[len - 1].kind() == Kind::HardClip
+        && ops[len - 2].kind() == Kind::SoftClip
+    {
+        ops[len - 2].len()
+    } else {
+        0
+    };
+
+    Ok((left_softclips, right_softclips))
+}
+
+#[pyfunction]
+pub fn left_right_soft_clip(cigar_string: &str) -> Result<(usize, usize)> {
+    let cigar = Cigar::new(cigar_string.as_bytes());
+    calc_softclips(&cigar)
+}
+
 pub fn summary_predict_generic<D: PartialEq + Send + Sync + Copy>(
     predictions: &[Vec<D>],
     labels: &[Vec<D>],
@@ -546,5 +586,23 @@ mod tests {
             smooth_label_region(&labels2, merge_threshold2, distance_threshold2, 0),
             expected_result2
         );
+    }
+
+    #[test]
+    fn test_cigar_soft_clip() {
+        let (left, right) = calc_softclips(&Cigar::new(b"5S10M5S")).unwrap();
+        assert_eq!(left, 5);
+        assert_eq!(right, 5);
+
+        let (left, right) = calc_softclips(&Cigar::new(b"5H10S5S")).unwrap();
+        assert_eq!(left, 10);
+        assert_eq!(right, 5);
+
+        let (left, right) = calc_softclips(&Cigar::new(b"10S5M1D")).unwrap();
+        assert_eq!(left, 10);
+        assert_eq!(right, 0);
+
+        let result = calc_softclips(&Cigar::new(b"1D5M10S5A"));
+        assert!(result.is_err());
     }
 }
