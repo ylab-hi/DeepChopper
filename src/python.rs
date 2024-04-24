@@ -732,6 +732,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m
     )?)?;
     m.add_function(wrap_pyfunction!(utils::left_right_soft_clip, m)?)?;
+    m.add_function(wrap_pyfunction!(output::py_read_bam_records, m)?)?;
 
     // add smooth utils
     m.add_function(wrap_pyfunction!(
@@ -754,6 +755,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<fq_encode::JsonEncoder>()?;
     m.add_class::<fq_encode::ParquetEncoder>()?;
     m.add_class::<smooth::Predict>()?;
+    m.add_class::<output::BamRecord>()?;
 
     Ok(())
 }

@@ -1,3 +1,5 @@
+use serde::Deserialize;
+use serde::Serialize;
 use std::ops::Range;
 use std::path::PathBuf;
 
@@ -27,7 +29,7 @@ pub fn test_predicts(predicts: Vec<PyRef<Predict>>) {
 }
 
 #[pyclass]
-#[derive(Debug, Default, FromPyObject)]
+#[derive(Debug, Default, FromPyObject, Deserialize, Serialize)]
 pub struct Predict {
     #[pyo3(get, set)]
     pub prediction: Vec<i8>,
