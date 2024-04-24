@@ -105,6 +105,52 @@ impl BamRecord {
     }
 }
 
+use noodles::bgzf;
+use std::{fs::File, num::NonZeroUsize, thread};
+
+pub fn read_bam_records_parallel<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRecord>> {
+    let file = File::open(path)?;
+
+    let worker_count = thread::available_parallelism().unwrap_or(NonZeroUsize::MIN);
+    let decoder = bgzf::MultithreadedReader::with_worker_count(worker_count, file);
+
+    let mut reader = bam::io::Reader::from(decoder);
+    let _header = reader.read_header()?;
+
+    let res: Result<HashMap<String, BamRecord>> = reader
+        .records()
+        .par_bridge()
+        .map(|result| {
+            let record = result?;
+            let qname = String::from_utf8(record.name().unwrap().as_bytes().to_vec())?;
+            let mapping_quality = record.mapping_quality().unwrap().get() as usize;
+
+            let ops: Vec<Op> = record.cigar().iter().collect::<Result<Vec<_>, _>>()?;
+            let cigar = cigar_to_string(&ops)?;
+
+            let forward = !record.flags().is_reverse_complemented();
+
+            let (mut left_softclip, mut right_softclip) = _calc_softclips(&ops)?;
+            if !forward {
+                std::mem::swap(&mut left_softclip, &mut right_softclip);
+            }
+
+            Ok((
+                qname.clone(),
+                BamRecord::new(
+                    qname,
+                    mapping_quality,
+                    cigar,
+                    forward,
+                    left_softclip,
+                    right_softclip,
+                ),
+            ))
+        })
+        .collect();
+    res
+}
+
 pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRecord>> {
     let mut reader = bam::io::reader::Builder.build_from_path(path)?;
     let _header = reader.read_header()?;
@@ -149,6 +195,12 @@ pub fn py_read_bam_records(path: &str) -> Result<HashMap<String, BamRecord>> {
     read_bam_records(path)
 }
 
+#[pyfunction]
+#[pyo3(name = "read_bam_records_parallel")]
+pub fn py_read_bam_records_parallel(path: &str) -> Result<HashMap<String, BamRecord>> {
+    read_bam_records_parallel(path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -157,6 +209,13 @@ mod tests {
     fn test_read_bam() {
         let path = "tests/data/4reads.bam";
         let _records = read_bam_records(path).unwrap();
+        println!("{:?}", _records);
+    }
+
+    #[test]
+    fn test_read_bam_parallel() {
+        let path = "tests/data/4reads.bam";
+        let _records = read_bam_records_parallel(path).unwrap();
         println!("{:?}", _records);
     }
 

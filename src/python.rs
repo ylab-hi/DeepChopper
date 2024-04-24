@@ -733,6 +733,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     )?)?;
     m.add_function(wrap_pyfunction!(output::left_right_soft_clip, m)?)?;
     m.add_function(wrap_pyfunction!(output::py_read_bam_records, m)?)?;
+    m.add_function(wrap_pyfunction!(output::py_read_bam_records_parallel, m)?)?;
 
     // add smooth utils
     m.add_function(wrap_pyfunction!(
