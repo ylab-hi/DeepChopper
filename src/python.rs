@@ -731,7 +731,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
         collect_and_split_dataset_with_natural_terminal_adapters,
         m
     )?)?;
-    m.add_function(wrap_pyfunction!(utils::left_right_soft_clip, m)?)?;
+    m.add_function(wrap_pyfunction!(output::left_right_soft_clip, m)?)?;
     m.add_function(wrap_pyfunction!(output::py_read_bam_records, m)?)?;
 
     // add smooth utils

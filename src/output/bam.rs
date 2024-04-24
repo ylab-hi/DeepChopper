@@ -1,5 +1,3 @@
-use crate::utils::_calc_softclips;
-use crate::utils::cigar_to_string;
 use anyhow::Result;
 use noodles::bam;
 use pyo3::prelude::*;
@@ -8,7 +6,65 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 
-use noodles::sam::alignment::record::cigar::op::Op;
+use noodles::sam::alignment::record::cigar::op::{Kind, Op};
+use noodles::sam::record::Cigar;
+
+pub fn cigar_to_string(cigar: &[Op]) -> Result<String> {
+    let mut cigar_str = String::new();
+    for op in cigar {
+        let kind_str = match op.kind() {
+            Kind::Match => "M",
+            Kind::Insertion => "I",
+            Kind::Deletion => "D",
+            Kind::Skip => "N",
+            Kind::SoftClip => "S",
+            Kind::HardClip => "H",
+            Kind::Pad => "P",
+            Kind::SequenceMatch => "=",
+            Kind::SequenceMismatch => "X",
+        };
+        cigar_str.push_str(&format!("{}{}", op.len(), kind_str));
+    }
+    Ok(cigar_str)
+}
+
+pub fn _calc_softclips(cigars: &[Op]) -> Result<(usize, usize)> {
+    let len = cigars.len();
+
+    // Calculate leading soft clips
+    let left_softclips = if len > 0 && cigars[0].kind() == Kind::SoftClip {
+        cigars[0].len()
+    } else if len > 1 && cigars[0].kind() == Kind::HardClip && cigars[1].kind() == Kind::SoftClip {
+        cigars[1].len()
+    } else {
+        0
+    };
+
+    // Calculate trailing soft clips
+    let right_softclips = if len > 0 && cigars[len - 1].kind() == Kind::SoftClip {
+        cigars[len - 1].len()
+    } else if len > 1
+        && cigars[len - 1].kind() == Kind::HardClip
+        && cigars[len - 2].kind() == Kind::SoftClip
+    {
+        cigars[len - 2].len()
+    } else {
+        0
+    };
+
+    Ok((left_softclips, right_softclips))
+}
+
+pub fn calc_softclips(cigar: &Cigar) -> Result<(usize, usize)> {
+    let ops: Vec<Op> = cigar.iter().collect::<Result<Vec<_>, _>>()?;
+    _calc_softclips(&ops)
+}
+
+#[pyfunction]
+pub fn left_right_soft_clip(cigar_string: &str) -> Result<(usize, usize)> {
+    let cigar = Cigar::new(cigar_string.as_bytes());
+    calc_softclips(&cigar)
+}
 
 #[pyclass]
 #[derive(Debug, Default, Deserialize, Serialize, FromPyObject)]
@@ -21,7 +77,6 @@ pub struct BamRecord {
     cigar: String,
     #[pyo3(get, set)]
     forward: bool,
-
     #[pyo3(get, set)]
     left_softclip: usize,
     #[pyo3(get, set)]
@@ -103,5 +158,23 @@ mod tests {
         let path = "tests/data/4reads.bam";
         let _records = read_bam_records(path).unwrap();
         println!("{:?}", _records);
+    }
+
+    #[test]
+    fn test_cigar_soft_clip() {
+        let (left, right) = calc_softclips(&Cigar::new(b"5S10M5S")).unwrap();
+        assert_eq!(left, 5);
+        assert_eq!(right, 5);
+
+        let (left, right) = calc_softclips(&Cigar::new(b"5H10S5S")).unwrap();
+        assert_eq!(left, 10);
+        assert_eq!(right, 5);
+
+        let (left, right) = calc_softclips(&Cigar::new(b"10S5M1D")).unwrap();
+        assert_eq!(left, 10);
+        assert_eq!(right, 0);
+
+        let result = calc_softclips(&Cigar::new(b"1D5M10S5A"));
+        assert!(result.is_err());
     }
 }
