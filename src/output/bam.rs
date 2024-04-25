@@ -1,10 +1,14 @@
 use anyhow::Result;
 use noodles::bam;
+use noodles::bgzf;
 use pyo3::prelude::*;
+use pyo3::types::PyBytes;
+
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
+use std::{fs::File, num::NonZeroUsize, thread};
 
 use noodles::sam::alignment::record::cigar::op::{Kind, Op};
 use noodles::sam::record::Cigar;
@@ -75,12 +79,20 @@ pub struct BamRecord {
     mapping_quality: usize,
     #[pyo3(get, set)]
     cigar: String,
-    #[pyo3(get, set)]
-    forward: bool,
+
     #[pyo3(get, set)]
     left_softclip: usize,
     #[pyo3(get, set)]
     right_softclip: usize,
+
+    #[pyo3(get, set)]
+    is_forward: bool,
+
+    #[pyo3(get, set)]
+    is_mapped: bool,
+
+    #[pyo3(get, set)]
+    is_supplementary: bool,
 }
 
 #[pymethods]
@@ -90,23 +102,55 @@ impl BamRecord {
         qname: String,
         mapping_quality: usize,
         cigar: String,
-        forward: bool,
         left_softclip: usize,
         right_softclip: usize,
+        is_forward: bool,
+        is_mapped: bool,
+        is_supplementary: bool,
     ) -> Self {
         BamRecord {
             qname,
             mapping_quality,
             cigar,
-            forward,
             left_softclip,
             right_softclip,
+            is_forward,
+            is_mapped,
+            is_supplementary,
         }
     }
-}
 
-use noodles::bgzf;
-use std::{fs::File, num::NonZeroUsize, thread};
+    fn __getstate__(&self, py: Python) -> PyResult<PyObject> {
+        // Serialize the struct to a JSON string
+        let serialized = serde_json::to_string(self).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to serialize: {}", e))
+        })?;
+
+        // Convert JSON string to Python bytes
+        Ok(PyBytes::new_bound(py, serialized.as_bytes()).into())
+    }
+
+    fn __setstate__(&mut self, py: Python, state: PyObject) -> PyResult<()> {
+        // Expect a bytes object for state
+        let state_bytes: &PyBytes = state.extract(py)?;
+
+        // Deserialize the JSON string into the current instance
+        *self = serde_json::from_slice(state_bytes.as_bytes()).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                "Failed to deserialize: {}",
+                e
+            ))
+        })?;
+        Ok(())
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "BamRecord(qname={}, mapping_quality={}, cigar={}, left_softclip={}, right_softclip={}, is_forward={}, is_mapped={}, is_supplementary={})",
+            self.qname, self.mapping_quality, self.cigar, self.left_softclip, self.right_softclip, self.is_forward, self.is_mapped, self.is_supplementary
+        )
+    }
+}
 
 pub fn read_bam_records_parallel<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRecord>> {
     let file = File::open(path)?;
@@ -128,10 +172,13 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(path: P) -> Result<HashMap<Stri
             let ops: Vec<Op> = record.cigar().iter().collect::<Result<Vec<_>, _>>()?;
             let cigar = cigar_to_string(&ops)?;
 
-            let forward = !record.flags().is_reverse_complemented();
+            let is_forward = !record.flags().is_reverse_complemented();
+            let is_mapped = !record.flags().is_unmapped();
+            let is_supplementary = record.flags().is_supplementary();
 
             let (mut left_softclip, mut right_softclip) = _calc_softclips(&ops)?;
-            if !forward {
+
+            if !is_forward {
                 std::mem::swap(&mut left_softclip, &mut right_softclip);
             }
 
@@ -141,9 +188,11 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(path: P) -> Result<HashMap<Stri
                     qname,
                     mapping_quality,
                     cigar,
-                    forward,
                     left_softclip,
                     right_softclip,
+                    is_forward,
+                    is_mapped,
+                    is_supplementary,
                 ),
             ))
         })
@@ -166,10 +215,12 @@ pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRe
             let ops: Vec<Op> = record.cigar().iter().collect::<Result<Vec<_>, _>>()?;
             let cigar = cigar_to_string(&ops)?;
 
-            let forward = !record.flags().is_reverse_complemented();
+            let is_forward = !record.flags().is_reverse_complemented();
+            let is_mapped = !record.flags().is_unmapped();
+            let is_supplementary = record.flags().is_supplementary();
 
             let (mut left_softclip, mut right_softclip) = _calc_softclips(&ops)?;
-            if !forward {
+            if !is_forward {
                 std::mem::swap(&mut left_softclip, &mut right_softclip);
             }
 
@@ -179,9 +230,11 @@ pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRe
                     qname,
                     mapping_quality,
                     cigar,
-                    forward,
                     left_softclip,
                     right_softclip,
+                    is_forward,
+                    is_mapped,
+                    is_supplementary,
                 ),
             ))
         })

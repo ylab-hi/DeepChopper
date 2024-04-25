@@ -1,5 +1,6 @@
 use anyhow::Result;
 use pyo3::prelude::*;
+use pyo3::types::PyBytes;
 use rayon::prelude::*;
 use std::ops::Deref; // Import the Deref trait
 
@@ -7,11 +8,12 @@ use super::Predict;
 use std::collections::HashMap;
 
 use crate::default;
+use serde::{Deserialize, Serialize};
 
 const FLANK_SIZE_COUNT_PLOYA: usize = 5;
 
 #[pyclass]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct StatResult {
     #[pyo3(get, set)]
     pub predicts_with_chop: Vec<String>,
@@ -124,6 +126,31 @@ impl StatResult {
             self.smooth_only_one.len(),
             self.smooth_only_one_with_ploya.len(),
         )
+    }
+
+    fn __getstate__(&self, py: Python) -> PyResult<PyObject> {
+        // Serialize the struct to a JSON string
+        let serialized = serde_json::to_string(self).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to serialize: {}", e))
+        })?;
+
+        // Convert JSON string to Python bytes
+        Ok(PyBytes::new_bound(py, serialized.as_bytes()).into())
+    }
+
+    fn __setstate__(&mut self, py: Python, state: PyObject) -> PyResult<()> {
+        // Expect a bytes object for state
+        let state_bytes: &PyBytes = state.extract(py)?;
+
+        // Deserialize the JSON string into the current instance
+        *self = serde_json::from_slice(state_bytes.as_bytes()).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                "Failed to deserialize: {}",
+                e
+            ))
+        })?;
+
+        Ok(())
     }
 }
 

@@ -12,6 +12,8 @@ use anyhow::Result;
 use candle_core::{self, pickle};
 use log::info;
 use pyo3::prelude::*;
+use pyo3::types::PyBytes;
+
 use rayon::prelude::*;
 use std::collections::HashMap;
 use walkdir::WalkDir;
@@ -139,6 +141,30 @@ impl Predict {
             sreg_str
         );
         result
+    }
+
+    fn __getstate__(&self, py: Python) -> Result<PyObject> {
+        // Serialize the struct to a JSON string
+        let serialized = serde_json::to_string(self).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to serialize: {}", e))
+        })?;
+
+        // Convert JSON string to Python bytes
+        Ok(PyBytes::new_bound(py, serialized.as_bytes()).into())
+    }
+
+    fn __setstate__(&mut self, py: Python, state: PyObject) -> PyResult<()> {
+        // Expect a bytes object for state
+        let state_bytes: &PyBytes = state.extract(py)?;
+
+        // Deserialize the JSON string into the current instance
+        *self = serde_json::from_slice(state_bytes.as_bytes()).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                "Failed to deserialize: {}",
+                e
+            ))
+        })?;
+        Ok(())
     }
 }
 
