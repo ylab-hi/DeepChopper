@@ -1,3 +1,4 @@
+import json
 import pysam
 import deepchopper
 from deepchopper import (
@@ -11,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 from rich.logging import RichHandler
+from rich.progress import track
 from needletail import (
     parse_fastx_file,
     NeedletailError,
@@ -21,13 +23,15 @@ import re
 from textwrap import wrap
 import gget
 
+
 FORMAT = "%(message)s"
 logging.basicConfig(
-    level=logging.WARN,
+    level=logging.DEBUG,
     format=FORMAT,
     handlers=[RichHandler()],
 )
 
+log = logging.getLogger("deepchopper")
 
 INTERNAL_THRESHOLD: float = 0.9
 OVERLAP_THRESHOLD: float = 0.4
@@ -111,7 +115,7 @@ def collect_fq_records(file: Path):
         for record in parse_fastx_file(file.as_posix()):
             result[record.id] = record
     except NeedletailError:
-        print("Invalid Fastq file")
+        log.error("Invalid Fastq file")
 
     return result
 
@@ -164,48 +168,50 @@ def show_sam_record(predict, stats, sam_records):
     seq_len = len(predict.seq)
     txt_width = 120
 
-    print(f"\nread id {predict.id} seq len: {seq_len}")
+    log.debug(f"read id {predict.id} seq len: {seq_len}")
 
     smooth_intervals = stats.smooth_intervals[predict.id]
 
     for interval in smooth_intervals:
         quals = predict.qual_array()[interval[0] : interval[1]]
         average_qual = sum(quals) / len(quals)
-        print(f"smooth interval : {interval} len: {interval[1] - interval[0]}     {average_qual=}")
+        log.debug(f"smooth interval : {interval} len: {interval[1] - interval[0]}     {average_qual=}")
 
     highlight_targets(predict.seq, predict.prediction_region())
     highlight_targets(predict.seq, smooth_intervals)
 
     predict_read = sam_records.get(predict.id, None)
     if predict_read is None:
-        print("the read is not map")
+        log.debug("the read is not map")
         return
 
     if len(smooth_intervals) == 1:
         blat_df = gget.blat(predict.seq[smooth_intervals[0][0] : smooth_intervals[0][1]])
         if blat_df is not None:
-            print(f"blat result:\n {blat_df.to_string()}\n")
+            log.debug(f"blat result:\n {blat_df.to_string()}\n")
 
-    print(
+    log.debug(
         f"{predict_read.reference_id=} strand={'+' if predict_read.is_forward else '-'} {predict_read.mapping_quality=}"
     )
-    print(f"{predict_read.reference_start=} {predict_read.reference_end=}")
-    print(f"cigar: {wrap_str(predict_read.cigarstring, txt_width)}")
+    log.debug(f"{predict_read.reference_start=} {predict_read.reference_end=}")
+    log.debug(f"cigar: {wrap_str(predict_read.cigarstring, txt_width)}")
 
     ls_len, rs_len = deepchopper.left_right_soft_clip(predict_read.cigarstring)
     if not predict_read.is_forward:
         ls_len, rs_len = rs_len, ls_len
 
-    print(f"ls: 0-{ls_len}  \n {wrap_str(predict.seq[:ls_len], txt_width)}")
-    print(f"rs: {seq_len-rs_len}-{seq_len} \n {wrap_str(predict.seq[-rs_len:], txt_width)}")
+    log.debug(f"ls: 0-{ls_len}  \n {wrap_str(predict.seq[:ls_len], txt_width)}")
+    log.debug(f"rs: {seq_len-rs_len}-{seq_len} \n {wrap_str(predict.seq[-rs_len:], txt_width)}")
 
     if predict_read.has_tag("SA"):
-        print("has sa")
+        log.debug(f"SA: {predict_read.get_tag('SA')}")
         chimeric_alns = predict_read.get_tag("SA")[:-1].split(";")
 
         for _aln in chimeric_alns:
             (
-                chr_sa, pos_sa, strand_sa,
+                chr_sa,
+                pos_sa,
+                strand_sa,
                 cigar_sa,
                 mapq_sa,
                 nm_sa,
@@ -218,13 +224,10 @@ def show_sam_record(predict, stats, sam_records):
             r_s_len = right_mat.group(1) if right_mat else ""
 
             tgt_key = f"{predict_read.qname}\t{l_s_len=}\t{r_s_len=}"
+            log.debug(f"chimeric : {tgt_key}")
 
-            print(f"chimeric : {tgt_key}")
 
-
-def check_overlap(
-    interval1: tuple[int, int], interval2: tuple[int, int], overlap_threshold: float
-) -> bool:
+def check_overlap(interval1: tuple[int, int], interval2: tuple[int, int], overlap_threshold: float) -> bool:
     # interval2 is predicted region
 
     start1, end1 = interval1
@@ -249,7 +252,7 @@ def check_overlap(
     ratio = overlap / divide
 
     # Check if the overlap meets or exceeds the threshold
-    print(f"compare {interval1}({length1}) {interval2}({length2}) {ratio=}")
+    log.debug(f"compare {interval1}({length1}) {interval2}({length2}) {ratio=}")
     return ratio >= overlap_threshold
 
 
@@ -288,9 +291,9 @@ def process_one_interval_parallel(
 
             blat_df = gget.blat(predict_seq)
             if blat_df is not None:
-                print(f"\nblat_df: {blat_df.to_string()}\n")
+                log.debug(f"blat_df: {blat_df.to_string()}\n")
             else:
-                print("blat_df is None")
+                log.debug("blat_df is None")
 
             if blat_df is None or (blat_df.iloc[0]["%_aligned"] / 100 < blat_threshold):
                 overlap_results["terminal_chop_nosc_noblat"].append(pid)
@@ -321,14 +324,12 @@ def process_one_interval_parallel(
 
             blat_df = gget.blat(predict_seq)
             if blat_df is not None:
-                print(f"\nblat_df: {blat_df.to_string()}\n")
+                log.debug(f"blat_df: {blat_df.to_string()}\n")
             else:
-                print("blat_df is None")
+                log.debug("blat_df is None")
 
             if blat_df is None or (blat_df.iloc[0]["%_aligned"] / 100 < blat_threshold):
                 overlap_results["internal_chop_nosc_noblat"].append(pid)
-
-
 
 
 def verify_result_with_sam_records_rs(
@@ -342,14 +343,14 @@ def verify_result_with_sam_records_rs(
     min_mapping_quality: int = MIN_MAPPING_QUALITY,
 ):
     read_mapping_quality = rs_read.mapping_quality
-    
+
     if not rs_read.is_mapped:
-        print(f"\nthe read {predict.id} is not map")
+        log.debug(f"the read {predict.id} is not map")
         overlap_results["unmap_read"].append(predict.id)
         return
 
     if read_mapping_quality < min_mapping_quality:
-        print(f"\nthe read {predict.id}'s mapping_quality {read_mapping_quality} is low")
+        log.debug(f"the read {predict.id}'s mapping_quality {read_mapping_quality} is low")
         overlap_results["low_mp_read"].append(predict.id)
         return
 
@@ -358,20 +359,12 @@ def verify_result_with_sam_records_rs(
 
     intervals = stats.smooth_intervals[predict.id]
 
-    print("\n")
-    print(predict.show_info(intervals))
-
+    log.debug(predict.show_info(intervals))
     txt_width = 120
-    print(
-        f"strand={'+' if rs_read.is_forward else '-'} {rs_read.mapping_quality=}"
-    )
-    # print(f"{predict_read.reference_start=} {predict_read.reference_end=}")
-    print(f"cigar: {wrap_str(rs_read.cigar, txt_width)}")
-    print(f"ls {ls_len}: 0-{ls_len}  \n {wrap_str(predict.seq[:ls_len], txt_width)}")
-    print(
-        f"rs {rs_len}: {seq_len-rs_len}-{seq_len} \n {wrap_str(predict.seq[seq_len-rs_len:seq_len], txt_width)}"
-    )
-    
+    log.debug(f"strand={'+' if rs_read.is_forward else '-'} {rs_read.mapping_quality=}")
+    log.debug(f"cigar: {wrap_str(rs_read.cigar, txt_width)}")
+    log.debug(f"ls {ls_len}: 0-{ls_len}  \n {wrap_str(predict.seq[:ls_len], txt_width)}")
+    log.debug(f"rs {rs_len}: {seq_len-rs_len}-{seq_len} \n {wrap_str(predict.seq[seq_len-rs_len:seq_len], txt_width)}")
 
     if len(intervals) == 1:
         # clean predict
@@ -416,9 +409,6 @@ def verify_result_with_sam_records_rs(
         pass
 
 
-
-
-
 def verify_result_with_sam_records_for_parallel(
     pseq: str,
     pid: str,
@@ -436,12 +426,12 @@ def verify_result_with_sam_records_for_parallel(
     read_mapping_quality = read_mapping_quality
 
     if not read_is_mapped:
-        print(f"\nthe read {pid} is not map")
+        log.debug(f"the read {pid} is not map")
         overlap_results["unmap_read"].append(pid)
         return overlap_results
 
     if read_mapping_quality < min_mapping_quality:
-        print(f"\nthe read {pid}'s mapping_quality {read_mapping_quality} is low")
+        log.debug(f"the read {pid}'s mapping_quality {read_mapping_quality} is low")
         overlap_results["low_mp_read"].append(pid)
         return overlap_results
 
@@ -452,7 +442,7 @@ def verify_result_with_sam_records_for_parallel(
     if len(intervals) == 1:
         # clean predict
         start, end = intervals[0]
-        
+
         process_one_interval_parallel(
             overlap_results,
             seq_len,
@@ -488,7 +478,7 @@ def verify_result_with_sam_records_for_parallel(
             )
     else:
         overlap_results["no_process"].append(pid)
-        
+
     return overlap_results
 
 
@@ -499,37 +489,87 @@ def merge_results(results_list):
             combined_results[key].extend(values)
     return combined_results
 
-INTERNAL_THRESHOLD: float = 0.9,
-OVERLAP_THRESHOLD: float = 0.4,
-BLAT_THRESHOLD: FLoat = 0.9,
-MIN_MAPPING_QUALITY: int = 0,
+
+def get_acc(data):
+    internal_chop_sc_count = len(data.get("internal_chop_sc", []))
+    internal_chop_nosc_count = len(data.get("internal_chop_nosc", []))
+    internal_chop_nosc_noblat_count = len(data.get("internal_chop_nosc_noblat", []))
+    internal_chop_nosc_cannotblat_count = len(data.get("internal_chop_nosc_cannot_blat", []))
+    total_internal = internal_chop_sc_count + internal_chop_nosc_count
+    confirmed_internal = internal_chop_sc_count + internal_chop_nosc_noblat_count
+
+    internal_acc = confirmed_internal / (total_internal)
+
+    terminal_chop_sc_count = len(data.get("terminal_chop_sc", []))
+    terminal_chop_nosc_count = len(data.get("terminal_chop_nosc", []))
+    terminal_chop_nosc_noblat_count = len(data.get("terminal_chop_nosc_noblat", []))
+    terminal_chop_nosc_cannotblat_count = len(data.get("terminal_chop_nosc_cannot_blat", []))
+    total_terminal = terminal_chop_sc_count + terminal_chop_nosc_count
+    confirmed_terminal = terminal_chop_sc_count + terminal_chop_nosc_noblat_count
+
+    terminal_acc = confirmed_terminal / (total_terminal)
+
+    total_acc = (confirmed_internal + confirmed_terminal) / (total_internal + total_terminal)
+
+    return internal_acc, terminal_acc, total_acc
+
+
+def vis_overlap_results(data):
+    import pandas as pd
+
+    internal_acc, terminal_acc, total_acc = get_acc(data)
+
+    plot_df = pd.DataFrame(
+        [(key, len(value)) for key, value in data.items()],
+        columns=["Category", "Count"],
+    )
+
+    # Plotting the data
+    plt.figure(figsize=(10, 6))  # Set the figure size
+    bars = plt.bar(plot_df["Category"], plot_df["Count"], color="skyblue")  # Create a bar chart
+    # Add text annotations to the bars
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(
+            bar.get_x() + bar.get_width() / 2,
+            yval + 0.5,
+            yval,
+            ha="center",
+            va="bottom",
+        )
+
+    plt.xlabel("Category")  # Set the x-label
+    plt.ylabel("Number of Items")  # Set the y-label
+    plt.title(
+        f"Count of Items in Each Category {internal_acc=:.4f} {terminal_acc=:.4f} {total_acc=:.4f}"
+    )  # Set the title
+    plt.xticks(rotation=45, ha="right")  # Rotate x-axis labels for better visibility
+    plt.tight_layout()  # Adjust layout to make room for the rotated x-labels
+    # plt.show()  # Display the plot
+    plt.savefig("overlap_results.pdf", dpi=300)
+    plt.close()
+
 
 def main():
     bam_file = "/projects/b1171/ylk4626/project/DeepChopper/data/eval/real_data/dorado_without_trim_fqs/VCaP.bam"
 
-    log = logging.getLogger("rich")
-    # log.info("Hello, World!")
-
-
     rs_sam_records = deepchopper.read_bam_records_parallel(bam_file)
     ## VCaP
     hyena_results = [
-            Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_0/predicts/0/"),
+        Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_0/predicts/0/"),
         Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_1/predicts/0/"),
-    Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_2/predicts/0/"),
-    Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_3/predicts/0/"),
-    Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_4/predicts/0/"),
-    Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_5/predicts/0/"),
-    Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_6/predicts/0/"),
-    Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_7/predicts/0/"),
-    Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_8/predicts/0/"),
-    Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_9/predicts/0/"),
+        Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_2/predicts/0/"),
+        Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_3/predicts/0/"),
+        Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_4/predicts/0/"),
+        Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_5/predicts/0/"),
+        Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_6/predicts/0/"),
+        Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_7/predicts/0/"),
+        Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_8/predicts/0/"),
+        Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_9/predicts/0/"),
     ]
 
-    max_batches  =  5000
-    all_predicts = deepchopper.load_predicts_from_batch_pts(hyena_results[0],
-                                                        -100, 
-                                                        max_batches)
+    max_batches = 100
+    all_predicts = deepchopper.load_predicts_from_batch_pts(hyena_results[0], -100, max_batches)
 
     stats = deepchopper.py_collect_statistics_for_predicts_parallel(
         list(all_predicts.values()),
@@ -540,13 +580,38 @@ def main():
         ploya_threshold=3,
     )
 
+    original_prediction_number = stats.number_predicts_with_chop(all_predicts)
+    smooth_prediction_number = stats.number_smooth_predicts_with_chop()
+    fig, axs = plt.subplots(1, 2, figsize=(18, 6))
+    vis_hist_for_num_of_intervals(original_prediction_number, title="Original Intervals", ax=axs[0])
+    vis_hist_for_num_of_intervals(smooth_prediction_number, title="Smooth Intervals", ax=axs[1])
+    fig.savefig("predicts_intervals_number.pdf", dpi=300)
 
-    for p in stats.smooth_predicts_with_chop:
-        verify_result_with_sam_records_rs(
-            overlap_results,
-            all_predicts[p],
-            stats,
-            rs_sam_records[p])
+    plot_oregion_size_data = stats.length_predicts_with_chop(all_predicts)
+    plot_sregion_size_data = stats.lenghth_smooth_predicts_with_chop()
+    fig, axs = plt.subplots(1, 2, figsize=(18, 6))
+    vis_hist_for_num_of_intervals(
+        plot_oregion_size_data,
+        title=f"Chop Size of clean data (original) {min(plot_oregion_size_data)}-{max(plot_oregion_size_data)}",
+        ax=axs[0],
+    )
+    vis_hist_for_num_of_intervals(
+        plot_sregion_size_data,
+        title=f"Chop Size of clean data (smooth) {min(plot_sregion_size_data)}-{max(plot_sregion_size_data)}",
+        ax=axs[1],
+    )
+    fig.savefig("predicts_intervals_size.pdf", dpi=300)
+
+    total_predicts = len(stats.smooth_predicts_with_chop)
+    overlap_results = defaultdict(list)
+    for p in track(stats.smooth_predicts_with_chop, description=f"Processing {total_predicts} predicts..."):
+        verify_result_with_sam_records_rs(overlap_results, all_predicts[p], stats, rs_sam_records[p])
+
+    with open(f"overlap_result_{max_start}.json", "w") as outfile:
+        json.dump(overlap_results, outfile, indent=4, sort_keys=False)
+
+    vis_overlap_results(overlap_results)
+
 
 if __name__ == "__main__":
-    pass
+    main()
