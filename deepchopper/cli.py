@@ -68,9 +68,7 @@ def load_model_from_checkpoint(check_point: Path):
     return resume_tokenizer, resume_model
 
 
-def load_dataset_from_checkpont(
-    check_point: Path, data_path: Path, resume_tokenizer, max_sample: int | None = None
-):
+def load_dataset_from_checkpont(check_point: Path, data_path: Path, resume_tokenizer, max_sample: int | None = None):
     """Load the dataset and model from the given paths."""
     if isinstance(check_point, str):
         check_point = Path(check_point)
@@ -178,9 +176,7 @@ def predict(
     if show_sample:
         random_show_seq(eval_dataset, sample=3)
 
-    trainer = load_trainer(
-        resume_tokenizer, resume_model, batch_size=batch_size, show_metrics=show_metrics
-    )
+    trainer = load_trainer(resume_tokenizer, resume_model, batch_size=batch_size, show_metrics=show_metrics)
     predicts = trainer.predict(tokenized_eval_dataset)  # type: ignore
 
     true_prediction, true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
@@ -206,9 +202,7 @@ def predict(
             print(f"{record_id=}")
             hightlight_predicts(seq, targets, smooth_predict_targets)
 
-            _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(
-                seq, smooth_predict_targets
-            )
+            _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(seq, smooth_predict_targets)
 
         print(predicts[2])
     elif save_predict:
@@ -236,18 +230,14 @@ def predict(
 @app.command(
     help="DeepChopper is All You Need: encode the given fastq",
 )
-def encode(
-    data_folder: Path, *, chunk: bool = False, chunk_size: int = 1000000, parallel: bool = False
-):
+def encode(data_folder: Path, *, chunk: bool = False, chunk_size: int = 1000000, parallel: bool = False):
     """Encode the given fastq files to parquet format."""
     if not data_folder.exists():
         msg = f"Folder {data_folder} does not exist."
         logging.error(msg)
 
     fq_files = (
-        [data_folder]
-        if data_folder.is_file()
-        else list(data_folder.glob("*.fq")) + list(data_folder.glob("*.fastq"))
+        [data_folder] if data_folder.is_file() else list(data_folder.glob("*.fq")) + list(data_folder.glob("*.fastq"))
     )
 
     for fq_file in fq_files:

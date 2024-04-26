@@ -25,18 +25,26 @@ import gget
 
 
 FORMAT = "%(message)s"
+log_level = logging.INFO
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=log_level,
     format=FORMAT,
+    datefmt="[%X]",
     handlers=[RichHandler()],
 )
-
 log = logging.getLogger("deepchopper")
+log.setLevel(log_level)
+
 
 INTERNAL_THRESHOLD: float = 0.9
 OVERLAP_THRESHOLD: float = 0.4
 BLAT_THRESHOLD: float = 0.9
 MIN_MAPPING_QUALITY: int = 0
+
+SMOOTH_WINDOW_SIZE: int = 21
+MIN_INTERVAL_SIZE: int = 10
+APPROVED_INTERVAL_NUMBER: int = 10
+PLOYA_THRESHOLD: int = 3
 
 
 @dataclass
@@ -549,11 +557,49 @@ def vis_overlap_results(data):
     plt.savefig("overlap_results.pdf", dpi=300)
     plt.close()
 
+def vis_stats(stats, total:int):
+    # Extracting data for plotting
+    categories = ['Total Predicts', 'Total Truncated', 'Predicts with Chop', 'Smooth Predicts with Chop', 'Smooth Internal Predicts',
+                   'Smooth Only One', 'Smooth Polya Only One']
+    values = [
+        stats.total_predicts,
+        stats.total_truncated,
+        len(stats.predicts_with_chop),
+        len(stats.smooth_predicts_with_chop),
+        len(stats.smooth_internal_predicts),
+        len(stats.smooth_only_one),
+        len(stats.smooth_only_one_with_ploya),
+    ]
+    
+    # Creating the bar plot
+    plt.figure(figsize=(10, 6))
+    bars  = plt.bar(categories, values,color="#66c2a5")
+
+    # Add text annotations to the bars
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(
+            bar.get_x() + bar.get_width() / 2,
+            yval + 0.5,
+            yval,
+            ha="center",
+            va="bottom",
+        )
+        
+    plt.xlabel('Categories')
+    plt.ylabel('Count')
+    plt.title(f'Statistics for {total}')
+    plt.xticks(rotation=45, ha="right")  # Rotate category names for better visibility
+    plt.tight_layout()  # Adjust layout to make all labels visible
+    # plt.show()
+    plt.savefig("stats.pdf", dpi=300)
+
 
 def main():
     bam_file = "/projects/b1171/ylk4626/project/DeepChopper/data/eval/real_data/dorado_without_trim_fqs/VCaP.bam"
-
     rs_sam_records = deepchopper.read_bam_records_parallel(bam_file)
+    log.debug(f"total sam records: {len(rs_sam_records)}")
+
     ## VCaP
     hyena_results = [
         Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_0/predicts/0/"),
@@ -568,17 +614,18 @@ def main():
         Path("/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_9/predicts/0/"),
     ]
 
-    max_batches = 100
+    max_batches = 1000
     all_predicts = deepchopper.load_predicts_from_batch_pts(hyena_results[0], -100, max_batches)
 
     stats = deepchopper.py_collect_statistics_for_predicts_parallel(
         list(all_predicts.values()),
-        smooth_window_size=21,
-        min_interval_size=10,
-        approved_interval_number=10,
+        smooth_window_size=SMOOTH_WINDOW_SIZE,
+        min_interval_size=MIN_INTERVAL_SIZE,
+        approved_interval_number=APPROVED_INTERVAL_NUMBER,
         internal_threshold=INTERNAL_THRESHOLD,
-        ploya_threshold=3,
+        ploya_threshold=PLOYA_THRESHOLD,
     )
+    vis_stats(stats, len(all_predicts))
 
     original_prediction_number = stats.number_predicts_with_chop(all_predicts)
     smooth_prediction_number = stats.number_smooth_predicts_with_chop()
@@ -607,7 +654,7 @@ def main():
     for p in track(stats.smooth_predicts_with_chop, description=f"Processing {total_predicts} predicts..."):
         verify_result_with_sam_records_rs(overlap_results, all_predicts[p], stats, rs_sam_records[p])
 
-    with open(f"overlap_result_{max_start}.json", "w") as outfile:
+    with open(f"overlap_result_{max_batches}.json", "w") as outfile:
         json.dump(overlap_results, outfile, indent=4, sort_keys=False)
 
     vis_overlap_results(overlap_results)

@@ -8,6 +8,8 @@ edition = "2021"
 name = "deepchopper"
 crate-type = ["cdylib", "rlib"]
 
+[profile.dev]
+debug = 0
 
 [profile.release]
 debug = false
@@ -62,6 +64,7 @@ derive_builder = "0.20"
 lexical = "6.1"
 bstr = "1.9.1"
 lazy_static = "1.4.0"
+tempfile = "3.10"
 
 # binaries
 clap = { version = "4.5.1", features = ["derive"] }
@@ -75,6 +78,6 @@ candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.
 colored = "2"
 textwrap = "0.16"
 
+
 [dev-dependencies]
 colored = "2"
-tempfile = "3.10"

@@ -587,3 +587,5 @@ notebooks/sg*
 test_predict*
 cnn.onnx
 tmp
+scripts/*.pdf
+scripts/*.json
