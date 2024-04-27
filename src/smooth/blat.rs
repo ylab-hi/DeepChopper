@@ -1,6 +1,7 @@
 use anyhow::Result;
 use derive_builder::Builder;
 use lexical;
+use log;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::prelude::*;
@@ -29,7 +30,7 @@ pub struct PslAlignment {
     pub tsize: usize,
     pub tstart: usize,
     pub tend: usize,
-    pub identity: f64,
+    pub identity: f32,
 }
 
 pub fn parse_psl<P: AsRef<Path>>(file: P) -> Result<Vec<PslAlignment>> {
@@ -58,7 +59,7 @@ pub fn parse_psl<P: AsRef<Path>>(file: P) -> Result<Vec<PslAlignment>> {
         let tstart: usize = lexical::parse(fields[15])?;
         let tend: usize = lexical::parse(fields[16])?;
 
-        let identity = match_ as f64 / qsize as f64;
+        let identity = match_ as f32 / qsize as f32;
 
         let al = PslAlignmentBuilder::default()
             .qsize(qsize)
@@ -78,12 +79,14 @@ pub fn parse_psl<P: AsRef<Path>>(file: P) -> Result<Vec<PslAlignment>> {
 }
 
 // ./blat -stepSize=5 -repMatch=2253 -minScore=20 -minIdentity=0  hg38.2bit t.fa  output.psl
-pub fn blat(
+pub fn blat<P: AsRef<Path> + std::convert::AsRef<std::ffi::OsStr>>(
     seq: &str,
-    blat_cli: &str,
-    two_bit: &str,
+    blat_cli: P,
+    two_bit: P,
     output: Option<&str>,
 ) -> Result<Vec<PslAlignment>> {
+    log::debug!("blat_cli: {}", seq);
+
     // Create a file inside of `std::env::temp_dir()`.
     let dir = tempdir()?;
     let file1 = dir.path().join("seq.fa");

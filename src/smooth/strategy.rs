@@ -1,18 +1,19 @@
 use super::blat::blat;
 use super::blat::MIN_SEQ_SIZE;
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::path::Path;
 
 use super::predict::load_predicts_from_batch_pts;
 use super::predict::Predict;
 
-use super::collect_statistics_for_predicts;
+use super::collect_statistics_for_predicts_rs;
 use super::StatResult;
 use crate::output::read_bam_records_parallel;
 use crate::output::BamRecord;
 
 use anyhow::Result;
 use derive_builder::Builder;
-use log::debug;
-use log::info;
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -25,7 +26,7 @@ pub struct OverlapOptions {
     pub min_mapping_quality: usize,
     pub smooth_window_size: usize,
     pub min_interval_size: usize,
-    pub append_interval_number: usize,
+    pub approved_interval_number: usize,
     pub ploya_threshold: usize, // 3
     pub hg38_2bit: PathBuf,
     pub blat_cli: PathBuf,
@@ -47,16 +48,24 @@ pub fn has_overlap(
     let _min_start = start1.min(start2);
     let _max_end = end1.max(end2);
 
-    let overlap = 0.max(min_end - max_start);
+    let _cmp: isize = min_end as isize - max_start as isize;
+    let overlap = 0.max(_cmp) as usize;
+
     let divide = length2;
 
     let ratio = overlap as f32 / divide as f32;
-    log::debug!("overlap: {}, divide: {}, ratio: {}", overlap, divide, ratio);
+
+    log::debug!(
+        "interval1: {:?}, interval2: {:?}, ratio: {}",
+        interval1,
+        interval2,
+        ratio
+    );
     ratio > overlap_threshold
 }
 
 pub fn process_one_interval(
-    mut overlap_results: HashMap<String, Vec<String>>,
+    overlap_results: &mut HashMap<String, Vec<String>>,
     predict_start: usize,
     predict_end: usize,
     predict: &Predict,
@@ -75,27 +84,27 @@ pub fn process_one_interval(
         ) {
             overlap_results
                 .entry("terminal_chop_sc".to_string())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(predict.id.clone());
         } else {
             overlap_results
                 .entry("terminal_chop_nosc".to_string())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(predict.id.clone());
 
             if predict_seq.len() < MIN_SEQ_SIZE {
                 overlap_results
                     .entry("terminal_chop_nosc_cannot_blat".to_string())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(predict.id.clone());
                 return Ok(());
             }
 
-            let blat_result = blat(&predict_seq, &options.blat_cli, &options.hg38_2bit, None);
+            let blat_result = blat(predict_seq, &options.blat_cli, &options.hg38_2bit, None);
             if blat_result.is_err() {
                 overlap_results
                     .entry("terminal_chop_nosc_blat_fail".to_string())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(predict.id.clone());
                 return Ok(());
             }
@@ -104,60 +113,61 @@ pub fn process_one_interval(
             if blat_result.is_empty() || blat_result[0].identity < options.blat_threshold {
                 overlap_results
                     .entry("terminal_chop_nosc_noblat".to_string())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(predict.id.clone());
             }
         }
     } else {
         // internal adapter
         let mut flag = false;
-        if bam_record.left_softclip > 0 {
-            if has_overlap(
+        if bam_record.left_softclip > 0
+            && has_overlap(
                 (0, bam_record.left_softclip),
                 (predict_start, predict_end),
                 options.overlap_threshold,
-            ) {
-                flag = true;
-                overlap_results
-                    .entry("internal_chop_sc".to_string())
-                    .or_insert_with(Vec::new)
-                    .push(predict.id.clone());
-            }
+            )
+        {
+            flag = true;
+            overlap_results
+                .entry("internal_chop_sc".to_string())
+                .or_default()
+                .push(predict.id.clone());
         }
 
-        if !flag && bam_record.right_softclip > 0 {
-            if has_overlap(
+        if !flag
+            && bam_record.right_softclip > 0
+            && has_overlap(
                 (whole_seq_len - bam_record.right_softclip, whole_seq_len),
                 (predict_start, predict_end),
                 options.overlap_threshold,
-            ) {
-                flag = true;
-                overlap_results
-                    .entry("internal_chop_sc".to_string())
-                    .or_insert_with(Vec::new)
-                    .push(predict.id.clone());
-            }
+            )
+        {
+            flag = true;
+            overlap_results
+                .entry("internal_chop_sc".to_string())
+                .or_default()
+                .push(predict.id.clone());
         }
 
         if !flag {
             overlap_results
                 .entry("internal_chop_nosc".to_string())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(predict.id.clone());
 
             if predict_seq.len() < MIN_SEQ_SIZE {
                 overlap_results
                     .entry("internal_chop_nosc_cannot_blat".to_string())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(predict.id.clone());
             }
 
-            let blat_result = blat(&predict_seq, &options.blat_cli, &options.hg38_2bit, None);
+            let blat_result = blat(predict_seq, &options.blat_cli, &options.hg38_2bit, None);
 
             if blat_result.is_err() {
                 overlap_results
                     .entry("internal_chop_nosc_blat_fail".to_string())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(predict.id.clone());
                 return Ok(());
             }
@@ -166,7 +176,7 @@ pub fn process_one_interval(
             if blat_result.is_empty() || blat_result[0].identity < options.blat_threshold {
                 overlap_results
                     .entry("internal_chop_nosc_noblat".to_string())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(predict.id.clone());
             }
         }
@@ -180,12 +190,12 @@ pub fn collect_overlap_results_for_predict(
     bam_record: &BamRecord,
     options: &OverlapOptions,
 ) -> Result<HashMap<String, Vec<String>>> {
-    let mut overlap_results = HashMap::new();
+    let mut overlap_results: HashMap<String, Vec<String>> = HashMap::new();
 
     if !bam_record.is_mapped {
         overlap_results
             .entry("unmapped_read".to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(predict.id.clone());
         return Ok(overlap_results);
     }
@@ -193,7 +203,7 @@ pub fn collect_overlap_results_for_predict(
     if bam_record.mapping_quality < options.min_mapping_quality {
         overlap_results
             .entry("low_mp_read".to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(predict.id.clone());
         return Ok(overlap_results);
     }
@@ -201,12 +211,20 @@ pub fn collect_overlap_results_for_predict(
     let intervals = stats.smooth_intervals.get(&predict.id).unwrap();
     let intervals_number = intervals.len();
 
+    log::debug!(
+        "pid: {},  intervals: {:?} bam cigar: {} bam mp: {}",
+        predict.id,
+        intervals,
+        bam_record.cigar,
+        bam_record.mapping_quality
+    );
+
     if intervals_number <= 3 {
         for interval in intervals {
             process_one_interval(
-                overlap_results,
-                interval[0],
-                interval[1],
+                &mut overlap_results,
+                interval.0,
+                interval.1,
                 predict,
                 bam_record,
                 options,
@@ -215,9 +233,11 @@ pub fn collect_overlap_results_for_predict(
     } else {
         overlap_results
             .entry("no_process".to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(predict.id.clone());
     }
+
+    Ok(overlap_results)
 }
 
 pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
@@ -228,39 +248,44 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
 ) -> Result<HashMap<String, Vec<String>>> {
     let bam_records = read_bam_records_parallel(bam_file)?;
 
-    log::info!(
-        "Start to collect overlap results for {} predicts",
-        bam_records.len()
-    );
+    log::info!("Start to collect {} bam records", bam_records.len());
 
-    let all_predicts = load_predicts_from_batch_pts(prediction_path, -100, max_batch_size)?;
+    let all_predicts =
+        load_predicts_from_batch_pts(prediction_path.as_ref().to_path_buf(), -100, max_batch_size)?;
 
-    log::info!(
-        "Start to collect overlap results for {} predicts",
-        all_predicts.len()
-    );
+    let all_predicts_number = all_predicts.len();
+
+    log::info!("Start to collect {} predicts", all_predicts_number);
 
     // get &[Predict] from HashMap<String, Predict>
     let predicts_value: Vec<&Predict> = all_predicts.values().collect();
-    let stats = collect_statistics_for_predicts(
-        predicts_value,
+    let stats = collect_statistics_for_predicts_rs(
+        predicts_value.as_slice(),
         options.smooth_window_size,
         options.min_interval_size,
-        options.append_interval_number,
+        options.approved_interval_number,
         options.internal_threshold,
         options.ploya_threshold,
     )?;
 
     // save the stats to a file
-    let stats_json = serde_json::to_string(self)?;
-    let mut stats_file = File::create("stats.json")?;
+    let stats_json = serde_json::to_string(&stats)?;
+    let stats_file_name = format!("stats_{}.json", all_predicts_number);
+    let stats_file = File::create(&stats_file_name)?;
     let mut writer = BufWriter::new(stats_file);
     writer.write_all(stats_json.as_bytes())?;
-    log::info!("Stats saved to stats.json");
+    log::info!("Stats saved to {}", stats_file_name);
 
-    let overlap_results = all_predicts
+    let stats_smooth_intervals_len = stats.smooth_predicts_with_chop.len();
+    log::info!(
+        "Start to collect overlap results for {} predicts",
+        stats_smooth_intervals_len
+    );
+    let overlap_results = stats
+        .smooth_predicts_with_chop
         .par_iter()
-        .map(|(id, predict)| {
+        .map(|id| {
+            let predict = all_predicts.get(id).unwrap();
             let bam_record = bam_records.get(id).unwrap();
             let overlap_results =
                 collect_overlap_results_for_predict(&stats, predict, bam_record, options)?;
@@ -273,10 +298,51 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
         .into_par_iter()
         .reduce_with(|mut acc, result| {
             for (key, value) in result {
-                acc.entry(key).or_insert_with(Vec::new).extend(value);
+                acc.entry(key).or_default().extend(value);
             }
             acc
-        });
+        })
+        .unwrap();
 
-    merged_results
+    let overlap_json = serde_json::to_string(&merged_results)?;
+    let overlap_file_name = format!("overlap_results_{}.json", stats_smooth_intervals_len);
+    let overlap_file = File::create(&overlap_file_name)?;
+    let mut writer = BufWriter::new(overlap_file);
+    writer.write_all(overlap_json.as_bytes())?;
+    log::info!("overlap_results  saved to {}", overlap_file_name);
+    Ok(merged_results)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_collect_overlap_results() {
+        let bam_file = "/projects/b1171/ylk4626/project/DeepChopper/data/eval/real_data/dorado_without_trim_fqs/VCaP.bam";
+        let prediction_path = "/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_0/predicts/0/";
+        let max_batch_size = Some(100);
+        let options = OverlapOptionsBuilder::default()
+            .internal_threshold(0.9)
+            .overlap_threshold(0.4)
+            .blat_threshold(0.9)
+            .min_mapping_quality(0)
+            .smooth_window_size(21)
+            .min_interval_size(10)
+            .approved_interval_number(10)
+            .ploya_threshold(3)
+            .hg38_2bit("/projects/b1171/ylk4626/project/scan_data/hg38.2bit".into())
+            .blat_cli("/projects/b1171/ylk4626/project/DeepChopper/tmp/blat".into())
+            .build()
+            .unwrap();
+
+        let overlap_results = colect_overlap_results_for_predicts(
+            bam_file,
+            prediction_path,
+            max_batch_size,
+            &options,
+        )
+        .unwrap();
+        println!("{:?}", overlap_results);
+    }
 }

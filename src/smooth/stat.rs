@@ -407,3 +407,77 @@ pub fn collect_statistics_for_predicts(
             a
         }))
 }
+
+pub fn collect_statistics_for_predicts_rs(
+    predicts: &[&Predict],
+    smooth_window_size: usize,
+    min_interval_size: usize,
+    approved_interval_number: usize,
+    internal_threshold: f32,
+    ploya_threshold: usize, // 3
+) -> Result<StatResult> {
+    Ok(predicts
+        .par_iter()
+        .filter_map(|predict| {
+            if predict.seq.len() < default::MIN_READ_LEN {
+                return None;
+            }
+            Some(predict)
+        })
+        .map(|predict| {
+            let mut result = StatResult::default();
+            result.total_predicts += 1;
+
+            if predict.is_truncated {
+                result.total_truncated += 1;
+            }
+
+            if !predict.prediction_region().is_empty() {
+                result.predicts_with_chop.push(predict.id.clone());
+            }
+
+            let smooth_regions: Vec<(usize, usize)> = predict
+                .smooth_and_slect_intervals(
+                    smooth_window_size,
+                    min_interval_size,
+                    approved_interval_number,
+                )
+                .par_iter()
+                .map(|r| (r.start, r.end))
+                .collect();
+
+            if !smooth_regions.is_empty() {
+                result.smooth_predicts_with_chop.push(predict.id.clone());
+                result
+                    .smooth_intervals
+                    .insert(predict.id.clone(), smooth_regions.clone());
+
+                if smooth_regions.len() == 1 {
+                    result.smooth_only_one.push(predict.id.clone());
+
+                    let flank_size = FLANK_SIZE_COUNT_PLOYA;
+                    // count first 5 bp of start, if has 3 A
+                    let count = predict.seq
+                        [(smooth_regions[0].0 - flank_size).max(0)..smooth_regions[0].0]
+                        .chars()
+                        .filter(|&c| c == 'A')
+                        .count();
+
+                    if count >= ploya_threshold {
+                        result.smooth_only_one_with_ploya.push(predict.id.clone());
+                    }
+                }
+
+                for region in &smooth_regions {
+                    if (region.1 as f32 / predict.seq_len() as f32) < internal_threshold {
+                        result.smooth_internal_predicts.push(predict.id.clone());
+                    }
+                }
+            }
+            result
+        })
+        .reduce(StatResult::default, |mut a, b| {
+            a.merge(b);
+            a
+        }))
+}

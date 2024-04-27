@@ -6,13 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "deepchopper"
-crate-type = [
-    "cdylib",
-    # "rlib"
-]
+crate-type = ["cdylib", "rlib"]
 
-[profile.dev]
-debug = 0
+# [profile.dev]
+# debug = 0
 
 [profile.release]
 debug = false
@@ -75,7 +72,6 @@ env_logger = "0.11"
 parquet = "51.0.0"
 arrow = "51.0"
 candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.5.0" }
-
 
 # vis
 colored = "2"
