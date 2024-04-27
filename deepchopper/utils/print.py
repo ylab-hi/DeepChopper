@@ -30,9 +30,7 @@ def hightlight_predicts(
 
     front1 = "L:"
     front2 = "P:"
-    for t1, t2 in zip(
-        target_seq.wrap(console, width), predict_seq.wrap(console, width), strict=True
-    ):
+    for t1, t2 in zip(target_seq.wrap(console, width), predict_seq.wrap(console, width), strict=True):
         console.print(front1, t1)
         console.print(front2, t2)
 
@@ -54,9 +52,7 @@ def highlight_target(seq: str, start: int, end: int, style="bold magenta"):
     console.print(text)
 
 
-def hightlight_predict(
-    seq: str, target_start: int, target_end: int, predict_start: int, predict_end: int
-):
+def hightlight_predict(seq: str, target_start: int, target_end: int, predict_start: int, predict_end: int):
     """Highlight the predicted sequence."""
     text = Text(seq)
     console = Console()

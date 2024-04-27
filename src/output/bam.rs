@@ -74,25 +74,25 @@ pub fn left_right_soft_clip(cigar_string: &str) -> Result<(usize, usize)> {
 #[derive(Debug, Default, Deserialize, Serialize, FromPyObject)]
 pub struct BamRecord {
     #[pyo3(get, set)]
-    qname: String,
+    pub qname: String,
     #[pyo3(get, set)]
-    mapping_quality: usize,
+    pub mapping_quality: usize,
     #[pyo3(get, set)]
-    cigar: String,
+    pub cigar: String,
 
     #[pyo3(get, set)]
-    left_softclip: usize,
+    pub left_softclip: usize,
     #[pyo3(get, set)]
-    right_softclip: usize,
+    pub right_softclip: usize,
 
     #[pyo3(get, set)]
-    is_forward: bool,
+    pub is_forward: bool,
 
     #[pyo3(get, set)]
-    is_mapped: bool,
+    pub is_mapped: bool,
 
     #[pyo3(get, set)]
-    is_supplementary: bool,
+    pub is_supplementary: bool,
 }
 
 #[pymethods]

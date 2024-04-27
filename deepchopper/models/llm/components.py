@@ -51,9 +51,7 @@ class TokenClassification(PreTrainedModel):
         super().__init__(config, **kwargs)
         self.num_class = config.num_class
         self.hyenadna_model_name = hyenadna_model
-        self.hyenadna = AutoModel.from_pretrained(
-            f"LongSafari/{hyenadna_model}-hf", trust_remote_code=True
-        )
+        self.hyenadna = AutoModel.from_pretrained(f"LongSafari/{hyenadna_model}-hf", trust_remote_code=True)
 
         self.head = TokenClassificationHead(
             input_size=config.input_size,

@@ -98,7 +98,7 @@ pub fn blat(
         dir.path().join("output.psl")
     };
 
-    let output = Command::new(blat_cli)
+    let _output = Command::new(blat_cli)
         .arg("-stepSize=5")
         .arg("-repMatch=2253")
         .arg("-minScore=20")

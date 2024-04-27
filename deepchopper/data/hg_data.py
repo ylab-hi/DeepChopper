@@ -29,11 +29,11 @@ def load_and_split_dataset(data_file: str | Path, num_proc: int | None = None):
         split="train[:80%]",
     ).with_format("torch")
 
-    val_dataset = load_dataset(
-        "parquet", data_files=data_files, num_proc=num_proc, split="train[80%:90%]"
-    ).with_format("torch")
+    val_dataset = load_dataset("parquet", data_files=data_files, num_proc=num_proc, split="train[80%:90%]").with_format(
+        "torch"
+    )
 
-    test_dataset = load_dataset(
-        "parquet", data_files=data_files, num_proc=num_proc, split="train[90%:]"
-    ).with_format("torch")
+    test_dataset = load_dataset("parquet", data_files=data_files, num_proc=num_proc, split="train[90%:]").with_format(
+        "torch"
+    )
     return train_dataset, val_dataset, test_dataset

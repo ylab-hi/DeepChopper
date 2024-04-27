@@ -36,9 +36,7 @@ class DataCollatorForTokenClassificationWithQual(DataCollatorForTokenClassificat
         import torch
 
         label_name = "label" if "label" in features[0] else "labels"
-        labels = (
-            [feature[label_name] for feature in features] if label_name in features[0] else None
-        )
+        labels = [feature[label_name] for feature in features] if label_name in features[0] else None
 
         qual_name = "input_quals"
         qual_pad_token_id = 0
@@ -47,8 +45,7 @@ class DataCollatorForTokenClassificationWithQual(DataCollatorForTokenClassificat
         id_name = "id"  # for predction dataset
 
         no_labels_features = [
-            {k: v for k, v in feature.items() if k not in [qual_name, label_name, id_name]}
-            for feature in features
+            {k: v for k, v in feature.items() if k not in [qual_name, label_name, id_name]} for feature in features
         ]
 
         batch = pad_without_fast_tokenizer_warning(
@@ -73,21 +70,17 @@ class DataCollatorForTokenClassificationWithQual(DataCollatorForTokenClassificat
 
         if padding_side == "right":
             batch[label_name] = [
-                to_list(label) + [self.label_pad_token_id] * (sequence_length - len(label))
-                for label in labels
+                to_list(label) + [self.label_pad_token_id] * (sequence_length - len(label)) for label in labels
             ]
             batch[qual_name] = [
-                to_list(qual) + [qual_pad_token_id] * (sequence_length - len(qual))
-                for qual in input_quals
+                to_list(qual) + [qual_pad_token_id] * (sequence_length - len(qual)) for qual in input_quals
             ]
         else:
             batch[label_name] = [
-                [self.label_pad_token_id] * (sequence_length - len(label)) + to_list(label)
-                for label in labels
+                [self.label_pad_token_id] * (sequence_length - len(label)) + to_list(label) for label in labels
             ]
             batch[qual_name] = [
-                [qual_pad_token_id] * (sequence_length - len(qual)) + to_list(qual)
-                for qual in input_quals
+                [qual_pad_token_id] * (sequence_length - len(qual)) + to_list(qual) for qual in input_quals
             ]
 
         batch[label_name] = torch.tensor(batch[label_name], dtype=torch.int8)
@@ -95,9 +88,7 @@ class DataCollatorForTokenClassificationWithQual(DataCollatorForTokenClassificat
 
         # for predction dataset and save id feature
         if id_name in features[0]:
-            batch[id_name] = torch.tensor(
-                [to_list(feature[id_name]) for feature in features], dtype=torch.int8
-            )
+            batch[id_name] = torch.tensor([to_list(feature[id_name]) for feature in features], dtype=torch.int8)
 
         return batch
 
@@ -123,9 +114,7 @@ def load_tokenizer_from_hyena_model(model_name):
     )
 
 
-def tokenize_and_align_labels_and_quals(
-    data, tokenizer, max_length, pad_qual=0, pad_label=IGNORE_INDEX
-):
+def tokenize_and_align_labels_and_quals(data, tokenizer, max_length, pad_qual=0, pad_label=IGNORE_INDEX):
     tokenized_inputs = tokenizer(data["seq"], max_length=max_length, truncation=True, padding=True)
 
     if len(data["seq"]) > max_length:
@@ -134,15 +123,11 @@ def tokenize_and_align_labels_and_quals(
             quals = torch.cat((data["qual"][: max_length - 1], torch.tensor([pad_qual]))).float()
             normalized_quals = torch.nn.functional.normalize(quals, dim=0)
         else:
-            labels = torch.tensor(
-                [*deepchopper.vertorize_target(*data["target"], max_length - 1), pad_label]
-            )
+            labels = torch.tensor([*deepchopper.vertorize_target(*data["target"], max_length - 1), pad_label])
             quals = torch.cat((data["qual"][: max_length - 1], torch.tensor([pad_qual]))).float()
             normalized_quals = torch.nn.functional.normalize(quals, dim=0)
     else:
-        labels = torch.tensor(
-            [*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label]
-        )
+        labels = torch.tensor([*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label])
         quals = torch.cat((data["qual"], torch.tensor([pad_qual]))).float()
         normalized_quals = torch.nn.functional.normalize(quals, dim=0)
 
@@ -163,15 +148,11 @@ def tokenize_and_align_labels_and_quals_ids(
             quals = torch.cat((data["qual"][: max_length - 1], torch.tensor([pad_qual]))).float()
             normalized_quals = torch.nn.functional.normalize(quals, dim=0)
         else:
-            labels = torch.tensor(
-                [*deepchopper.vertorize_target(*data["target"], max_length - 1), pad_label]
-            )
+            labels = torch.tensor([*deepchopper.vertorize_target(*data["target"], max_length - 1), pad_label])
             quals = torch.cat((data["qual"][: max_length - 1], torch.tensor([pad_qual]))).float()
             normalized_quals = torch.nn.functional.normalize(quals, dim=0)
     else:
-        labels = torch.tensor(
-            [*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label]
-        )
+        labels = torch.tensor([*deepchopper.vertorize_target(*data["target"], len(data["seq"])), pad_label])
         quals = torch.cat((data["qual"], torch.tensor([pad_qual]))).float()
         normalized_quals = torch.nn.functional.normalize(quals, dim=0)
 

@@ -7,22 +7,14 @@ from omegaconf import DictConfig
 from .utils import (
     RankedLogger,
     extras,
+    instantiate_callbacks,
     instantiate_loggers,
     log_hyperparameters,
     task_wrapper,
-    instantiate_callbacks,
 )
-
-from .utils import (
-    alignment_predict,
-    highlight_target,
-    hightlight_predicts,
-    summary_predict,
-)
-
 
 if TYPE_CHECKING:
-    from lightning import LightningDataModule, LightningModule, Trainer, Callback
+    from lightning import Callback, LightningDataModule, LightningModule, Trainer
     from lightning.pytorch.loggers import Logger
 
 log = RankedLogger(__name__, rank_zero_only=True)
@@ -75,17 +67,13 @@ def evaluate(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
         import multiprocess.context as ctx
 
         ctx._force_start_method("spawn")
-        trainer.predict(
-            model=model, dataloaders=datamodule, ckpt_path=cfg.ckpt_path, return_predictions=False
-        )
+        trainer.predict(model=model, dataloaders=datamodule, ckpt_path=cfg.ckpt_path, return_predictions=False)
 
     metric_dict = trainer.callback_metrics
     return metric_dict, object_dict
 
 
-@hydra.main(
-    version_base="1.3", config_path=os.getenv("DC_CONFIG_PATH", "configs"), config_name="eval.yaml"
-)
+@hydra.main(version_base="1.3", config_path=os.getenv("DC_CONFIG_PATH", "configs"), config_name="eval.yaml")
 def main(cfg: DictConfig) -> None:
     """Main entry point for evaluation.
 

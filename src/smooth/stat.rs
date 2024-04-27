@@ -338,7 +338,7 @@ pub fn collect_statistics_for_predicts(
     predicts: &[Predict],
     smooth_window_size: usize,
     min_interval_size: usize,
-    append_interval_number: usize,
+    approved_interval_number: usize,
     internal_threshold: f32,
     ploya_threshold: usize, // 3
 ) -> Result<StatResult> {
@@ -366,7 +366,7 @@ pub fn collect_statistics_for_predicts(
                 .smooth_and_slect_intervals(
                     smooth_window_size,
                     min_interval_size,
-                    append_interval_number,
+                    approved_interval_number,
                 )
                 .par_iter()
                 .map(|r| (r.start, r.end))
@@ -382,7 +382,7 @@ pub fn collect_statistics_for_predicts(
                     result.smooth_only_one.push(predict.id.clone());
 
                     let flank_size = FLANK_SIZE_COUNT_PLOYA;
-                    // count first 10 bp of start, if has 3 A
+                    // count first 5 bp of start, if has 3 A
                     let count = predict.seq
                         [(smooth_regions[0].0 - flank_size).max(0)..smooth_regions[0].0]
                         .chars()

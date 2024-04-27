@@ -41,9 +41,7 @@ def parse_fq_record(text: str):
 
 
 def load_dataset(text: str, tokenizer):
-    dataset = Dataset.from_generator(parse_fq_record, gen_kwargs={"text": text}).with_format(
-        "torch"
-    )
+    dataset = Dataset.from_generator(parse_fq_record, gen_kwargs={"text": text}).with_format("torch")
     tokenized_dataset = dataset.map(
         partial(
             tokenize_and_align_labels_and_quals,
@@ -68,13 +66,9 @@ def predict(text: str):
     for idx, preds in enumerate(true_prediction):
         _id = dataset[idx]["id"]
         seq = dataset[idx]["seq"]
-        smooth_predict_targets = smooth_label_region(
-            preds, min_region_length_for_smooth, max_distance_for_smooth
-        )
+        smooth_predict_targets = smooth_label_region(preds, min_region_length_for_smooth, max_distance_for_smooth)
         # zip two consecutive elements
-        _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(
-            seq, smooth_predict_targets
-        )
+        _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(seq, smooth_predict_targets)
 
         total_intervals.extend(_selected_intervals)
         total_intervals.extend(smooth_predict_targets)

@@ -38,9 +38,7 @@ class TokenClassificationLit(LightningModule):
         self.criterion = torch.nn.CrossEntropyLoss()
 
         # metric objects for calculating and averaging accuracy across batches
-        self.train_acc = F1Score(
-            task="binary", num_classes=net.number_of_classes, ignore_index=-100
-        )
+        self.train_acc = F1Score(task="binary", num_classes=net.number_of_classes, ignore_index=-100)
         self.val_acc = F1Score(task="binary", num_classes=net.number_of_classes, ignore_index=-100)
         self.test_acc = F1Score(task="binary", num_classes=net.number_of_classes, ignore_index=-100)
 
@@ -71,9 +69,7 @@ class TokenClassificationLit(LightningModule):
         self.val_acc.reset()
         self.val_acc_best.reset()
 
-    def model_step(
-        self, batch: tuple[torch.Tensor, torch.Tensor]
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def model_step(self, batch: tuple[torch.Tensor, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Perform a single model step on a batch of data.
 
         :param batch: A batch of data (a tuple) containing the input tensor of images and target labels.
@@ -151,9 +147,7 @@ class TokenClassificationLit(LightningModule):
     def on_test_epoch_end(self) -> None:
         """Lightning hook that is called when a test epoch ends."""
 
-    def predict_step(
-        self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
-    ) -> torch.Tensor:
+    def predict_step(self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Perform a single prediction step on a batch of data from the test set.
 
         :param batch: A batch of data (a tuple) containing the input tensor of images and target

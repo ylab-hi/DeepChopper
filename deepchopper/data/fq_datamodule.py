@@ -141,24 +141,16 @@ class FqDataModule(LightningDataModule):
                 msg = f"Data file {data_path} is not in FastQ or Parquet format."
                 raise ValueError(msg)
 
-        self.hparams.train_data_path = (
-            Path(self.hparams.train_data_path).with_suffix(".parquet").as_posix()
-        )
+        self.hparams.train_data_path = Path(self.hparams.train_data_path).with_suffix(".parquet").as_posix()
 
         if self.hparams.val_data_path is not None:
-            self.hparams.val_data_path = (
-                Path(self.hparams.val_data_path).with_suffix(".parquet").as_posix()
-            )
+            self.hparams.val_data_path = Path(self.hparams.val_data_path).with_suffix(".parquet").as_posix()
 
         if self.hparams.test_data_path is not None:
-            self.hparams.test_data_path = (
-                Path(self.hparams.test_data_path).with_suffix(".parquet").as_posix()
-            )
+            self.hparams.test_data_path = Path(self.hparams.test_data_path).with_suffix(".parquet").as_posix()
 
         if self.hparams.predict_data_path is not None:
-            self.hparams.predict_data_path = (
-                Path(self.hparams.predict_data_path).with_suffix(".parquet").as_posix()
-            )
+            self.hparams.predict_data_path = Path(self.hparams.predict_data_path).with_suffix(".parquet").as_posix()
 
     def setup(self, stage: str | None = None) -> None:
         """Load data. Set variables: `self.data_train`, `self.data_val`, `self.data_test`.
@@ -193,9 +185,9 @@ class FqDataModule(LightningDataModule):
             predict_dataset = predict_dataset["predict"]
             if self.hparams.max_predict_samples is not None:
                 max_predict_samples = min(self.hparams.max_predict_samples, len(predict_dataset))
-                predict_dataset = HuggingFaceDataset.from_dict(
-                    predict_dataset[:max_predict_samples]
-                ).with_format("torch")
+                predict_dataset = HuggingFaceDataset.from_dict(predict_dataset[:max_predict_samples]).with_format(
+                    "torch"
+                )
 
             self.data_predict = predict_dataset.map(
                 partial(
@@ -245,9 +237,9 @@ class FqDataModule(LightningDataModule):
                 ).with_format("torch")
 
             else:
-                raw_datasets = load_dataset(
-                    "parquet", data_files=data_files, num_proc=max(1, num_proc)
-                ).with_format("torch")
+                raw_datasets = load_dataset("parquet", data_files=data_files, num_proc=max(1, num_proc)).with_format(
+                    "torch"
+                )
 
                 train_dataset = raw_datasets["train"]
                 val_dataset = raw_datasets["validation"]
@@ -255,21 +247,15 @@ class FqDataModule(LightningDataModule):
 
             if self.hparams.max_train_samples is not None:
                 max_train_samples = min(self.hparams.max_train_samples, len(train_dataset))
-                train_dataset = HuggingFaceDataset.from_dict(
-                    train_dataset[:max_train_samples]
-                ).with_format("torch")
+                train_dataset = HuggingFaceDataset.from_dict(train_dataset[:max_train_samples]).with_format("torch")
 
             if self.hparams.max_val_samples is not None:
                 max_val_samples = min(self.hparams.max_val_samples, len(val_dataset))
-                val_dataset = HuggingFaceDataset.from_dict(
-                    val_dataset[:max_val_samples]
-                ).with_format("torch")
+                val_dataset = HuggingFaceDataset.from_dict(val_dataset[:max_val_samples]).with_format("torch")
 
             if self.hparams.max_test_samples is not None:
                 max_test_samples = min(self.hparams.max_test_samples, len(test_dataset))
-                test_dataset = HuggingFaceDataset.from_dict(
-                    test_dataset[:max_test_samples]
-                ).with_format("torch")
+                test_dataset = HuggingFaceDataset.from_dict(test_dataset[:max_test_samples]).with_format("torch")
 
             self.data_train = train_dataset.map(
                 partial(

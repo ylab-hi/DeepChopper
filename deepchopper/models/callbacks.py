@@ -1,5 +1,6 @@
-import torch
 from pathlib import Path
+
+import torch
 from lightning.pytorch.callbacks import BasePredictionWriter
 
 
@@ -8,9 +9,7 @@ class CustomWriter(BasePredictionWriter):
         super().__init__(write_interval)
         self.output_dir = Path(output_dir)
 
-    def write_on_batch_end(
-        self, trainer, pl_module, prediction, batch_indices, batch, batch_idx, dataloader_idx
-    ):
+    def write_on_batch_end(self, trainer, pl_module, prediction, batch_indices, batch, batch_idx, dataloader_idx):
         folder = self.output_dir / str(dataloader_idx)
         if not folder.exists():
             folder.mkdir(parents=True, exist_ok=True)

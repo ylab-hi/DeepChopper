@@ -18,9 +18,7 @@ class TokenClassificationModule(nn.Module):
         super().__init__()
         self.number_of_classes = number_of_classes
         self.backbone_name = backbone_name
-        self.backbone = AutoModel.from_pretrained(
-            f"LongSafari/{backbone_name}-hf", trust_remote_code=True
-        )
+        self.backbone = AutoModel.from_pretrained(f"LongSafari/{backbone_name}-hf", trust_remote_code=True)
         self.head = head
 
         if freeze_backbone:

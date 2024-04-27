@@ -1,18 +1,16 @@
 import torch
+import torch.nn.functional as F  # noqa: N812
 from torch import nn
 from torch.nn import (
+    TransformerDecoder,
+    TransformerDecoderLayer,
     TransformerEncoder,
     TransformerEncoderLayer,
-    TransformerDecoderLayer,
-    TransformerDecoder,
 )
-import torch.nn.functional as F  # noqa: N812
 
 
 class TokenClassificationModule(nn.Module):
-    def __init__(
-        self, vocab_size, d_model, nhead, num_encoder_layers, dim_feedforward, number_of_classes
-    ):
+    def __init__(self, vocab_size, d_model, nhead, num_encoder_layers, dim_feedforward, number_of_classes):
         super().__init__()
         self.number_of_classes = number_of_classes
 

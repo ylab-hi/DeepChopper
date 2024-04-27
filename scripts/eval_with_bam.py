@@ -570,7 +570,7 @@ def vis_stats(stats, total:int):
         len(stats.smooth_only_one),
         len(stats.smooth_only_one_with_ploya),
     ]
-    
+
     # Creating the bar plot
     plt.figure(figsize=(10, 6))
     bars  = plt.bar(categories, values,color="#66c2a5")
@@ -585,7 +585,7 @@ def vis_stats(stats, total:int):
             ha="center",
             va="bottom",
         )
-        
+
     plt.xlabel('Categories')
     plt.ylabel('Count')
     plt.title(f'Statistics for {total}')

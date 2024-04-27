@@ -26,7 +26,8 @@ class TokenClassificationHead(nn.Module):
             use_qual (bool): Whether to use quality in the model.
         """
         if lin1_size != lin2_size:
-            raise ValueError(f"{lin1_size=} and {lin2_size=} must be equal")
+            msg = f"{lin1_size=} and {lin2_size=} must be equal"
+            raise ValueError(msg)
 
         super().__init__()
         self.use_qual = use_qual
@@ -35,9 +36,7 @@ class TokenClassificationHead(nn.Module):
         self.linear2 = nn.Linear(lin1_size, lin2_size)
         self.linear3 = nn.Linear(lin2_size, num_class)
 
-        self.qual_linear1 = (
-            nn.Identity() if use_identity_layer_for_qual else nn.Linear(1, lin1_size)
-        )
+        self.qual_linear1 = nn.Identity() if use_identity_layer_for_qual else nn.Linear(1, lin1_size)
 
     def forward(self, x: torch.Tensor, input_quals: torch.Tensor) -> torch.Tensor:
         """Forward pass through the neural network model.
