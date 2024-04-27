@@ -1,7 +1,19 @@
+use super::blat::MIN_SEQ_SIZE;
+use super::predict::Predict;
+use crate::output::BamRecord;
 use anyhow::Result;
+use derive_builder::Builder;
 use log::debug;
 use log::info;
 use std::collections::HashMap;
+
+#[derive(Builder, Debug, Default, Clone)]
+pub struct OverlapOptions {
+    pub internal_threshold: f32,
+    pub overlap_threshold: f32,
+    pub blat_threshold: f32,
+    pub min_mapping_quality: usize,
+}
 
 pub fn check_overlap(
     interval1: (usize, usize),
@@ -27,6 +39,20 @@ pub fn check_overlap(
     ratio > overlap_threshold
 }
 
-pub fn process_one_interval() -> Result<()> {
+pub fn process_one_interval(
+    mut overlap_results: HashMap<String, Vec<String>>,
+    predict_start: usize,
+    predict_end: usize,
+    predict: &Predict,
+    bam_record: &BamRecord,
+    options: &OverlapOptions,
+) -> Result<()> {
+    let predict_seq = &predict.seq[predict_start..predict_end];
+    let whole_seq_len = predict.seq.len();
+
+    if (predict_end as f32 / whole_seq_len as f32) < options.internal_threshold {
+        return Ok(());
+    }
+
     Ok(())
 }

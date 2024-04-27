@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use tempfile::tempdir;
 
+pub const MIN_SEQ_SIZE: usize = 20;
 // psLayout version 3
 
 // match   mis-    rep.    N's     Q gap   Q gap   T gap   T gap   strand  Q               Q       Q       Q       T               T       T    T        block   blockSizes      qStarts  tStarts
@@ -73,7 +74,6 @@ pub fn parse_psl<P: AsRef<Path>>(file: P) -> Result<Vec<PslAlignment>> {
         alignments.push(al);
         line.clear();
     }
-
     Ok(alignments)
 }
 
@@ -107,10 +107,6 @@ pub fn blat(
         .arg(file1)
         .arg(output_file.clone())
         .output()?;
-
-    println!("status: {}", output.status);
-    println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-
     parse_psl(output_file)
 }
 
