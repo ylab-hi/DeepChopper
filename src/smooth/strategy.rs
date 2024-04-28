@@ -248,14 +248,14 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
 ) -> Result<HashMap<String, Vec<String>>> {
     let bam_records = read_bam_records_parallel(bam_file)?;
 
-    log::info!("Start to collect {} bam records", bam_records.len());
+    log::info!("Collect {} bam records", bam_records.len());
 
     let all_predicts =
         load_predicts_from_batch_pts(prediction_path.as_ref().to_path_buf(), -100, max_batch_size)?;
 
     let all_predicts_number = all_predicts.len();
 
-    log::info!("Start to collect {} predicts", all_predicts_number);
+    log::info!("Collect {} predicts", all_predicts_number);
 
     // get &[Predict] from HashMap<String, Predict>
     let predicts_value: Vec<&Predict> = all_predicts.values().collect();

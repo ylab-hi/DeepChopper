@@ -110,6 +110,14 @@ pub fn blat<P: AsRef<Path> + std::convert::AsRef<std::ffi::OsStr>>(
         .arg(file1)
         .arg(output_file.clone())
         .output()?;
+
+    if !_output.status.success() || !output_file.exists() {
+        return Err(anyhow::anyhow!(
+            "blat failed: {}",
+            String::from_utf8_lossy(&_output.stderr)
+        ));
+    }
+
     parse_psl(output_file)
 }
 

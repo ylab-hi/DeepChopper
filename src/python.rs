@@ -757,6 +757,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<fq_encode::ParquetEncoder>()?;
     m.add_class::<smooth::Predict>()?;
     m.add_class::<output::BamRecord>()?;
+    m.add_class::<smooth::StatResult>()?;
 
     Ok(())
 }

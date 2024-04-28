@@ -589,3 +589,5 @@ cnn.onnx
 tmp
 scripts/*.pdf
 scripts/*.json
+*overlap_results*.json
+*stats_*.json

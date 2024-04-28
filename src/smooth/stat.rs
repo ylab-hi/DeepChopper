@@ -1,7 +1,9 @@
 use anyhow::Result;
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
+use pyo3::types::PyType;
 use rayon::prelude::*;
+use std::io::BufRead;
 use std::ops::Deref; // Import the Deref trait
 
 use super::Predict;
@@ -56,6 +58,14 @@ impl StatResult {
             smooth_only_one_with_ploya,
             total_predicts,
         }
+    }
+
+    #[classmethod]
+    pub fn from_json(_cls: &Bound<'_, PyType>, json_path: String) -> Result<Self> {
+        let file = std::fs::File::open(json_path)?;
+        let reader = std::io::BufReader::new(file);
+        let json_str = reader.lines().map(|line| line.unwrap()).collect::<String>();
+        Ok(serde_json::from_str(&json_str)?)
     }
 
     pub fn length_predicts_with_chop(
