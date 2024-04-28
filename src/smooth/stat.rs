@@ -26,6 +26,8 @@ pub struct StatResult {
     #[pyo3(get, set)]
     pub smooth_intervals: HashMap<String, Vec<(usize, usize)>>,
     #[pyo3(get, set)]
+    pub original_intervals: HashMap<String, Vec<(usize, usize)>>,
+    #[pyo3(get, set)]
     pub total_truncated: usize,
     #[pyo3(get, set)]
     pub smooth_only_one: Vec<String>,
@@ -43,6 +45,7 @@ impl StatResult {
         smooth_predicts_with_chop: Vec<String>,
         smooth_internal_predicts: Vec<String>,
         smooth_intervals: HashMap<String, Vec<(usize, usize)>>,
+        original_intervals: HashMap<String, Vec<(usize, usize)>>,
         total_truncated: usize,
         smooth_only_one: Vec<String>,
         smooth_only_one_with_ploya: Vec<String>,
@@ -53,6 +56,7 @@ impl StatResult {
             smooth_predicts_with_chop,
             smooth_internal_predicts,
             smooth_intervals,
+            original_intervals,
             total_truncated,
             smooth_only_one,
             smooth_only_one_with_ploya,
@@ -68,39 +72,22 @@ impl StatResult {
         Ok(serde_json::from_str(&json_str)?)
     }
 
-    pub fn length_predicts_with_chop(
-        &self,
-        predicts: HashMap<String, PyRef<Predict>>,
-    ) -> Vec<usize> {
-        let predicts = predicts
-            .iter()
-            .map(|(id, cell)| (id.clone(), cell.deref()))
-            .collect::<HashMap<String, &Predict>>();
-
+    pub fn length_predicts_with_chop(&self) -> Vec<usize> {
         self.predicts_with_chop
             .par_iter()
             .flat_map(|id| {
-                predicts[id]
-                    .prediction_region()
+                self.original_intervals[id]
                     .iter()
-                    .map(|r| r.end - r.start)
+                    .map(|r| r.1 - r.0)
                     .collect::<Vec<usize>>()
             })
             .collect()
     }
 
-    pub fn number_predicts_with_chop(
-        &self,
-        predicts: HashMap<String, PyRef<Predict>>,
-    ) -> Vec<usize> {
-        let predicts = predicts
-            .iter()
-            .map(|(id, cell)| (id.clone(), cell.deref()))
-            .collect::<HashMap<String, &Predict>>();
-
+    pub fn number_predicts_with_chop(&self) -> Vec<usize> {
         self.predicts_with_chop
             .par_iter()
-            .map(|id| predicts[id].prediction_region().len())
+            .map(|id| self.original_intervals[id].len())
             .collect()
     }
 
@@ -172,6 +159,7 @@ impl StatResult {
         self.smooth_internal_predicts
             .extend(other.smooth_internal_predicts);
         self.smooth_intervals.extend(other.smooth_intervals);
+        self.original_intervals.extend(other.original_intervals);
         self.total_truncated += other.total_truncated;
         self.smooth_only_one.extend(other.smooth_only_one);
         self.smooth_only_one_with_ploya
@@ -272,6 +260,7 @@ pub fn py_collect_statistics_for_predicts(
     let mut predicts_with_chop = Vec::new();
     let mut smooth_predicts_with_chop = Vec::new();
     let mut smooth_intervals = HashMap::new();
+    let mut original_intervals = HashMap::new();
     let mut smooth_internal_predicts = Vec::new();
     let mut total_truncated = 0;
 
@@ -289,8 +278,14 @@ pub fn py_collect_statistics_for_predicts(
             total_truncated += 1;
         }
 
-        if !predict.prediction_region().is_empty() {
+        let predict_regions = predict
+            .prediction_region()
+            .par_iter()
+            .map(|r| (r.start, r.end))
+            .collect::<Vec<(usize, usize)>>();
+        if !predict_regions.is_empty() {
             predicts_with_chop.push(predict.id.clone());
+            original_intervals.insert(predict.id.clone(), predict_regions);
         }
 
         let smooth_regions: Vec<(usize, usize)> = predict
@@ -337,6 +332,7 @@ pub fn py_collect_statistics_for_predicts(
         smooth_predicts_with_chop,
         smooth_internal_predicts,
         smooth_intervals,
+        original_intervals,
         total_truncated,
         smooth_only_one,
         smooth_ploya_only_one,
@@ -368,8 +364,16 @@ pub fn collect_statistics_for_predicts(
                 result.total_truncated += 1;
             }
 
-            if !predict.prediction_region().is_empty() {
+            let predict_regions = predict
+                .prediction_region()
+                .par_iter()
+                .map(|r| (r.start, r.end))
+                .collect::<Vec<(usize, usize)>>();
+            if !predict_regions.is_empty() {
                 result.predicts_with_chop.push(predict.id.clone());
+                result
+                    .original_intervals
+                    .insert(predict.id.clone(), predict_regions);
             }
 
             let smooth_regions: Vec<(usize, usize)> = predict
@@ -442,8 +446,16 @@ pub fn collect_statistics_for_predicts_rs(
                 result.total_truncated += 1;
             }
 
-            if !predict.prediction_region().is_empty() {
+            let predict_regions = predict
+                .prediction_region()
+                .par_iter()
+                .map(|r| (r.start, r.end))
+                .collect::<Vec<(usize, usize)>>();
+            if !predict_regions.is_empty() {
                 result.predicts_with_chop.push(predict.id.clone());
+                result
+                    .original_intervals
+                    .insert(predict.id.clone(), predict_regions);
             }
 
             let smooth_regions: Vec<(usize, usize)> = predict

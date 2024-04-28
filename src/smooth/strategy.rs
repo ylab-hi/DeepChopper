@@ -56,7 +56,7 @@ pub fn has_overlap(
     let ratio = overlap as f32 / divide as f32;
 
     log::debug!(
-        "interval1: {:?}, interval2: {:?}, ratio: {}",
+        "softclip: {:?}, predict: {:?}, ratio: {}",
         interval1,
         interval2,
         ratio
@@ -212,10 +212,11 @@ pub fn collect_overlap_results_for_predict(
     let intervals_number = intervals.len();
 
     log::debug!(
-        "pid: {},  intervals: {:?} bam cigar: {} bam mp: {}",
+        "pid: {},  intervals: {:?} bam ls: {} rs: {} mp: {}",
         predict.id,
         intervals,
-        bam_record.cigar,
+        bam_record.left_softclip,
+        bam_record.right_softclip,
         bam_record.mapping_quality
     );
 
@@ -270,7 +271,11 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
 
     // save the stats to a file
     let stats_json = serde_json::to_string(&stats)?;
-    let stats_file_name = format!("stats_{}.json", all_predicts_number);
+    let stats_file_name = format!(
+        "stats_pd{}_bt{}.json",
+        all_predicts_number,
+        max_batch_size.unwrap_or(0)
+    );
     let stats_file = File::create(&stats_file_name)?;
     let mut writer = BufWriter::new(stats_file);
     writer.write_all(stats_json.as_bytes())?;
@@ -305,7 +310,7 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
         .unwrap();
 
     let overlap_json = serde_json::to_string(&merged_results)?;
-    let overlap_file_name = format!("overlap_results_{}.json", stats_smooth_intervals_len);
+    let overlap_file_name = format!("overlap_results_spd{}.json", stats_smooth_intervals_len);
     let overlap_file = File::create(&overlap_file_name)?;
     let mut writer = BufWriter::new(overlap_file);
     writer.write_all(overlap_json.as_bytes())?;
