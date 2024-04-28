@@ -659,6 +659,8 @@ def main():
 
     vis_overlap_results(overlap_results)
 
+def vis():
+    pass
 
 if __name__ == "__main__":
     main()

@@ -72,6 +72,19 @@ impl StatResult {
         Ok(serde_json::from_str(&json_str)?)
     }
 
+    pub fn selected_predict_by_intervals(&self, interval_number: usize) -> Vec<String> {
+        self.smooth_predicts_with_chop
+            .par_iter()
+            .flat_map(|id| {
+                let intervals = self.smooth_intervals.get(id).unwrap();
+                if intervals.len() >= interval_number {
+                    return Some(id.clone());
+                }
+                None
+            })
+            .collect()
+    }
+
     pub fn length_predicts_with_chop(&self) -> Vec<usize> {
         self.predicts_with_chop
             .par_iter()

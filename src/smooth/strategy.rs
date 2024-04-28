@@ -310,44 +310,13 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
         .unwrap();
 
     let overlap_json = serde_json::to_string(&merged_results)?;
-    let overlap_file_name = format!("overlap_results_spd{}.json", stats_smooth_intervals_len);
+    let overlap_file_name = format!(
+        "overlap_results_spd{}_pd{}.json",
+        stats_smooth_intervals_len, all_predicts_number
+    );
     let overlap_file = File::create(&overlap_file_name)?;
     let mut writer = BufWriter::new(overlap_file);
     writer.write_all(overlap_json.as_bytes())?;
     log::info!("overlap_results  saved to {}", overlap_file_name);
     Ok(merged_results)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_collect_overlap_results() {
-        let bam_file = "/projects/b1171/ylk4626/project/DeepChopper/data/eval/real_data/dorado_without_trim_fqs/VCaP.bam";
-        let prediction_path = "/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_0/predicts/0/";
-        let max_batch_size = Some(100);
-        let options = OverlapOptionsBuilder::default()
-            .internal_threshold(0.9)
-            .overlap_threshold(0.4)
-            .blat_threshold(0.9)
-            .min_mapping_quality(0)
-            .smooth_window_size(21)
-            .min_interval_size(10)
-            .approved_interval_number(10)
-            .ploya_threshold(3)
-            .hg38_2bit("/projects/b1171/ylk4626/project/scan_data/hg38.2bit".into())
-            .blat_cli("/projects/b1171/ylk4626/project/DeepChopper/tmp/blat".into())
-            .build()
-            .unwrap();
-
-        let overlap_results = colect_overlap_results_for_predicts(
-            bam_file,
-            prediction_path,
-            max_batch_size,
-            &options,
-        )
-        .unwrap();
-        println!("{:?}", overlap_results);
-    }
 }
