@@ -216,7 +216,7 @@ pub fn collect_overlap_results_for_predict(
         bam_record.mapping_quality
     );
 
-    if intervals_number <= 3 {
+    if intervals_number <= 4 {
         for interval in intervals {
             process_one_interval(
                 &mut overlap_results,
