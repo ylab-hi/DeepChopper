@@ -27,6 +27,7 @@ pub struct OverlapOptions {
     pub smooth_window_size: usize,
     pub min_interval_size: usize,
     pub approved_interval_number: usize,
+    pub max_process_intervals: usize,
     pub ploya_threshold: usize, // 3
     pub hg38_2bit: PathBuf,
     pub blat_cli: PathBuf,
@@ -216,7 +217,7 @@ pub fn collect_overlap_results_for_predict(
         bam_record.mapping_quality
     );
 
-    if intervals_number <= 4 {
+    if intervals_number <= options.max_process_intervals {
         for interval in intervals {
             process_one_interval(
                 &mut overlap_results,
