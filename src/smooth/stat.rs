@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 const FLANK_SIZE_COUNT_PLOYA: usize = 5;
 
 #[pyclass]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, Clone)]
 pub struct StatResult {
     #[pyo3(get, set)]
     pub predicts_with_chop: Vec<String>,
@@ -121,6 +121,12 @@ impl StatResult {
             .par_iter()
             .map(|id| self.smooth_intervals[id].len())
             .collect()
+    }
+
+    #[pyo3(name = "merge")]
+    pub fn py_merge(&mut self, other: PyRef<StatResult>) {
+        let other: &StatResult = other.deref();
+        self.merge(other.clone())
     }
 
     fn __repr__(&self) -> String {

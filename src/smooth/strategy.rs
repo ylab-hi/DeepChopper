@@ -119,7 +119,6 @@ pub fn process_one_interval(
         }
     } else {
         // internal adapter
-        let mut flag = false;
         if bam_record.left_softclip > 0
             && has_overlap(
                 (0, bam_record.left_softclip),
@@ -127,58 +126,55 @@ pub fn process_one_interval(
                 options.overlap_threshold,
             )
         {
-            flag = true;
             overlap_results
                 .entry("internal_chop_sc".to_string())
                 .or_default()
                 .push(predict.id.clone());
+            return Ok(());
         }
 
-        if !flag
-            && bam_record.right_softclip > 0
+        if bam_record.right_softclip > 0
             && has_overlap(
                 (whole_seq_len - bam_record.right_softclip, whole_seq_len),
                 (predict_start, predict_end),
                 options.overlap_threshold,
             )
         {
-            flag = true;
             overlap_results
                 .entry("internal_chop_sc".to_string())
                 .or_default()
                 .push(predict.id.clone());
+            return Ok(());
         }
 
-        if !flag {
+        overlap_results
+            .entry("internal_chop_nosc".to_string())
+            .or_default()
+            .push(predict.id.clone());
+
+        if predict_seq.len() < MIN_SEQ_SIZE {
             overlap_results
-                .entry("internal_chop_nosc".to_string())
+                .entry("internal_chop_nosc_cannot_blat".to_string())
                 .or_default()
                 .push(predict.id.clone());
+            return Ok(());
+        }
 
-            if predict_seq.len() < MIN_SEQ_SIZE {
-                overlap_results
-                    .entry("internal_chop_nosc_cannot_blat".to_string())
-                    .or_default()
-                    .push(predict.id.clone());
-            }
+        let blat_result = blat(predict_seq, &options.blat_cli, &options.hg38_2bit, None);
+        if blat_result.is_err() {
+            overlap_results
+                .entry("internal_chop_nosc_blat_fail".to_string())
+                .or_default()
+                .push(predict.id.clone());
+            return Ok(());
+        }
 
-            let blat_result = blat(predict_seq, &options.blat_cli, &options.hg38_2bit, None);
-
-            if blat_result.is_err() {
-                overlap_results
-                    .entry("internal_chop_nosc_blat_fail".to_string())
-                    .or_default()
-                    .push(predict.id.clone());
-                return Ok(());
-            }
-
-            let blat_result = blat_result.unwrap();
-            if blat_result.is_empty() || blat_result[0].identity < options.blat_threshold {
-                overlap_results
-                    .entry("internal_chop_nosc_noblat".to_string())
-                    .or_default()
-                    .push(predict.id.clone());
-            }
+        let blat_result = blat_result.unwrap();
+        if blat_result.is_empty() || blat_result[0].identity < options.blat_threshold {
+            overlap_results
+                .entry("internal_chop_nosc_noblat".to_string())
+                .or_default()
+                .push(predict.id.clone());
         }
     }
     Ok(())
