@@ -35,6 +35,9 @@ pub struct StatResult {
     pub smooth_only_one_with_ploya: Vec<String>,
     #[pyo3(get, set)]
     pub total_predicts: usize,
+
+    #[pyo3(get, set)]
+    pub smooth_intervals_relative_pos: Vec<f32>,
 }
 
 #[pymethods]
@@ -50,6 +53,7 @@ impl StatResult {
         smooth_only_one: Vec<String>,
         smooth_only_one_with_ploya: Vec<String>,
         total_predicts: usize,
+        smooth_intervals_relative_pos: Vec<f32>,
     ) -> Self {
         Self {
             predicts_with_chop,
@@ -61,6 +65,7 @@ impl StatResult {
             smooth_only_one,
             smooth_only_one_with_ploya,
             total_predicts,
+            smooth_intervals_relative_pos,
         }
     }
 
@@ -184,6 +189,8 @@ impl StatResult {
         self.smooth_only_one_with_ploya
             .extend(other.smooth_only_one_with_ploya);
         self.total_predicts += other.total_predicts;
+        self.smooth_intervals_relative_pos
+            .extend(other.smooth_intervals_relative_pos);
     }
 }
 
@@ -201,172 +208,27 @@ pub fn py_collect_statistics_for_predicts_parallel(
         .map(|cell| cell.deref())
         .collect::<Vec<&Predict>>();
 
-    Ok(predicts
-        .par_iter()
-        .filter_map(|predict| {
-            if predict.seq.len() < default::MIN_READ_LEN {
-                return None;
-            }
-            Some(predict)
-        })
-        .map(|predict| {
-            let mut result = StatResult::default();
-            result.total_predicts += 1;
-
-            if predict.is_truncated {
-                result.total_truncated += 1;
-            }
-
-            if !predict.prediction_region().is_empty() {
-                result.predicts_with_chop.push(predict.id.clone());
-            }
-
-            let smooth_regions: Vec<(usize, usize)> = predict
-                .smooth_and_slect_intervals(
-                    smooth_window_size,
-                    min_interval_size,
-                    approved_interval_number,
-                )
-                .par_iter()
-                .map(|r| (r.start, r.end))
-                .collect();
-
-            if !smooth_regions.is_empty() {
-                result.smooth_predicts_with_chop.push(predict.id.clone());
-                result
-                    .smooth_intervals
-                    .insert(predict.id.clone(), smooth_regions.clone());
-
-                if smooth_regions.len() == 1 {
-                    result.smooth_only_one.push(predict.id.clone());
-
-                    let flank_size = FLANK_SIZE_COUNT_PLOYA;
-                    // count first 10 bp of start, if has 3 A
-                    let count = predict.seq
-                        [(smooth_regions[0].0 - flank_size).max(0)..smooth_regions[0].0]
-                        .chars()
-                        .filter(|&c| c == 'A')
-                        .count();
-
-                    if count >= ploya_threshold {
-                        result.smooth_only_one_with_ploya.push(predict.id.clone());
-                    }
-                }
-
-                for region in &smooth_regions {
-                    if (region.1 as f32 / predict.seq_len() as f32) < internal_threshold {
-                        result.smooth_internal_predicts.push(predict.id.clone());
-                    }
-                }
-            }
-            result
-        })
-        .reduce(StatResult::default, |mut a, b| {
-            a.merge(b);
-            a
-        }))
+    collect_statistics_for_predicts(
+        &predicts,
+        smooth_window_size,
+        min_interval_size,
+        approved_interval_number,
+        internal_threshold,
+        ploya_threshold,
+    )
 }
 
-#[pyfunction]
-pub fn py_collect_statistics_for_predicts(
-    predicts: Vec<PyRef<Predict>>,
+pub fn collect_statistics_for_predicts<T>(
+    predicts: &[T],
     smooth_window_size: usize,
     min_interval_size: usize,
     approved_interval_number: usize,
     internal_threshold: f32,
     ploya_threshold: usize, // 3
-) -> Result<StatResult> {
-    let mut predicts_with_chop = Vec::new();
-    let mut smooth_predicts_with_chop = Vec::new();
-    let mut smooth_intervals = HashMap::new();
-    let mut original_intervals = HashMap::new();
-    let mut smooth_internal_predicts = Vec::new();
-    let mut total_truncated = 0;
-
-    let mut smooth_only_one = Vec::new();
-    let mut smooth_ploya_only_one = Vec::new();
-    let mut total_predicts = 0;
-
-    for predict in predicts {
-        if predict.seq.len() < default::MIN_READ_LEN {
-            continue;
-        }
-
-        total_predicts += 1;
-        if predict.is_truncated {
-            total_truncated += 1;
-        }
-
-        let predict_regions = predict
-            .prediction_region()
-            .par_iter()
-            .map(|r| (r.start, r.end))
-            .collect::<Vec<(usize, usize)>>();
-        if !predict_regions.is_empty() {
-            predicts_with_chop.push(predict.id.clone());
-            original_intervals.insert(predict.id.clone(), predict_regions);
-        }
-
-        let smooth_regions: Vec<(usize, usize)> = predict
-            .smooth_and_slect_intervals(
-                smooth_window_size,
-                min_interval_size,
-                approved_interval_number,
-            )
-            .par_iter()
-            .map(|r| (r.start, r.end))
-            .collect();
-
-        if !smooth_regions.is_empty() {
-            smooth_predicts_with_chop.push(predict.id.clone());
-
-            if smooth_regions.len() == 1 {
-                smooth_only_one.push(predict.id.clone());
-
-                let flank_size = FLANK_SIZE_COUNT_PLOYA;
-
-                // count first 5 bp of start, if has 3 A
-                let count = predict.seq
-                    [(smooth_regions[0].0 - flank_size).max(0)..smooth_regions[0].0]
-                    .chars()
-                    .filter(|&c| c == 'A')
-                    .count();
-
-                if count >= ploya_threshold {
-                    smooth_ploya_only_one.push(predict.id.clone());
-                }
-            }
-
-            for region in &smooth_regions {
-                if (region.1 as f32 / predict.seq_len() as f32) < internal_threshold {
-                    smooth_internal_predicts.push(predict.id.clone());
-                }
-            }
-            smooth_intervals.insert(predict.id.clone(), smooth_regions);
-        }
-    }
-
-    Ok(StatResult::new(
-        predicts_with_chop,
-        smooth_predicts_with_chop,
-        smooth_internal_predicts,
-        smooth_intervals,
-        original_intervals,
-        total_truncated,
-        smooth_only_one,
-        smooth_ploya_only_one,
-        total_predicts,
-    ))
-}
-
-pub fn collect_statistics_for_predicts(
-    predicts: &[Predict],
-    smooth_window_size: usize,
-    min_interval_size: usize,
-    approved_interval_number: usize,
-    internal_threshold: f32,
-    ploya_threshold: usize, // 3
-) -> Result<StatResult> {
+) -> Result<StatResult>
+where
+    T: Deref<Target = Predict> + Sync,
+{
     Ok(predicts
         .par_iter()
         .filter_map(|predict| {
@@ -428,89 +290,9 @@ pub fn collect_statistics_for_predicts(
                 }
 
                 for region in &smooth_regions {
-                    if (region.1 as f32 / predict.seq_len() as f32) < internal_threshold {
-                        result.smooth_internal_predicts.push(predict.id.clone());
-                    }
-                }
-            }
-            result
-        })
-        .reduce(StatResult::default, |mut a, b| {
-            a.merge(b);
-            a
-        }))
-}
-
-pub fn collect_statistics_for_predicts_rs(
-    predicts: &[&Predict],
-    smooth_window_size: usize,
-    min_interval_size: usize,
-    approved_interval_number: usize,
-    internal_threshold: f32,
-    ploya_threshold: usize, // 3
-) -> Result<StatResult> {
-    Ok(predicts
-        .par_iter()
-        .filter_map(|predict| {
-            if predict.seq.len() < default::MIN_READ_LEN {
-                return None;
-            }
-            Some(predict)
-        })
-        .map(|predict| {
-            let mut result = StatResult::default();
-            result.total_predicts += 1;
-
-            if predict.is_truncated {
-                result.total_truncated += 1;
-            }
-
-            let predict_regions = predict
-                .prediction_region()
-                .par_iter()
-                .map(|r| (r.start, r.end))
-                .collect::<Vec<(usize, usize)>>();
-            if !predict_regions.is_empty() {
-                result.predicts_with_chop.push(predict.id.clone());
-                result
-                    .original_intervals
-                    .insert(predict.id.clone(), predict_regions);
-            }
-
-            let smooth_regions: Vec<(usize, usize)> = predict
-                .smooth_and_slect_intervals(
-                    smooth_window_size,
-                    min_interval_size,
-                    approved_interval_number,
-                )
-                .par_iter()
-                .map(|r| (r.start, r.end))
-                .collect();
-
-            if !smooth_regions.is_empty() {
-                result.smooth_predicts_with_chop.push(predict.id.clone());
-                result
-                    .smooth_intervals
-                    .insert(predict.id.clone(), smooth_regions.clone());
-
-                if smooth_regions.len() == 1 {
-                    result.smooth_only_one.push(predict.id.clone());
-
-                    let flank_size = FLANK_SIZE_COUNT_PLOYA;
-                    // count first 5 bp of start, if has 3 A
-                    let count = predict.seq
-                        [(smooth_regions[0].0 - flank_size).max(0)..smooth_regions[0].0]
-                        .chars()
-                        .filter(|&c| c == 'A')
-                        .count();
-
-                    if count >= ploya_threshold {
-                        result.smooth_only_one_with_ploya.push(predict.id.clone());
-                    }
-                }
-
-                for region in &smooth_regions {
-                    if (region.1 as f32 / predict.seq_len() as f32) < internal_threshold {
+                    let relative_pos = region.1 as f32 / predict.seq_len() as f32;
+                    result.smooth_intervals_relative_pos.push(relative_pos);
+                    if (relative_pos) < internal_threshold {
                         result.smooth_internal_predicts.push(predict.id.clone());
                     }
                 }

@@ -735,11 +735,6 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(output::py_read_bam_records, m)?)?;
     m.add_function(wrap_pyfunction!(output::py_read_bam_records_parallel, m)?)?;
 
-    // add smooth utils
-    m.add_function(wrap_pyfunction!(
-        smooth::py_collect_statistics_for_predicts,
-        m
-    )?)?;
     m.add_function(wrap_pyfunction!(
         smooth::py_collect_statistics_for_predicts_parallel,
         m

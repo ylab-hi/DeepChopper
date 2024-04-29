@@ -7,7 +7,7 @@ use std::path::Path;
 use super::predict::load_predicts_from_batch_pts;
 use super::predict::Predict;
 
-use super::collect_statistics_for_predicts_rs;
+use super::collect_statistics_for_predicts;
 use super::StatResult;
 use crate::output::read_bam_records_parallel;
 use crate::output::BamRecord;
@@ -131,6 +131,13 @@ pub fn process_one_interval(
                 .entry("internal_chop_sc".to_string())
                 .or_default()
                 .push(predict.id.clone());
+
+            if bam_record.sa_tag.is_some() {
+                overlap_results
+                    .entry("internal_chop_sc_sa".to_string())
+                    .or_default()
+                    .push(predict.id.clone());
+            }
             return Ok(());
         }
 
@@ -145,6 +152,13 @@ pub fn process_one_interval(
                 .entry("internal_chop_sc".to_string())
                 .or_default()
                 .push(predict.id.clone());
+
+            if bam_record.sa_tag.is_some() {
+                overlap_results
+                    .entry("internal_chop_sc_sa".to_string())
+                    .or_default()
+                    .push(predict.id.clone());
+            }
             return Ok(());
         }
 
@@ -257,7 +271,7 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
 
     // get &[Predict] from HashMap<String, Predict>
     let predicts_value: Vec<&Predict> = all_predicts.values().collect();
-    let stats = collect_statistics_for_predicts_rs(
+    let stats = collect_statistics_for_predicts(
         predicts_value.as_slice(),
         options.smooth_window_size,
         options.min_interval_size,
@@ -278,10 +292,10 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
     writer.write_all(stats_json.as_bytes())?;
     log::info!("Stats saved to {}", stats_file_name);
 
-    let stats_smooth_intervals_len = stats.smooth_predicts_with_chop.len();
+    let stats_smooth_intervals_number = stats.smooth_predicts_with_chop.len();
     log::info!(
         "Start to collect overlap results for {} predicts",
-        stats_smooth_intervals_len
+        stats_smooth_intervals_number
     );
     let overlap_results = stats
         .smooth_predicts_with_chop
@@ -309,7 +323,7 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
     let overlap_json = serde_json::to_string(&merged_results)?;
     let overlap_file_name = format!(
         "overlap_results_spd{}_pd{}.json",
-        stats_smooth_intervals_len, all_predicts_number
+        stats_smooth_intervals_number, all_predicts_number
     );
     let overlap_file = File::create(&overlap_file_name)?;
     let mut writer = BufWriter::new(overlap_file);

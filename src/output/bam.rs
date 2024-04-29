@@ -3,6 +3,7 @@ use noodles::bam;
 use noodles::bgzf;
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
+use std::ops::Deref;
 
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -11,6 +12,8 @@ use std::path::Path;
 use std::{fs::File, num::NonZeroUsize, thread};
 
 use noodles::sam::alignment::record::cigar::op::{Kind, Op};
+use noodles::sam::alignment::record::data::field::Tag;
+use noodles::sam::alignment::record::data::field::Value;
 use noodles::sam::record::Cigar;
 
 pub fn cigar_to_string(cigar: &[Op]) -> Result<String> {
@@ -93,6 +96,9 @@ pub struct BamRecord {
 
     #[pyo3(get, set)]
     pub is_supplementary: bool,
+
+    #[pyo3(get, set)]
+    pub sa_tag: Option<String>,
 }
 
 #[pymethods]
@@ -107,6 +113,7 @@ impl BamRecord {
         is_forward: bool,
         is_mapped: bool,
         is_supplementary: bool,
+        sa_tag: Option<String>,
     ) -> Self {
         BamRecord {
             qname,
@@ -117,6 +124,7 @@ impl BamRecord {
             is_forward,
             is_mapped,
             is_supplementary,
+            sa_tag,
         }
     }
 
@@ -176,8 +184,15 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(path: P) -> Result<HashMap<Stri
             let is_mapped = !record.flags().is_unmapped();
             let is_supplementary = record.flags().is_supplementary();
 
-            let (mut left_softclip, mut right_softclip) = _calc_softclips(&ops)?;
+            let sa_tag = if let Some(Ok(Value::String(sa_string))) =
+                record.data().get(&Tag::OTHER_ALIGNMENTS)
+            {
+                Some(String::from_utf8(sa_string.to_vec())?)
+            } else {
+                None
+            };
 
+            let (mut left_softclip, mut right_softclip) = _calc_softclips(&ops)?;
             if !is_forward {
                 std::mem::swap(&mut left_softclip, &mut right_softclip);
             }
@@ -193,6 +208,7 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(path: P) -> Result<HashMap<Stri
                     is_forward,
                     is_mapped,
                     is_supplementary,
+                    sa_tag,
                 ),
             ))
         })
@@ -219,6 +235,14 @@ pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRe
             let is_mapped = !record.flags().is_unmapped();
             let is_supplementary = record.flags().is_supplementary();
 
+            let sa_tag = if let Some(Ok(Value::String(sa_string))) =
+                record.data().get(&Tag::OTHER_ALIGNMENTS)
+            {
+                Some(String::from_utf8(sa_string.to_vec())?)
+            } else {
+                None
+            };
+
             let (mut left_softclip, mut right_softclip) = _calc_softclips(&ops)?;
             if !is_forward {
                 std::mem::swap(&mut left_softclip, &mut right_softclip);
@@ -235,11 +259,30 @@ pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRe
                     is_forward,
                     is_mapped,
                     is_supplementary,
+                    sa_tag,
                 ),
             ))
         })
         .collect();
     res
+}
+
+pub fn collect_read_mapping_quality<T>(records: &[T]) -> Vec<usize>
+where
+    T: Deref<Target = BamRecord> + Sync,
+{
+    records
+        .par_iter()
+        .filter(|record| record.is_mapped)
+        .map(|record| record.mapping_quality)
+        .collect()
+}
+
+#[pyfunction]
+#[pyo3(name = "collect_read_mapping_quality")]
+pub fn py_collect_read_mapping_quality(records: Vec<PyRef<BamRecord>>) -> Vec<usize> {
+    let records: Vec<&BamRecord> = records.iter().map(|record| record.deref()).collect();
+    collect_read_mapping_quality(&records)
 }
 
 #[pyfunction]
