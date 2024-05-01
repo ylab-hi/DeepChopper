@@ -31,6 +31,7 @@ pub struct OverlapOptions {
     pub ploya_threshold: usize, // 3
     pub hg38_2bit: PathBuf,
     pub blat_cli: PathBuf,
+    pub threads: usize,
 }
 
 pub fn has_overlap(
@@ -258,7 +259,7 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
     max_batch_size: Option<usize>,
     options: &OverlapOptions,
 ) -> Result<HashMap<String, Vec<String>>> {
-    let bam_records = read_bam_records_parallel(bam_file)?;
+    let bam_records = read_bam_records_parallel(bam_file, Some(options.threads))?;
 
     log::info!("Collect {} bam records", bam_records.len());
 

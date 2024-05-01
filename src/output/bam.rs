@@ -169,10 +169,20 @@ impl BamRecord {
     }
 }
 
-pub fn read_bam_records_parallel<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRecord>> {
+pub fn read_bam_records_parallel<P: AsRef<Path>>(
+    path: P,
+    threads: Option<usize>,
+) -> Result<HashMap<String, BamRecord>> {
     let file = File::open(path)?;
 
-    let worker_count = thread::available_parallelism().unwrap_or(NonZeroUsize::MIN);
+    let worker_count = if let Some(threads) = threads {
+        std::num::NonZeroUsize::new(threads)
+            .unwrap()
+            .min(thread::available_parallelism().unwrap_or(NonZeroUsize::MIN))
+    } else {
+        thread::available_parallelism().unwrap_or(NonZeroUsize::MIN)
+    };
+
     let decoder = bgzf::MultithreadedReader::with_worker_count(worker_count, file);
 
     let mut reader = bam::io::Reader::from(decoder);
@@ -306,8 +316,11 @@ pub fn py_read_bam_records(path: &str) -> Result<HashMap<String, BamRecord>> {
 
 #[pyfunction]
 #[pyo3(name = "read_bam_records_parallel")]
-pub fn py_read_bam_records_parallel(path: &str) -> Result<HashMap<String, BamRecord>> {
-    read_bam_records_parallel(path)
+pub fn py_read_bam_records_parallel(
+    path: &str,
+    threads: Option<usize>,
+) -> Result<HashMap<String, BamRecord>> {
+    read_bam_records_parallel(path, threads)
 }
 
 #[cfg(test)]
@@ -324,7 +337,7 @@ mod tests {
     #[test]
     fn test_read_bam_parallel() {
         let path = "tests/data/4reads.bam";
-        let _records = read_bam_records_parallel(path).unwrap();
+        let _records = read_bam_records_parallel(path, Some(2)).unwrap();
         println!("{:?}", _records);
     }
 
