@@ -7,6 +7,25 @@ from torchmetrics import MaxMetric, MeanMetric
 from torchmetrics.classification import F1Score
 
 
+class ContinuousIntervalLoss(nn.Module):
+    """A custom loss function that penalizes the model for predicting different classes in consecutive positions."""
+
+    def __init__(self, lambda_penalty: float = 0, **kwargs):
+        super().__init__()
+        self.base = torch.nn.CrossEntropyLoss(**kwargs)
+        self.lambda_penalty = lambda_penalty
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        loss = self.base(pred, target)
+        if self.lambda_penalty == 0:
+            return loss
+
+        true_pred = pred[target != self.base.ignore_index]
+        true_target = target[target != self.base.ignore_index]
+        penalty = self.lambda_penalty * (true_pred[1:] != true_target[:-1]).float().mean()
+        return loss + penalty
+
+
 class TokenClassificationLit(LightningModule):
     """A PyTorch Lightning module for training a token classification model."""
 
@@ -15,6 +34,7 @@ class TokenClassificationLit(LightningModule):
         net: nn.Module,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler.LRScheduler,
+        criterion: nn.Module,
         *,
         compile: bool,
     ):
@@ -32,15 +52,21 @@ class TokenClassificationLit(LightningModule):
 
         # this line allows to access init params with 'self.hparams' attribute
         # also ensures init params will be stored in ckpt
-        self.save_hyperparameters(logger=False, ignore=["net"])
+        self.save_hyperparameters(logger=False, ignore=["net", "criterion"])
         self.net = net
         # loss function
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = criterion
 
         # metric objects for calculating and averaging accuracy across batches
-        self.train_acc = F1Score(task="binary", num_classes=net.number_of_classes, ignore_index=-100)
-        self.val_acc = F1Score(task="binary", num_classes=net.number_of_classes, ignore_index=-100)
-        self.test_acc = F1Score(task="binary", num_classes=net.number_of_classes, ignore_index=-100)
+        self.train_acc = F1Score(
+            task="binary", num_classes=net.number_of_classes, ignore_index=self.criterion.ignore_index
+        )
+        self.val_acc = F1Score(
+            task="binary", num_classes=net.number_of_classes, ignore_index=self.criterion.ignore_index
+        )
+        self.test_acc = F1Score(
+            task="binary", num_classes=net.number_of_classes, ignore_index=self.criterion.ignore_index
+        )
 
         # for averaging loss across batches
         self.train_loss = MeanMetric()

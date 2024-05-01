@@ -98,6 +98,9 @@ pub struct BamRecord {
     pub is_supplementary: bool,
 
     #[pyo3(get, set)]
+    pub quality: Vec<u8>,
+
+    #[pyo3(get, set)]
     pub sa_tag: Option<String>,
 }
 
@@ -113,6 +116,7 @@ impl BamRecord {
         is_forward: bool,
         is_mapped: bool,
         is_supplementary: bool,
+        quality: Vec<u8>,
         sa_tag: Option<String>,
     ) -> Self {
         BamRecord {
@@ -124,6 +128,7 @@ impl BamRecord {
             is_forward,
             is_mapped,
             is_supplementary,
+            quality,
             sa_tag,
         }
     }
@@ -158,6 +163,10 @@ impl BamRecord {
             self.qname, self.mapping_quality, self.cigar, self.left_softclip, self.right_softclip, self.is_forward, self.is_mapped, self.is_supplementary
         )
     }
+
+    fn select_quality(&self, start: usize, end: usize) -> Vec<u8> {
+        self.quality[start..end].to_vec()
+    }
 }
 
 pub fn read_bam_records_parallel<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRecord>> {
@@ -183,6 +192,7 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(path: P) -> Result<HashMap<Stri
             let is_forward = !record.flags().is_reverse_complemented();
             let is_mapped = !record.flags().is_unmapped();
             let is_supplementary = record.flags().is_supplementary();
+            let quality = record.quality_scores().as_ref().to_vec();
 
             let sa_tag = if let Some(Ok(Value::String(sa_string))) =
                 record.data().get(&Tag::OTHER_ALIGNMENTS)
@@ -208,6 +218,7 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(path: P) -> Result<HashMap<Stri
                     is_forward,
                     is_mapped,
                     is_supplementary,
+                    quality,
                     sa_tag,
                 ),
             ))
@@ -234,6 +245,7 @@ pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRe
             let is_forward = !record.flags().is_reverse_complemented();
             let is_mapped = !record.flags().is_unmapped();
             let is_supplementary = record.flags().is_supplementary();
+            let quality = record.quality_scores().as_ref().to_vec();
 
             let sa_tag = if let Some(Ok(Value::String(sa_string))) =
                 record.data().get(&Tag::OTHER_ALIGNMENTS)
@@ -259,6 +271,7 @@ pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRe
                     is_forward,
                     is_mapped,
                     is_supplementary,
+                    quality,
                     sa_tag,
                 ),
             ))

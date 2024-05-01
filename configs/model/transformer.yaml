@@ -22,5 +22,9 @@ net:
   num_encoder_layers: 4
   dim_feedforward: 256
 
+criterion:
+  _target_: deepchopper.models.basic_module.ContinuousIntervalLoss
+  lambda_penalty: 0
+
 # compile model for faster training with pytorch 2.0
 compile: false

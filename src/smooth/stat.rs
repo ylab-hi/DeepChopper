@@ -35,7 +35,6 @@ pub struct StatResult {
     pub smooth_only_one_with_ploya: Vec<String>,
     #[pyo3(get, set)]
     pub total_predicts: usize,
-
     #[pyo3(get, set)]
     pub smooth_intervals_relative_pos: Vec<f32>,
 }

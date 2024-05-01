@@ -26,5 +26,9 @@ net:
     use_identity_layer_for_qual: true
     use_qual: bool
 
+criterion:
+  _target_: deepchopper.models.basic_module.ContinuousIntervalLoss
+  lambda_penalty: 0
+
 # compile model for faster training with pytorch 2.0
 compile: false
