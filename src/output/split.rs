@@ -4,13 +4,15 @@ use rayon::prelude::*;
 use std::ops::Range;
 
 use crate::{error::EncodingError, fq_encode::RecordData};
+use noodles::fastq;
+use noodles::fastq::record::Record as FastqRecord;
 
-pub fn split_records_by_remove_interval(
-    seq: &BStr,
-    id: &BStr,
-    qual: &[u8],
-    target: &[Range<usize>],
-) -> Result<Vec<RecordData>> {
+fn _split_records_by_remove_internal<'a>(
+    seq: &'a BStr,
+    id: &'a BStr,
+    qual: &'a [u8],
+    target: &'a [Range<usize>],
+) -> Result<(Vec<String>, Vec<&'a BStr>, Vec<&'a BStr>)> {
     let mut seqs = Vec::new();
     let mut quals = Vec::new();
     let mut selected_intervals = Vec::new();
@@ -47,10 +49,42 @@ pub fn split_records_by_remove_interval(
             )
         })
         .collect();
+    Ok((ids, seqs, quals))
+}
+
+pub fn split_noodel_records_by_remove_interval(
+    seq: &BStr,
+    id: &BStr,
+    qual: &[u8],
+    target: &[Range<usize>],
+) -> Result<Vec<FastqRecord>> {
+    let (ids, seqs, quals) = _split_records_by_remove_internal(seq, id, qual, target)?;
 
     let records = ids
-        .into_iter()
-        .zip(seqs.into_iter().zip(quals))
+        .into_par_iter()
+        .zip(seqs.into_par_iter().zip(quals.into_par_iter()))
+        .map(|(id, (seq, qual))| {
+            FastqRecord::new(
+                fastq::record::Definition::new(id.as_str(), ""),
+                seq.to_vec(),
+                qual.to_vec(),
+            )
+        })
+        .collect();
+
+    Ok(records)
+}
+
+pub fn split_records_by_remove_interval(
+    seq: &BStr,
+    id: &BStr,
+    qual: &[u8],
+    target: &[Range<usize>],
+) -> Result<Vec<RecordData>> {
+    let (ids, seqs, quals) = _split_records_by_remove_internal(seq, id, qual, target)?;
+    let records = ids
+        .into_par_iter()
+        .zip(seqs.into_par_iter().zip(quals.into_par_iter()))
         .map(|(id, (seq, qual))| RecordData::new(id.into(), seq.into(), qual.into()))
         .collect();
 

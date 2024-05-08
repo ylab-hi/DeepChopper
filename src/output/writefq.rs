@@ -92,7 +92,7 @@ pub fn write_fq_parallel_for_noodle_record(
     file_path: PathBuf,
     threads: Option<usize>,
 ) -> Result<()> {
-    let worker_count = NonZeroUsize::new(threads.unwrap_or(1))
+    let worker_count = NonZeroUsize::new(threads.unwrap_or(2))
         .map(|count| count.min(thread::available_parallelism().unwrap()))
         .unwrap();
 

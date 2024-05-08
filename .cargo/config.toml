@@ -1,2 +1,10 @@
 [build]
 rustflags = ["-Ctarget-cpu=native"]
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C",
+    "link-arg=-Wl,-rpath,/projects/b1171/ylk4626/mambaforge/envs/deepchopper/lib",
+    "-C",
+    "link-arg=-L/projects/b1171/ylk4626/mambaforge/envs/deepchopper/lib",
+]

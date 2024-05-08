@@ -9,6 +9,7 @@ use super::predict::Predict;
 
 use super::collect_statistics_for_predicts;
 use super::StatResult;
+use crate::default;
 use crate::output::read_bam_records_parallel;
 use crate::output::BamRecord;
 
@@ -64,6 +65,22 @@ pub fn has_overlap(
         ratio
     );
     ratio > overlap_threshold
+}
+pub fn process_no_interval(
+    overlap_results: &mut HashMap<String, Vec<String>>,
+    bam_record: &BamRecord,
+    options: &OverlapOptions,
+) -> Result<()> {
+    if bam_record.left_softclip > options.min_interval_size
+        || bam_record.right_softclip > options.min_interval_size
+    {
+        overlap_results
+            .entry("sc_without_chop".to_string())
+            .or_default()
+            .push(bam_record.qname.clone());
+    }
+
+    Ok(())
 }
 
 pub fn process_one_interval(
@@ -220,7 +237,12 @@ pub fn collect_overlap_results_for_predict(
         return Ok(overlap_results);
     }
 
-    let intervals = stats.smooth_intervals.get(&predict.id).unwrap();
+    let empty_intervals = Vec::new();
+    let intervals = stats
+        .smooth_intervals
+        .get(&predict.id)
+        .unwrap_or(&empty_intervals);
+
     let intervals_number = intervals.len();
 
     log::debug!(
@@ -232,7 +254,9 @@ pub fn collect_overlap_results_for_predict(
         bam_record.mapping_quality
     );
 
-    if intervals_number <= options.max_process_intervals {
+    if intervals_number == 0 {
+        process_no_interval(&mut overlap_results, bam_record, options)?;
+    } else if intervals_number <= options.max_process_intervals {
         for interval in intervals {
             process_one_interval(
                 &mut overlap_results,
@@ -263,8 +287,11 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
 
     log::info!("Collect {} bam records", bam_records.len());
 
-    let all_predicts =
-        load_predicts_from_batch_pts(prediction_path.as_ref().to_path_buf(), -100, max_batch_size)?;
+    let all_predicts = load_predicts_from_batch_pts(
+        prediction_path.as_ref().to_path_buf(),
+        default::IGNORE_LABEL,
+        max_batch_size,
+    )?;
 
     let all_predicts_number = all_predicts.len();
 
@@ -298,10 +325,11 @@ pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
         "Start to collect overlap results for {} predicts",
         stats_smooth_intervals_number
     );
-    let overlap_results = stats
-        .smooth_predicts_with_chop
+
+    // stats .smooth_predicts_with_chop // NOTE:  <Yangyang Li>  Note: change here to all predicts
+    let overlap_results = all_predicts
         .par_iter()
-        .map(|id| {
+        .map(|(id, _predcit)| {
             let predict = all_predicts.get(id).unwrap();
             let bam_record = bam_records.get(id).unwrap();
             let overlap_results =
