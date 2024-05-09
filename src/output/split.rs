@@ -57,15 +57,28 @@ pub fn split_noodel_records_by_remove_interval(
     id: &BStr,
     qual: &[u8],
     target: &[Range<usize>],
+    min_chop_read_length: usize,
+    id_annotation: bool,
 ) -> Result<Vec<FastqRecord>> {
     let (ids, seqs, quals) = _split_records_by_remove_internal(seq, id, qual, target)?;
+    let ids_length = ids.len();
 
     let records = ids
         .into_par_iter()
         .zip(seqs.into_par_iter().zip(quals.into_par_iter()))
+        .filter(|(_, (seq, _))| seq.len() >= min_chop_read_length)
         .map(|(id, (seq, qual))| {
+            let id_str = if id_annotation {
+                if ids_length == 1 {
+                    format!("{}|{}", id, 'T')
+                } else {
+                    format!("{}|{}", id, 'I')
+                }
+            } else {
+                id
+            };
             FastqRecord::new(
-                fastq::record::Definition::new(id.as_str(), ""),
+                fastq::record::Definition::new(id_str, ""),
                 seq.to_vec(),
                 qual.to_vec(),
             )
@@ -80,12 +93,28 @@ pub fn split_records_by_remove_interval(
     id: &BStr,
     qual: &[u8],
     target: &[Range<usize>],
+    min_chop_read_length: usize,
+    id_annotation: bool,
 ) -> Result<Vec<RecordData>> {
     let (ids, seqs, quals) = _split_records_by_remove_internal(seq, id, qual, target)?;
+    let ids_length = ids.len();
+
     let records = ids
         .into_par_iter()
         .zip(seqs.into_par_iter().zip(quals.into_par_iter()))
-        .map(|(id, (seq, qual))| RecordData::new(id.into(), seq.into(), qual.into()))
+        .filter(|(_, (seq, _))| seq.len() >= min_chop_read_length)
+        .map(|(id, (seq, qual))| {
+            let id_str = if id_annotation {
+                if ids_length == 1 {
+                    format!("{}|{}", id, 'T')
+                } else {
+                    format!("{}|{}", id, 'I')
+                }
+            } else {
+                id
+            };
+            RecordData::new(id_str.into(), seq.into(), qual.into())
+        })
         .collect();
 
     Ok(records)

@@ -98,6 +98,9 @@ pub struct BamRecord {
     pub is_supplementary: bool,
 
     #[pyo3(get, set)]
+    pub is_secondary: bool,
+
+    #[pyo3(get, set)]
     pub quality: Vec<u8>,
 
     #[pyo3(get, set)]
@@ -116,6 +119,7 @@ impl BamRecord {
         is_forward: bool,
         is_mapped: bool,
         is_supplementary: bool,
+        is_secondary: bool,
         quality: Vec<u8>,
         sa_tag: Option<String>,
     ) -> Self {
@@ -128,6 +132,7 @@ impl BamRecord {
             is_forward,
             is_mapped,
             is_supplementary,
+            is_secondary,
             quality,
             sa_tag,
         }
@@ -200,8 +205,11 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(
             let cigar = cigar_to_string(&ops)?;
 
             let is_forward = !record.flags().is_reverse_complemented();
+
             let is_mapped = !record.flags().is_unmapped();
             let is_supplementary = record.flags().is_supplementary();
+            let is_secondary = record.flags().is_secondary();
+
             let quality = record.quality_scores().as_ref().to_vec();
 
             let sa_tag = if let Some(Ok(Value::String(sa_string))) =
@@ -228,6 +236,7 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(
                     is_forward,
                     is_mapped,
                     is_supplementary,
+                    is_secondary,
                     quality,
                     sa_tag,
                 ),
@@ -255,6 +264,8 @@ pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRe
             let is_forward = !record.flags().is_reverse_complemented();
             let is_mapped = !record.flags().is_unmapped();
             let is_supplementary = record.flags().is_supplementary();
+            let is_secondary = record.flags().is_secondary();
+
             let quality = record.quality_scores().as_ref().to_vec();
 
             let sa_tag = if let Some(Ok(Value::String(sa_string))) =
@@ -281,6 +292,7 @@ pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRe
                     is_forward,
                     is_mapped,
                     is_supplementary,
+                    is_secondary,
                     quality,
                     sa_tag,
                 ),

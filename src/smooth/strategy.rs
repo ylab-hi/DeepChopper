@@ -229,6 +229,14 @@ pub fn collect_overlap_results_for_predict(
         return Ok(overlap_results);
     }
 
+    if bam_record.is_secondary || bam_record.is_supplementary {
+        overlap_results
+            .entry("secondary_or_supp_read".to_string())
+            .or_default()
+            .push(predict.id.clone());
+        return Ok(overlap_results);
+    }
+
     if bam_record.mapping_quality < options.min_mapping_quality {
         overlap_results
             .entry("low_mp_read".to_string())

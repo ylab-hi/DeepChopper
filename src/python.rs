@@ -1,5 +1,5 @@
 use crate::{
-    default::{BASES, KMER_SIZE, QUAL_OFFSET, VECTORIZED_TARGET},
+    default::{BASES, KMER_SIZE, MIN_CHOPED_SEQ_LEN, QUAL_OFFSET, VECTORIZED_TARGET},
     fq_encode::{self, Encoder},
     kmer::{self, vertorize_target},
     output::{self, write_json, write_parquet},
@@ -641,6 +641,8 @@ fn write_predicts(
                 id.value(i).into(),
                 &qual_vec,
                 &smooth_predict,
+                MIN_CHOPED_SEQ_LEN,
+                false,
             )
             .unwrap();
             records

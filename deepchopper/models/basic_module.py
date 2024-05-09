@@ -15,13 +15,17 @@ class ContinuousIntervalLoss(nn.Module):
         self.base = torch.nn.CrossEntropyLoss(**kwargs)
         self.lambda_penalty = lambda_penalty
 
+    @property
+    def ignore_index(self):
+        return self.base.ignore_index
+
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         loss = self.base(pred, target)
         if self.lambda_penalty == 0:
             return loss
-
-        true_pred = pred[target != self.base.ignore_index]
-        true_target = target[target != self.base.ignore_index]
+        valid_mask = target != self.ignore_index
+        true_pred = pred.argmax(-1)[valid_mask]
+        true_target = target[valid_mask]
         penalty = self.lambda_penalty * (true_pred[1:] != true_target[:-1]).float().mean()
         return loss + penalty
 

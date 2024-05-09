@@ -110,6 +110,7 @@ pub fn write_fq_parallel_for_noodle_record(
 pub fn read_noodle_records_from_zip_fq<P: AsRef<Path>>(file_path: P) -> Result<Vec<FastqRecord>> {
     let decoder = bgzf::Reader::new(File::open(file_path)?);
     let mut reader = fastq::Reader::new(decoder);
+
     let records: Result<Vec<FastqRecord>> = reader
         .records()
         .map(|record| {

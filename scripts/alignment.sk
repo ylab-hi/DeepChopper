@@ -1,0 +1,21 @@
+SAMPLES = ["vcap_all.9177639pd.chop.fq.gz"]
+
+rule all:
+    input:
+        expand("{sample}.bai", sample=SAMPLES)
+
+rule minimap2_mapping:
+    input:
+        fq="{sample}",
+        genome="/projects/b1171/twp7981/database/genome/hg38.fa",
+        bigbed="/projects/b1171/twp7981/database/gencode/gencode.v38.bigbed"
+    output:
+        bam="{sample}.bam",
+        bai="{sample}.bai"
+    params:
+        rg="@RG\tID:choprna002\tSM:hs\tLB:CPRNA002\tPL:ONT"
+    threads: 40  # 32 for minimap2 + 8 for samtools
+    shell:
+        """
+        minimap2 -Y -t 32 -R "{params.rg}" --MD -ax splice -uf -k14 --junc-bed  {input.bigbed}  {input.genome}  {input.fq} | samtools sort -@ 8 -O BAM -o {output.bam} - && samtools index {output.bam} {output.bai}
+        """

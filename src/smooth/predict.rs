@@ -215,14 +215,18 @@ pub fn load_predicts_from_batch_pts(
 ) -> Result<HashMap<String, Predict>> {
     // iter over the pt files under the path
     // make sure there is only one pt file
-    let mut pt_files: Vec<_> = WalkDir::new(pt_path)
+    let mut pt_files: Vec<_> = WalkDir::new(&pt_path)
         .into_iter()
         .par_bridge()
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().map_or(false, |ext| ext == "pt"))
         .collect();
 
-    info!("Found {} pt files", pt_files.len());
+    info!(
+        "Found {} pt files from {}",
+        pt_files.len(),
+        pt_path.display()
+    );
 
     if let Some(max_predicts) = max_predicts {
         if pt_files.len() > max_predicts {
