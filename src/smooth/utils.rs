@@ -31,11 +31,11 @@ pub fn ascii_list2str(ascii_list: &[i64]) -> String {
 }
 
 pub fn id_list2seq_i64(id_list: &[i64]) -> String {
-    id_list.par_iter().map(|id| ID_TABLE_I64[&id]).collect()
+    id_list.par_iter().map(|id| ID_TABLE_I64[id]).collect()
 }
 
 pub fn id_list2seq(id_list: &[u8]) -> String {
-    id_list.par_iter().map(|id| ID_TABLE[&id]).collect()
+    id_list.par_iter().map(|id| ID_TABLE[id]).collect()
 }
 
 pub fn majority_voting(labels: &[i8], window_size: usize) -> Vec<i8> {
