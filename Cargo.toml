@@ -37,7 +37,7 @@ pyo3 = { version = "0.21.2", features = [
 ctrlc = "3.4"
 log = "0.4"
 pyo3-log = "0.10"
-noodles = { version = "0.71.0", features = [
+noodles = { version = "0.72.0", features = [
     "bgzf",
     "core",
     "csi",
@@ -50,6 +50,8 @@ noodles = { version = "0.71.0", features = [
 bio = "1.5"
 needletail = "0.5"
 
+
+ahash = "0.8.11"
 numpy = "0.21"
 ndarray = { version = "0.15", features = ["serde", "rayon"] }
 num-traits = { version = "0.2" }
