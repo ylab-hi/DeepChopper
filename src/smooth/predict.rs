@@ -14,8 +14,10 @@ use log::info;
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 
+use ahash::HashMap;
+use ahash::HashMapExt;
+
 use rayon::prelude::*;
-use std::collections::HashMap;
 use walkdir::WalkDir;
 
 use crate::vis;

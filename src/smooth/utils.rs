@@ -1,6 +1,7 @@
+use ahash::HashMap;
+use ahash::HashMapExt;
 use lazy_static::lazy_static;
 use rayon::prelude::*;
-use std::collections::HashMap;
 
 lazy_static! {
     static ref ID_TABLE: HashMap<u8, char> = {

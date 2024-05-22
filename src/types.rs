@@ -1,5 +1,5 @@
+use ahash::HashMap;
 use ndarray::{Array2, Array3};
-use std::collections::HashMap;
 
 pub type Element = i32;
 pub type Matrix = Array2<Element>;

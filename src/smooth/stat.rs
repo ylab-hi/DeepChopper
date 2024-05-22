@@ -7,7 +7,8 @@ use std::io::BufRead;
 use std::ops::Deref; // Import the Deref trait
 
 use super::Predict;
-use std::collections::HashMap;
+
+use ahash::HashMap;
 
 use crate::default;
 use serde::{Deserialize, Serialize};

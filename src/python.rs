@@ -14,7 +14,9 @@ use numpy::{IntoPyArray, PyArray2, PyArray3};
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use pyo3::prelude::*;
 use rayon::prelude::*;
-use std::{collections::HashMap, ops::Range, path::PathBuf};
+use std::{ops::Range, path::PathBuf};
+
+use ahash::HashMap;
 
 use log::{debug, error, info, warn};
 

@@ -16,8 +16,10 @@ use crate::output::BamRecord;
 use anyhow::Result;
 use derive_builder::Builder;
 use rayon::prelude::*;
-use std::collections::HashMap;
 use std::path::PathBuf;
+
+use ahash::HashMap;
+use ahash::HashMapExt;
 
 #[derive(Builder, Debug, Default, Clone)]
 pub struct OverlapOptions {

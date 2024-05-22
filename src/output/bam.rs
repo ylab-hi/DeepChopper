@@ -7,7 +7,6 @@ use std::ops::Deref;
 
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::Path;
 use std::{fs::File, num::NonZeroUsize, thread};
 
@@ -15,6 +14,8 @@ use noodles::sam::alignment::record::cigar::op::{Kind, Op};
 use noodles::sam::alignment::record::data::field::Tag;
 use noodles::sam::alignment::record::data::field::Value;
 use noodles::sam::record::Cigar;
+
+use ahash::HashMap;
 
 pub fn cigar_to_string(cigar: &[Op]) -> Result<String> {
     let mut cigar_str = String::new();

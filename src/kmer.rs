@@ -266,7 +266,8 @@ mod tests {
 
     #[test]
     fn test_generate_kmers_table_empty_base() {
-        use std::collections::HashMap;
+        use ahash::HashMap;
+        use ahash::HashMapExt;
 
         let base = b"";
         let k = 2;
