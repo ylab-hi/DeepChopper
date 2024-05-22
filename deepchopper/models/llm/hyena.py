@@ -2,8 +2,9 @@ import torch
 from torch import nn
 from transformers import AutoModel
 
-
 # https://github.com/HazyResearch/hyena-dna
+
+
 class TokenClassificationModule(nn.Module):
     """Token classification model."""
 
