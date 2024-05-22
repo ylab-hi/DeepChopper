@@ -78,7 +78,7 @@ pub fn parse_psl<P: AsRef<Path>>(file: P) -> Result<Vec<PslAlignment>> {
     Ok(alignments)
 }
 
-pub fn blat_for_seq<P: AsRef<Path> + std::convert::AsRef<std::ffi::OsStr>>(
+pub fn blat_for_seq<P: AsRef<Path> + AsRef<std::ffi::OsStr>>(
     path: P,
     blat_cli: P,
     two_bit: P,
@@ -104,7 +104,7 @@ pub fn blat_for_seq<P: AsRef<Path> + std::convert::AsRef<std::ffi::OsStr>>(
 }
 
 // ./blat -stepSize=5 -repMatch=2253 -minScore=20 -minIdentity=0  hg38.2bit t.fa  output.psl
-pub fn blat<P: AsRef<Path> + std::convert::AsRef<std::ffi::OsStr>>(
+pub fn blat<P: AsRef<Path> + AsRef<std::ffi::OsStr>>(
     seq: &str,
     blat_cli: P,
     two_bit: P,

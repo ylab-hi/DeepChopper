@@ -285,7 +285,7 @@ pub fn collect_overlap_results_for_predict(
     Ok(overlap_results)
 }
 
-pub fn colect_overlap_results_for_predicts<P: AsRef<Path>>(
+pub fn collect_overlap_results_for_predicts<P: AsRef<Path>>(
     bam_file: P,
     prediction_path: P,
     max_batch_size: Option<usize>,

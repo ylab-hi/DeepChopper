@@ -289,7 +289,7 @@ mod tests {
         let original_target: Interval<usize> = (2..6).into(); // Target region [2, 6)
         let k = 3; // K-mer size
         let new_target_region = to_kmer_target_region(&original_target, k, None).unwrap();
-        assert_eq!(new_target_region, (2..4));
+        assert_eq!(new_target_region, 2..4);
     }
 
     #[test]

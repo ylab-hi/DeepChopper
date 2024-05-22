@@ -181,7 +181,7 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(
     let file = File::open(path)?;
 
     let worker_count = if let Some(threads) = threads {
-        std::num::NonZeroUsize::new(threads)
+        NonZeroUsize::new(threads)
             .unwrap()
             .min(thread::available_parallelism().unwrap_or(NonZeroUsize::MIN))
     } else {
