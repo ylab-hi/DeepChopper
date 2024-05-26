@@ -679,6 +679,11 @@ fn convert_multiple_fqs_to_one_fq(
 }
 
 #[pyfunction]
+fn reverse_complement(seq: String) -> String {
+    String::from_utf8(seq.as_bytes().reverse_complement()).unwrap()
+}
+
+#[pyfunction]
 fn id_list2seq(ids: Vec<u8>) -> String {
     smooth::id_list2seq(&ids)
 }
@@ -724,6 +729,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(encode_qual, m)?)?;
 
     // add utils
+    m.add_function(wrap_pyfunction!(reverse_complement, m)?)?;
     m.add_function(wrap_pyfunction!(summary_predict, m)?)?;
     m.add_function(wrap_pyfunction!(collect_and_split_dataset, m)?)?;
     m.add_function(wrap_pyfunction!(get_label_region, m)?)?;

@@ -88,6 +88,8 @@ nvidia-nccl-cu11 = { version = "^2.19.3", markers = "sys_platform == 'linux'" }
 nvidia-nvtx-cu11 = { version = "^11.8.86", markers = "sys_platform == 'linux'" }
 nvidia-cublas-cu11 = { version = "^11.11.3.6", markers = "sys_platform == 'linux'" }
 gradio = "^4.21.0"
+mamba-ssm = "^1.2.0.post1"
+causal-conv1d = "^1.2.0.post2"
 
 [[tool.poetry.source]]
 name = "pytorch"
