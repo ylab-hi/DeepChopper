@@ -40,12 +40,13 @@ fn test_log() {
     error!("error Hello from Rust!");
 }
 
-#[pymodule]
-fn default(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("QUAL_OFFSET", QUAL_OFFSET)?;
-    m.add("BASES", String::from_utf8_lossy(BASES))?;
-    m.add("KMER_SIZE", KMER_SIZE)?;
-    m.add("VECTORIZED_TARGET", VECTORIZED_TARGET)?;
+fn register_default_module(parent_module: &Bound<'_, PyModule>) -> PyResult<()> {
+    let child_module = PyModule::new_bound(parent_module.py(), "default")?;
+    child_module.add("QUAL_OFFSET", QUAL_OFFSET)?;
+    child_module.add("BASES", String::from_utf8_lossy(BASES))?;
+    child_module.add("KMER_SIZE", KMER_SIZE)?;
+    child_module.add("VECTORIZED_TARGET", VECTORIZED_TARGET)?;
+    parent_module.add_submodule(&child_module)?;
     Ok(())
 }
 
@@ -697,10 +698,7 @@ fn majority_voting(labels: Vec<i8>, window_size: usize) -> Vec<i8> {
 #[pymodule]
 fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     pyo3_log::init();
-
-    let default_module = PyModule::new_bound(m.py(), "default")?;
-    default(m)?;
-    m.add_submodule(&default_module)?;
+    register_default_module(m)?;
 
     m.add_function(wrap_pyfunction!(splite_qual_by_offsets, m)?)?;
     m.add_function(wrap_pyfunction!(vertorize_target, m)?)?;

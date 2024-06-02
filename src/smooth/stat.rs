@@ -280,7 +280,7 @@ where
                     let flank_size = FLANK_SIZE_COUNT_PLOYA;
                     // count first 5 bp of start, if has 3 A
                     let count = predict.seq
-                        [(smooth_regions[0].0 - flank_size).max(0)..smooth_regions[0].0]
+                        [smooth_regions[0].0.saturating_sub(flank_size)..smooth_regions[0].0]
                         .chars()
                         .filter(|&c| c == 'A')
                         .count();
