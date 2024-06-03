@@ -101,7 +101,7 @@ impl Predict {
         min_interval_size: usize,
         append_interval_number: usize,
     ) -> Vec<(usize, usize)> {
-        self.smooth_and_slect_intervals(
+        self.smooth_and_select_intervals(
             smooth_window_size,
             min_interval_size,
             append_interval_number,
@@ -183,15 +183,15 @@ impl Predict {
         majority_voting(&self.prediction, window_size)
     }
 
-    pub fn smooth_and_slect_intervals(
+    pub fn smooth_and_select_intervals(
         &self,
         smooth_window_size: usize,
         min_interval_size: usize,
         approved_interval_number: usize,
     ) -> Vec<Range<usize>> {
-        let chop_interals = self.smooth_prediction(smooth_window_size);
+        let chop_intervals = self.smooth_prediction(smooth_window_size);
 
-        let results = chop_interals
+        let results = chop_intervals
             .par_iter()
             .filter_map(|interval| {
                 if interval.end - interval.start >= min_interval_size {

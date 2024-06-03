@@ -259,7 +259,7 @@ where
             }
 
             let smooth_regions: Vec<(usize, usize)> = predict
-                .smooth_and_slect_intervals(
+                .smooth_and_select_intervals(
                     smooth_window_size,
                     min_interval_size,
                     approved_interval_number,
