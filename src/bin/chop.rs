@@ -126,7 +126,7 @@ fn main() -> Result<()> {
                 return Ok(vec![fq_record.clone()]);
             }
 
-            let smooth_intervals = predict.smooth_and_slect_intervals(
+            let smooth_intervals = predict.smooth_and_select_intervals(
                 cli.smooth_window_size,
                 cli.min_interval_size,
                 cli.approved_interval_number,

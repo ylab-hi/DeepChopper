@@ -2,8 +2,8 @@ use anyhow::Result;
 use clap::Parser;
 use rayon::prelude::*;
 use std::fs::File;
-use std::io::{BufWriter, Write};
-use std::path::PathBuf;
+use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::path::{Path, PathBuf};
 
 use deepchopper::default;
 use deepchopper::smooth::*;
@@ -52,6 +52,24 @@ struct Cli {
     debug: u8,
 }
 
+fn read_selected_reads<P: AsRef<Path>>(file: P) -> Vec<String> {
+    let file = File::open(file.as_ref()).unwrap();
+    let reader = BufReader::new(file);
+    let mut selected_reads = Vec::new();
+    // skip header
+    let mut lines = reader.lines();
+    lines.next();
+
+    for line in lines {
+        let line = line.unwrap();
+        // split and get the first column
+        let name = line.split_whitespace().next().unwrap().to_string();
+        selected_reads.push(name);
+    }
+
+    selected_reads
+}
+
 fn main() -> Result<()> {
     let start = std::time::Instant::now();
     let cli = Cli::parse();
@@ -76,28 +94,56 @@ fn main() -> Result<()> {
     let all_predicts_number = all_predicts.len();
     log::info!("Collect {} predicts", all_predicts_number);
 
-    // get &[Predict] from HashMap<String, Predict>
-    let predicts_value: Vec<&Predict> = all_predicts.values().collect();
+    let predict_seqs = if let Some(selected_reads) = cli.selected_reads {
+        let selected_reads = read_selected_reads(selected_reads);
+        let predict_seqs = selected_reads
+            .par_iter()
+            .filter_map(|read_id| {
+                let predict = all_predicts.get(read_id).unwrap();
+                let smooth_intervals = predict.smooth_and_select_intervals(
+                    cli.smooth_window_size,
+                    cli.min_interval_size,
+                    cli.approved_interval_number,
+                );
+                if smooth_intervals.len() > cli.max_process_intervals || smooth_intervals.is_empty()
+                {
+                    return None;
+                }
+                let result = smooth_intervals
+                    .iter()
+                    .map(|interval| predict.seq[interval.start..interval.end].to_string())
+                    .collect::<Vec<_>>();
+                Some(result)
+            })
+            .flatten()
+            .collect::<Vec<_>>();
+        predict_seqs
+    } else {
+        // get &[Predict] from HashMap<String, Predict>
+        let predicts_value: Vec<&Predict> = all_predicts.values().collect();
 
-    let predict_seqs = predicts_value
-        .par_iter()
-        .filter_map(|predict| {
-            let smooth_intervals = predict.smooth_and_slect_intervals(
-                cli.smooth_window_size,
-                cli.min_interval_size,
-                cli.approved_interval_number,
-            );
-            if smooth_intervals.len() > cli.max_process_intervals || smooth_intervals.is_empty() {
-                return None;
-            }
-            let result = smooth_intervals
-                .iter()
-                .map(|interval| predict.seq[interval.start..interval.end].to_string())
-                .collect::<Vec<_>>();
-            Some(result)
-        })
-        .flatten()
-        .collect::<Vec<_>>();
+        let predict_seqs = predicts_value
+            .par_iter()
+            .filter_map(|predict| {
+                let smooth_intervals = predict.smooth_and_select_intervals(
+                    cli.smooth_window_size,
+                    cli.min_interval_size,
+                    cli.approved_interval_number,
+                );
+                if smooth_intervals.len() > cli.max_process_intervals || smooth_intervals.is_empty()
+                {
+                    return None;
+                }
+                let result = smooth_intervals
+                    .iter()
+                    .map(|interval| predict.seq[interval.start..interval.end].to_string())
+                    .collect::<Vec<_>>();
+                Some(result)
+            })
+            .flatten()
+            .collect::<Vec<_>>();
+        predict_seqs
+    };
 
     log::info!("Collect {} predict seqs", predict_seqs.len());
 
