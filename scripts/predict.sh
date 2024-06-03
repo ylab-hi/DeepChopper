@@ -7,8 +7,8 @@ cnn_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-
 caduceus_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-05-25_19-42-45/checkpoints/epoch_002_f1_0.9982.ckpt"
 
 # Default model selection
-data_folder="data/eval/real_data/dorado_without_trim_fqs/VCaP.fastq_chunks"
-# data_path="data/eval/real_data/dorado_without_trim_fqs/VCaP.fastq_chunks/VCaP.fastq_9.parquet"
+sample_name="vcap004"
+data_folder="data/dorado_without_trim_fqs/RNA004.fastq_chunks"
 num_workers=60
 batch_size=64
 
@@ -45,7 +45,7 @@ for data_path in "$data_folder"/*.parquet; do
 	filename="${filename%.*}"
 
 	# Define output directory using the filename
-	output_dir="/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap_${model}/${filename}"
+	output_dir="/projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap004_${model}/${filename}"
 
 	echo "Evaluating file: $data_path"
 	echo "Output directory: $output_dir"

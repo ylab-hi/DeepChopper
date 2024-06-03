@@ -19,7 +19,7 @@ pub fn write_fq(records: &[RecordData], file_path: Option<PathBuf>) -> Result<()
     } else {
         Box::new(io::stdout().lock())
     };
-    let mut writer = fastq::Writer::new(sink);
+    let mut writer = fastq::io::Writer::new(sink);
 
     for record in records {
         let qual_str = record.qual.to_string();
@@ -55,7 +55,7 @@ pub fn write_fq_for_noodle_record<P: AsRef<Path>>(
     file_path: P,
 ) -> Result<()> {
     let file = File::create(file_path)?;
-    let mut writer = fastq::Writer::new(file);
+    let mut writer = fastq::io::Writer::new(file);
     for record in records {
         writer.write_record(record)?;
     }
@@ -74,7 +74,7 @@ pub fn write_zip_fq_parallel(
     let sink = File::create(file_path)?;
     let encoder = bgzf::MultithreadedWriter::with_worker_count(worker_count, sink);
 
-    let mut writer = fastq::Writer::new(encoder);
+    let mut writer = fastq::io::Writer::new(encoder);
 
     for record in records {
         let record = fastq::Record::new(
@@ -99,7 +99,7 @@ pub fn write_fq_parallel_for_noodle_record(
     let sink = File::create(file_path)?;
     let encoder = bgzf::MultithreadedWriter::with_worker_count(worker_count, sink);
 
-    let mut writer = fastq::Writer::new(encoder);
+    let mut writer = fastq::io::Writer::new(encoder);
 
     for record in records {
         writer.write_record(record)?;

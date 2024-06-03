@@ -109,9 +109,9 @@ pub fn collect_and_split_dataset<P: AsRef<Path>>(
     let val_data_path = format!("val{}.fq", prefix.unwrap_or_default());
     let test_data_path = format!("test{}.fq", prefix.unwrap_or_default());
 
-    let mut train_writer = fastq::Writer::new(File::create(train_data_path)?);
-    let mut val_writer = fastq::Writer::new(File::create(val_data_path)?);
-    let mut test_writer = fastq::Writer::new(File::create(test_data_path)?);
+    let mut train_writer = fastq::io::Writer::new(File::create(train_data_path)?);
+    let mut val_writer = fastq::io::Writer::new(File::create(val_data_path)?);
+    let mut test_writer = fastq::io::Writer::new(File::create(test_data_path)?);
 
     // write for positive train records
     internal_fq_reader
@@ -256,9 +256,9 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters<P: AsRef<Path>>(
     let val_data_path = format!("val{}.fq", prefix.unwrap_or_default());
     let test_data_path = format!("test{}.fq", prefix.unwrap_or_default());
 
-    let mut train_writer = fastq::Writer::new(File::create(train_data_path)?);
-    let mut val_writer = fastq::Writer::new(File::create(val_data_path)?);
-    let mut test_writer = fastq::Writer::new(File::create(test_data_path)?);
+    let mut train_writer = fastq::io::Writer::new(File::create(train_data_path)?);
+    let mut val_writer = fastq::io::Writer::new(File::create(val_data_path)?);
+    let mut test_writer = fastq::io::Writer::new(File::create(test_data_path)?);
 
     // write for positive train records
     internal_fq_reader
