@@ -1,19 +1,25 @@
 use anyhow::Result;
 use clap::Parser;
+use noodles::{bgzf, fastq};
 use rayon::prelude::*;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 
+use ahash::HashMap;
+use ahash::HashMapExt;
+use ahash::HashSet;
 use deepchopper::default;
 use deepchopper::smooth::*;
+use log::info;
+use noodles::fastq::record::Record as FastqRecord;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Cli {
     /// path to the predicts
-    #[arg(value_name = "predicts")]
-    predicts: PathBuf,
+    #[arg(long = "pdt", value_name = "predicts", action = clap::ArgAction::Append)]
+    predicts: Vec<PathBuf>,
 
     /// threads number
     #[arg(short, long, default_value = "2")]
@@ -23,9 +29,13 @@ struct Cli {
     #[arg(short, long)]
     max_batch_size: Option<usize>,
 
-    /// selected read id
+    /// path to selected read id
     #[arg(long = "sr")]
     selected_reads: Option<PathBuf>,
+
+    ///  path to fastq  file
+    #[arg(long = "fq")]
+    fastq: Option<PathBuf>,
 
     /// smooth_window_size
     #[arg(short, long, default_value = "21")]
@@ -52,22 +62,18 @@ struct Cli {
     debug: u8,
 }
 
-fn read_selected_reads<P: AsRef<Path>>(file: P) -> Vec<String> {
+fn read_selected_reads<P: AsRef<Path>>(file: P) -> HashSet<String> {
     let file = File::open(file.as_ref()).unwrap();
     let reader = BufReader::new(file);
-    let mut selected_reads = Vec::new();
     // skip header
     let mut lines = reader.lines();
     lines.next();
-
-    for line in lines {
-        let line = line.unwrap();
-        // split and get the first column
-        let name = line.split_whitespace().next().unwrap().to_string();
-        selected_reads.push(name);
-    }
-
-    selected_reads
+    lines
+        .map(|line| {
+            let line = line.unwrap();
+            line.split_whitespace().next().unwrap().to_string()
+        })
+        .collect()
 }
 
 fn main() -> Result<()> {
@@ -88,34 +94,92 @@ fn main() -> Result<()> {
         .build_global()
         .unwrap();
 
-    let all_predicts =
-        load_predicts_from_batch_pts(cli.predicts, default::IGNORE_LABEL, cli.max_batch_size)?;
+    let all_predicts = cli
+        .predicts
+        .par_iter()
+        .map(|path| {
+            load_predicts_from_batch_pts(
+                path.to_path_buf(),
+                default::IGNORE_LABEL,
+                cli.max_batch_size,
+            )
+        })
+        .collect::<Result<Vec<_>>>()?
+        .into_par_iter()
+        .flatten()
+        .collect::<HashMap<_, _>>();
 
     let all_predicts_number = all_predicts.len();
     log::info!("Collect {} predicts", all_predicts_number);
 
+    let mut selected_quals: Vec<f32> = Vec::new();
     let predict_seqs = if let Some(selected_reads) = cli.selected_reads {
         let selected_reads = read_selected_reads(selected_reads);
-        let predict_seqs = selected_reads
+
+        let mut selected_fq_records: HashMap<String, FastqRecord> = HashMap::new();
+
+        if let Some(fastq_path) = cli.fastq {
+            let decoder = bgzf::Reader::new(File::open(fastq_path)?);
+            let mut reader = fastq::Reader::new(decoder);
+            selected_fq_records = reader
+                .records()
+                .par_bridge()
+                .filter_map(|record| {
+                    let record = record.unwrap();
+                    let name = String::from_utf8(record.definition().name().to_vec()).unwrap();
+                    if selected_reads.contains(&name) {
+                        return Some((name, record));
+                    }
+                    None
+                })
+                .collect();
+        }
+
+        let predict_seqs_qual = selected_reads
             .par_iter()
             .filter_map(|read_id| {
+                info!("read_id: {}", read_id);
+
                 let predict = all_predicts.get(read_id).unwrap();
                 let smooth_intervals = predict.smooth_and_select_intervals(
                     cli.smooth_window_size,
                     cli.min_interval_size,
                     cli.approved_interval_number,
                 );
+
                 if smooth_intervals.len() > cli.max_process_intervals || smooth_intervals.is_empty()
                 {
                     return None;
                 }
+
+                let qual = selected_fq_records.get(read_id).unwrap().quality_scores();
+
                 let result = smooth_intervals
                     .iter()
-                    .map(|interval| predict.seq[interval.start..interval.end].to_string())
+                    .map(|interval| {
+                        let average_qual = qual[interval.start..interval.end]
+                            .iter()
+                            .map(|&x| x as f32)
+                            .sum::<f32>()
+                            / (interval.end - interval.start) as f32;
+                        (
+                            predict.seq[interval.start..interval.end].to_string(),
+                            average_qual,
+                        )
+                    })
                     .collect::<Vec<_>>();
+
                 Some(result)
             })
             .flatten()
+            .collect::<Vec<_>>();
+
+        let predict_seqs = predict_seqs_qual
+            .iter()
+            .map(|(seq, qual)| {
+                selected_quals.push(*qual);
+                seq.clone()
+            })
             .collect::<Vec<_>>();
         predict_seqs
     } else {
@@ -186,6 +250,17 @@ fn main() -> Result<()> {
     let mut json_writer = BufWriter::new(json_file);
     json_writer.write_all(serde_json::to_string(&identities)?.as_bytes())?;
     log::info!("Write all identities to {}", &file_name);
+
+    if !selected_quals.is_empty() {
+        let file_name = format!(
+            "{}predicts_base_quals.json",
+            cli.prefix.clone().unwrap_or_default()
+        );
+        let json_file = File::create(&file_name)?;
+        let mut json_writer = BufWriter::new(json_file);
+        json_writer.write_all(serde_json::to_string(&selected_quals)?.as_bytes())?;
+        log::info!("Write selected reads quals to {}", &file_name);
+    }
 
     let elapsed = start.elapsed();
     log::info!("elapsed time: {:.2?}", elapsed);
