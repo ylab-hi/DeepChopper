@@ -7,8 +7,8 @@ cnn_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-
 caduceus_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-05-25_19-42-45/checkpoints/epoch_002_f1_0.9982.ckpt"
 
 # Default model selection
-sample_name="vcap_cdna"
-data_folder="data/direct_cdna/vcap.fastq_chunks"
+sample_name="vcap"
+data_folder="data/dorado_without_trim_fqs/VCaP.fastq_chunks"
 
 num_workers=60
 batch_size=64

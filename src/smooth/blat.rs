@@ -1,3 +1,5 @@
+use ahash::HashMap;
+use ahash::HashMapExt;
 use anyhow::Result;
 use derive_builder::Builder;
 use lexical;
@@ -22,6 +24,7 @@ pub const MIN_SEQ_SIZE: usize = 20;
 
 #[derive(Debug, Default, Builder, Clone, Serialize, Deserialize)]
 pub struct PslAlignment {
+    pub qname: String,
     pub qsize: usize,
     pub qstart: usize,
     pub qend: usize,
@@ -31,6 +34,15 @@ pub struct PslAlignment {
     pub tstart: usize,
     pub tend: usize,
     pub identity: f32,
+}
+
+pub fn parse_psl_by_qname<P: AsRef<Path>>(file: P) -> Result<HashMap<String, Vec<PslAlignment>>> {
+    let result = parse_psl(file)?;
+    Ok(result.into_iter().fold(HashMap::new(), |mut acc, al| {
+        let qname = al.qname.clone();
+        acc.entry(qname).or_default().push(al);
+        acc
+    }))
 }
 
 pub fn parse_psl<P: AsRef<Path>>(file: P) -> Result<Vec<PslAlignment>> {
@@ -50,6 +62,7 @@ pub fn parse_psl<P: AsRef<Path>>(file: P) -> Result<Vec<PslAlignment>> {
         let fields: Vec<&str> = line.split_whitespace().collect();
 
         let match_: usize = lexical::parse(fields[0])?;
+        let qname = fields[9];
         let qsize: usize = lexical::parse(fields[10])?;
         let qstart: usize = lexical::parse(fields[11])?;
         let qend: usize = lexical::parse(fields[12])?;
@@ -62,6 +75,7 @@ pub fn parse_psl<P: AsRef<Path>>(file: P) -> Result<Vec<PslAlignment>> {
         let identity = match_ as f32 / qsize as f32;
 
         let al = PslAlignmentBuilder::default()
+            .qname(qname.to_string())
             .qsize(qsize)
             .qstart(qstart)
             .qend(qend)

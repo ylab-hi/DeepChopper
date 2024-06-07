@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use noodles::{bgzf, fastq};
+use noodles::fastq;
 use rayon::prelude::*;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 use ahash::HashMap;
 use ahash::HashMapExt;
 use ahash::HashSet;
+
 use deepchopper::default;
 use deepchopper::smooth::*;
 use log::info;
@@ -115,18 +116,22 @@ fn main() -> Result<()> {
     let mut selected_quals: Vec<f32> = Vec::new();
     let predict_seqs = if let Some(selected_reads) = cli.selected_reads {
         let selected_reads = read_selected_reads(selected_reads);
+        info!("Selected reads number: {}", selected_reads.len());
 
         let mut selected_fq_records: HashMap<String, FastqRecord> = HashMap::new();
 
         if let Some(fastq_path) = cli.fastq {
-            let decoder = bgzf::Reader::new(File::open(fastq_path)?);
-            let mut reader = fastq::Reader::new(decoder);
+            let mut reader = File::open(fastq_path)
+                .map(BufReader::new)
+                .map(fastq::io::Reader::new)?;
+
             selected_fq_records = reader
                 .records()
                 .par_bridge()
                 .filter_map(|record| {
                     let record = record.unwrap();
                     let name = String::from_utf8(record.definition().name().to_vec()).unwrap();
+
                     if selected_reads.contains(&name) {
                         return Some((name, record));
                     }
@@ -134,6 +139,8 @@ fn main() -> Result<()> {
                 })
                 .collect();
         }
+
+        info!("Selected fq records number: {}", selected_fq_records.len());
 
         let predict_seqs_qual = selected_reads
             .par_iter()
@@ -236,9 +243,17 @@ fn main() -> Result<()> {
 
     log::info!("Collect {} psl alignments", psl_alignments.len());
 
-    let identities = psl_alignments
+    let psl_alignments_by_qname: HashMap<String, Vec<PslAlignment>> = psl_alignments
+        .into_iter()
+        .fold(HashMap::new(), |mut acc, al| {
+            let qname = al.qname.clone();
+            acc.entry(qname).or_default().push(al);
+            acc
+        });
+
+    let identities = psl_alignments_by_qname
         .par_iter()
-        .map(|alignment| alignment.identity)
+        .map(|(_qname, alignments)| alignments[0].identity)
         .collect::<Vec<_>>();
 
     // save identities to json file
@@ -264,5 +279,6 @@ fn main() -> Result<()> {
 
     let elapsed = start.elapsed();
     log::info!("elapsed time: {:.2?}", elapsed);
+
     Ok(())
 }
