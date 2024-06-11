@@ -1,4 +1,4 @@
-# <img src="./documentation/logo.webp" alt="logo" height=100> **DeepChopper** [![social](https://img.shields.io/github/stars/ylab-hi/DeepChopper?style=social)](https://github.com/ylab-hi/DeepChopper/stargazers)
+# <img src="./documentation/logo.webp" alt="logo" height=100> **Project X** [![social](https://img.shields.io/github/stars/ylab-hi/DeepChopper?style=social)](https://github.com/ylab-hi/DeepChopper/stargazers)
 
 <!--toc:start-->
 
@@ -11,11 +11,11 @@ deep learning adapter chopper for ont direct-rna data
 
 ## 🚀 Feature
 
-- [ ] rust
-- [ ] fast
-- [ ] fast
-- [ ] fast
-- [ ] fasst
+- [ ] Rust
+- [ ] Fast
+- [ ] Fast
+- [ ] Fast
+- [ ] Fasst
 
 ## 🤜 Contribution
 
