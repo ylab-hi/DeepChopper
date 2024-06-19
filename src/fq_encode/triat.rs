@@ -37,12 +37,11 @@ pub trait Encoder {
         if !src.contains(&b'|') {
             return Ok(vec![0..0]);
         }
-
-        // @462:528,100:120|738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8
-        // removea content after |
+        // @738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8|462:528,100:120
+        // remove content before |
         let number_part = src
             .split(|&c| c == b'|')
-            .next()
+            .last()
             .context("Failed to get number part")?;
 
         let result = number_part
@@ -58,24 +57,7 @@ pub trait Encoder {
             .collect::<Result<Vec<_>>>();
 
         if result.is_err() {
-            // @738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8|462:528,100:120
-            // remove content before |
-            let number_part = src
-                .split(|&c| c == b'|')
-                .last()
-                .context("Failed to get number part")?;
-
-            number_part
-                .par_split(|&c| c == b',')
-                .map(|target| {
-                    let mut parts = target.split(|&c| c == b':');
-                    let start: usize =
-                        lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
-                    let end: usize =
-                        lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
-                    Ok(start..end)
-                })
-                .collect::<Result<Vec<_>>>()
+            Ok(vec![0..0])
         } else {
             result
         }
@@ -181,7 +163,7 @@ mod tests {
     #[test]
     fn test_parse_target_from_id() {
         // Test case 1: Valid input
-        let src = b"462:528,100:120|test_name";
+        let src = b"@test_name|462:528,100:120";
         let expected = vec![462..528, 100..120];
 
         struct TestEncoder;
@@ -210,7 +192,6 @@ mod tests {
                 Ok(RecordData::default())
             }
         }
-
         assert_eq!(TestEncoder::parse_target_from_id(src).unwrap(), expected);
 
         // Test case 2: Empty input

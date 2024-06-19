@@ -16,3 +16,16 @@ cargo run --bin chop -r -- \
 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/${predict_folder}/VCaP.fastq_9/predicts/0 \
 	--fq /projects/b1171/ylk4626/project/DeepChopper/data/eval/real_data/dorado_without_trim_fqs/VCaP.fastq \
 	-d -t 20 -o vcap_caduceus_all
+
+cargo run --bin predict -r -- \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap_cdna_hyena/vcap_cdna_trim_primer.fastq_0/predicts/0 \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap_cdna_hyena/vcap_cdna_trim_primer.fastq_1/predicts/0 \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap_cdna_hyena/vcap_cdna_trim_primer.fastq_2/predicts/0 \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap_cdna_hyena/vcap_cdna_trim_primer.fastq_3/predicts/0 \
+	--fq data/dorado_without_trim_fqs/wtc11.fastq -t 10
+
+# cargo run --bin predict -r -- \
+# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_0/predicts/0 \
+# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_1/predicts/0 \
+# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_2/predicts/0 \
+# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_3/predicts/0

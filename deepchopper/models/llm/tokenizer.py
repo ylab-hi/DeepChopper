@@ -141,6 +141,7 @@ def tokenize_and_align_labels_and_quals_ids(
     tokenized_inputs = tokenizer(data["seq"], max_length=max_length, truncation=True, padding=True)
 
     truncation = False
+
     if len(data["seq"]) > max_length:
         truncation = True
         if data["target"][1] + 2 > max_length:

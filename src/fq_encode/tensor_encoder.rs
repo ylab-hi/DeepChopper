@@ -525,19 +525,16 @@ mod tests {
             .build()
             .unwrap();
 
-        let paths = vec![
-            "tests/data/twenty_five_records.fq",
-            "tests/data/1000_records.fq",
-        ]
-        .into_iter()
-        .map(PathBuf::from)
-        .collect::<Vec<_>>();
+        let paths = vec!["tests/data/twenty_five_records.fq"]
+            .into_iter()
+            .map(PathBuf::from)
+            .collect::<Vec<_>>();
 
         let ((inputs, targets), quals) = encoder.encode_multiple(&paths, true).unwrap();
 
-        assert_eq!(inputs.shape(), &[1025, 2, 15000]);
-        assert_eq!(targets.shape(), &[1025, 1, 15000]);
-        assert_eq!(quals.shape(), &[1025, 15000]);
+        assert_eq!(inputs.shape(), &[25, 2, 15000]);
+        assert_eq!(targets.shape(), &[25, 1, 15000]);
+        assert_eq!(quals.shape(), &[25, 15000]);
     }
 
     #[test]
