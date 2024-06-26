@@ -15,7 +15,7 @@ use log::info;
 use noodles::fastq::record::Record as FastqRecord;
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(version, about = "Blat Adapter Seq and Save base Qual", long_about = None)]
 struct Cli {
     /// path to the predicts
     #[arg(long = "pdt", value_name = "predicts", action = clap::ArgAction::Append)]

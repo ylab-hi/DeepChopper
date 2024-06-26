@@ -4,6 +4,7 @@ use anyhow::Result;
 use derive_builder::Builder;
 use lexical;
 use log;
+use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::prelude::*;
@@ -22,18 +23,39 @@ pub const MIN_SEQ_SIZE: usize = 20;
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 // 23      1       0       0       0       0       0       0       +       seq     51      3       27      chr12   133275309       11447342     11447366 1       24,     3,      11447342,
 
+#[pyclass]
 #[derive(Debug, Default, Builder, Clone, Serialize, Deserialize)]
 pub struct PslAlignment {
+    #[pyo3(get, set)]
     pub qname: String,
+    #[pyo3(get, set)]
     pub qsize: usize,
+    #[pyo3(get, set)]
     pub qstart: usize,
+    #[pyo3(get, set)]
     pub qend: usize,
+    #[pyo3(get, set)]
     pub qmatch: usize,
+    #[pyo3(get, set)]
     pub tname: String,
+    #[pyo3(get, set)]
     pub tsize: usize,
+    #[pyo3(get, set)]
     pub tstart: usize,
+    #[pyo3(get, set)]
     pub tend: usize,
+    #[pyo3(get, set)]
     pub identity: f32,
+}
+
+#[pymethods]
+impl PslAlignment {
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(format!(
+            "PslAlignment(qname={}, qsize={}, qstart={}, qend={}, qmatch={}, tname={}, tsize={}, tstart={}, tend={}, identity={})",
+            self.qname, self.qsize, self.qstart, self.qend, self.qmatch, self.tname, self.tsize, self.tstart, self.tend, self.identity
+        ))
+    }
 }
 
 pub fn parse_psl_by_qname<P: AsRef<Path>>(file: P) -> Result<HashMap<String, Vec<PslAlignment>>> {

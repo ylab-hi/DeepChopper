@@ -692,6 +692,12 @@ fn id_list2seq(ids: Vec<u8>) -> String {
 #[pyfunction]
 fn majority_voting(labels: Vec<i8>, window_size: usize) -> Vec<i8> {
     smooth::majority_voting(&labels, window_size)
+
+}
+
+#[pyfunction]
+fn parse_psl_by_qname(file_path: PathBuf) ->  Result<HashMap<String, Vec<smooth::PslAlignment>>> {
+    smooth::parse_psl_by_qname(file_path)
 }
 
 /// A Python module implemented in Rust.
@@ -752,6 +758,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(majority_voting, m)?)?;
     m.add_function(wrap_pyfunction!(smooth::load_predicts_from_batch_pt, m)?)?;
     m.add_function(wrap_pyfunction!(smooth::load_predicts_from_batch_pts, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_psl_by_qname, m)?)?;
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;
@@ -761,6 +768,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<smooth::Predict>()?;
     m.add_class::<output::BamRecord>()?;
     m.add_class::<smooth::StatResult>()?;
+    m.add_class::<smooth::PslAlignment>()?;
 
     Ok(())
 }

@@ -63,3 +63,9 @@ for data_path in "$data_folder"/*.parquet; do
 		tags=["eval"] \
 		extras.print_config=False
 done
+
+# cargo run --bin predict -r -- \
+# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_0/predicts/0 \
+# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_1/predicts/0 \
+# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_2/predicts/0 \
+# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_3/predicts/0
