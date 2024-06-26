@@ -3,6 +3,8 @@ from torch import nn
 from transformers import AutoModel, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import TokenClassifierOutput
 
+from .head import TokenClassificationHead
+
 HyenadnaMaxLengths = {
     "hyenadna-tiny-1k-seqlen": 1024,
     "hyenadna-small-32k-seqlen": 32768,

@@ -1,15 +1,12 @@
 use anyhow::Result;
 use clap::Parser;
 use rayon::prelude::*;
-use std::fs::File;
-use std::io::BufReader;
 use std::path::PathBuf;
 
 use bstr::BStr;
 use deepchopper::default;
 use deepchopper::output;
 use deepchopper::smooth::*;
-use noodles::fastq;
 
 use ahash::HashMap;
 
@@ -48,9 +45,9 @@ struct Cli {
     #[arg(long = "mpi", default_value = "4")]
     max_process_intervals: usize,
 
-    /// min chopped read length
+    /// min read length after chop
     #[arg(long = "mcr", default_value = "20")]
-    min_choped_read_length: usize,
+    min_read_length_after_chop: usize,
 
     /// prefix for output files
     #[arg(short, long)]
@@ -97,15 +94,11 @@ fn main() -> Result<()> {
     let all_predicts_number = all_predicts.len();
     log::info!("Collect {} predicts", all_predicts_number);
 
-    // load fq  file
-    let mut reader = File::open(&cli.fq)
-        .map(BufReader::new)
-        .map(fastq::Reader::new)?;
-    let fq_records = reader
-        .records()
-        .par_bridge()
+    // load fq file
+    let mut _records = output::read_noodel_records_from_fq_or_zip_fq(&cli.fq)?;
+    let fq_records = _records
+        .into_par_iter()
         .map(|record| {
-            let record = record.unwrap();
             let id = String::from_utf8(record.definition().name().to_vec()).unwrap();
             (id, record)
         })
@@ -136,12 +129,17 @@ fn main() -> Result<()> {
                 return Ok(vec![fq_record.clone()]);
             }
 
+            if predict.seq.len() != fq_record.quality_scores().len() {
+                // trucate seq prediction, do not process
+                return Ok(vec![fq_record.clone()]);
+            };
+
             output::split_noodel_records_by_remove_interval(
                 BStr::new(&predict.seq),
                 id.as_bytes().into(),
                 fq_record.quality_scores(),
                 &smooth_intervals,
-                cli.min_choped_read_length,
+                cli.min_read_length_after_chop,
                 true, // NOTE: add annotation for terminal or internal chop
             )
         })
@@ -173,5 +171,6 @@ fn main() -> Result<()> {
 
     let elapsed = start.elapsed();
     log::info!("elapsed time: {:.2?}", elapsed);
+
     Ok(())
 }

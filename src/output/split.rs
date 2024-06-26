@@ -33,13 +33,27 @@ fn _split_records_by_remove_internal<'a>(
     if seqs.len() != quals.len() {
         return Err(Error::new(
             EncodingError::NotSameLengthForQualityAndSequence(format!(
-                "seqs: {:?}, quals: {:?}",
+                "{} seqs: {:?}, quals: {:?}",
+                id,
                 seqs.len(),
                 quals.len()
             )),
         ));
     }
 
+    // ensure the seq and qual length is the same
+    for (seq, qual) in seqs.iter().zip(quals.iter()) {
+        if seq.len() != qual.len() {
+            return Err(Error::new(
+                EncodingError::NotSameLengthForQualityAndSequence(format!(
+                    "{} seq length {} not equal to qual length {}",
+                    id,
+                    seq.len(),
+                    qual.len(),
+                )),
+            ));
+        }
+    }
     let ids: Vec<String> = (0..seqs.len())
         .into_par_iter()
         .map(|x| {
@@ -161,9 +175,9 @@ pub fn remove_intervals_and_keep_left<'a>(
 ) -> Result<(Vec<&'a BStr>, Vec<Range<usize>>)> {
     let mut intervals = intervals.to_vec();
     intervals.par_sort_by(|a: &Range<usize>, b: &Range<usize>| a.start.cmp(&b.start));
-    let slected_intervals = generate_unmaped_intervals(&intervals, seq.len());
+    let selected_intervals = generate_unmaped_intervals(&intervals, seq.len());
 
-    let slected_seq = slected_intervals
+    let selected_seq = selected_intervals
         .par_iter()
         .map(|interval| {
             // Check if the interval is valid and starts after the current start point
@@ -179,7 +193,7 @@ pub fn remove_intervals_and_keep_left<'a>(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    Ok((slected_seq, slected_intervals))
+    Ok((selected_seq, selected_intervals))
 }
 
 #[cfg(test)]
@@ -199,5 +213,13 @@ mod tests {
         let intervals = vec![5..10, 15..20];
         let (seq, _inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
         assert_eq!(seq, vec!["abcde", "klmno", "uvwxy"]);
+    }
+
+    #[test]
+    fn test_generate_unmaped_intervals() {
+        let intervals = vec![8100..8123];
+        let seq_len = 32768;
+        let selected_intervals = generate_unmaped_intervals(&intervals, seq_len);
+        assert_eq!(selected_intervals, vec![0..8100, 8123..32767]);
     }
 }

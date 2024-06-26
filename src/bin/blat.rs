@@ -1,6 +1,5 @@
 use anyhow::Result;
 use clap::Parser;
-use noodles::fastq;
 use rayon::prelude::*;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
@@ -66,10 +65,8 @@ struct Cli {
 fn read_selected_reads<P: AsRef<Path>>(file: P) -> HashSet<String> {
     let file = File::open(file.as_ref()).unwrap();
     let reader = BufReader::new(file);
-    // skip header
-    let mut lines = reader.lines();
-    lines.next();
-    lines
+    reader
+        .lines()
         .map(|line| {
             let line = line.unwrap();
             line.split_whitespace().next().unwrap().to_string()
@@ -119,19 +116,12 @@ fn main() -> Result<()> {
         info!("Selected reads number: {}", selected_reads.len());
 
         let mut selected_fq_records: HashMap<String, FastqRecord> = HashMap::new();
-
         if let Some(fastq_path) = cli.fastq {
-            let mut reader = File::open(fastq_path)
-                .map(BufReader::new)
-                .map(fastq::io::Reader::new)?;
-
-            selected_fq_records = reader
-                .records()
-                .par_bridge()
+            let records = deepchopper::output::read_noodel_records_from_fq_or_zip_fq(&fastq_path)?;
+            selected_fq_records = records
+                .into_par_iter()
                 .filter_map(|record| {
-                    let record = record.unwrap();
                     let name = String::from_utf8(record.definition().name().to_vec()).unwrap();
-
                     if selected_reads.contains(&name) {
                         return Some((name, record));
                     }

@@ -2,13 +2,11 @@ use anyhow::Result;
 use anyhow::{anyhow, Context};
 use log::info;
 use needletail::Sequence;
-use noodles::fastq;
 use rayon::prelude::*;
-use std::fs::File;
-use std::io::BufReader;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
 
+use crate::output;
 use crate::types::Element;
 
 use super::RecordData;
@@ -65,16 +63,11 @@ pub trait Encoder {
 
     fn fetch_records<P: AsRef<Path>>(&mut self, path: P, kmer_size: u8) -> Result<Vec<RecordData>> {
         info!("fetching records from {}", path.as_ref().display());
-        let mut reader = File::open(path.as_ref())
-            .map(BufReader::new)
-            .map(fastq::Reader::new)?;
+        let _records = output::read_noodel_records_from_fq_or_zip_fq(path)?;
 
-        let records: Vec<RecordData> = reader
-            .records()
-            .par_bridge()
-            .filter_map(|res| {
-                let record = res.unwrap();
-
+        let records: Vec<RecordData> = _records
+            .into_par_iter()
+            .filter_map(|record| {
                 let id = record.definition().name();
                 let seq = record.sequence();
                 let normalized_seq = seq.normalize(false);
