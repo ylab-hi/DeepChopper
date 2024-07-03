@@ -78,6 +78,7 @@ fn main() -> Result<()> {
         ids.par_lines().map(|s| s.to_string()).collect()
     };
 
+
     let records = find_needle(cli.fq, &select_ids)?;
     show_records(&records);
     Ok(())

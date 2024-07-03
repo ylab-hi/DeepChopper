@@ -4,6 +4,7 @@ set -euo pipefail # Combines the set commands into one line
 predict_folder="vcap_caduceus"
 
 cargo run --bin predict -r -- \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap_004_hyena/RNA004.fastq_0/predicts/0/ \
 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap_004_hyena/RNA004.fastq_1/predicts/0/ \
 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap_004_hyena/RNA004.fastq_2/predicts/0/ \
 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap_004_hyena/RNA004.fastq_3/predicts/0/ \

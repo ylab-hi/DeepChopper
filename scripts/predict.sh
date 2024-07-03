@@ -2,13 +2,17 @@
 set -euo pipefail # Combines the set commands into one line
 
 # Paths to checkpoint files
-hyena_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-04-08_23-19-20/checkpoints/epoch_005_f1_0.9933.ckpt"
+# hyena_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-04-08_23-19-20/checkpoints/epoch_005_f1_0.9933.ckpt"
+
+# rna 004 only
+hyena_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-07-02_15-20-53/checkpoints/epoch_008_f1_0.9946.ckpt"
+
 cnn_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-04-07_12-01-37/checkpoints/epoch_036_f1_0.9914.ckpt"
 caduceus_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-05-25_19-42-45/checkpoints/epoch_002_f1_0.9982.ckpt"
 
 # Default model selection
-sample_name="vcap_cdna"
-data_folder="data/dorado_without_trim_fqs/vcap_cdna_trim_primer.fastq_chunks"
+sample_name="vcap_004_model_only"
+data_folder="data/dorado_without_trim_fqs/RNA004.fastq_chunks"
 
 num_workers=60
 batch_size=64
@@ -63,9 +67,3 @@ for data_path in "$data_folder"/*.parquet; do
 		tags=["eval"] \
 		extras.print_config=False
 done
-
-# cargo run --bin predict -r -- \
-# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_0/predicts/0 \
-# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_1/predicts/0 \
-# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_2/predicts/0 \
-# 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/h1_hyena/h1.fastq_3/predicts/0

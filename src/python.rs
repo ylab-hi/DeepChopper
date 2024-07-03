@@ -692,11 +692,10 @@ fn id_list2seq(ids: Vec<u8>) -> String {
 #[pyfunction]
 fn majority_voting(labels: Vec<i8>, window_size: usize) -> Vec<i8> {
     smooth::majority_voting(&labels, window_size)
-
 }
 
 #[pyfunction]
-fn parse_psl_by_qname(file_path: PathBuf) ->  Result<HashMap<String, Vec<smooth::PslAlignment>>> {
+fn parse_psl_by_qname(file_path: PathBuf) -> Result<HashMap<String, Vec<smooth::PslAlignment>>> {
     smooth::parse_psl_by_qname(file_path)
 }
 
