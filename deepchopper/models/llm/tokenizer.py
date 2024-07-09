@@ -117,7 +117,7 @@ def load_tokenizer_from_hyena_model(model_name):
 def tokenize_and_align_labels_and_quals(data, tokenizer, max_length, pad_qual=0, pad_label=IGNORE_INDEX):
     tokenized_inputs = tokenizer(data["seq"], max_length=max_length, truncation=True, padding=True)
 
-    if len(data["seq"]) > max_length:
+    if len(data["seq"]) >= max_length:
         if data["target"][1] + 2 > max_length:
             labels = torch.tensor([*deepchopper.vertorize_target(0, 0, max_length - 1), pad_label])
             quals = torch.cat((data["qual"][: max_length - 1], torch.tensor([pad_qual]))).float()
@@ -142,7 +142,7 @@ def tokenize_and_align_labels_and_quals_ids(
 
     truncation = False
 
-    if len(data["seq"]) > max_length:
+    if len(data["seq"]) >= max_length:
         truncation = True
         if data["target"][1] + 2 > max_length:
             labels = torch.tensor([*deepchopper.vertorize_target(0, 0, max_length - 1), pad_label])

@@ -19,11 +19,18 @@ cargo run --bin predict -r -- \
 	--fq data/dorado_without_trim_fqs/RNA004.fastq -t 10 -o vcap_004_hyena_all
 
 cargo run --bin predict -r -- \
-	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/lncap_002_hyena/lncap.fq_0/predicts/0/ \
-	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/lncap_002_hyena/lncap.fq_1/predicts/0/ \
-	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/lncap_002_hyena/lncap.fq_2/predicts/0/ \
-	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/lncap_002_hyena/lncap.fq_3/predicts/0/ \
-	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/lncap_002_hyena/lncap.fq_4/predicts/0/ \
-	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/lncap_002_hyena/lncap.fq_5/predicts/0/ \
-	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/lncap_002_hyena/lncap.fq_6/predicts/0/ \
-	--fq data/dorado_without_trim_fqs/lncap.fq -t 10 -o lncap_002_hyena_model_002
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_0/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_1/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_2/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_3/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_4/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_5/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_6/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_7/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_8/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_9/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_10/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_11/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_12/predicts/0/ \
+	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/hek293t_rna004_hyena_hyena/HEK293T_RNA004.fastq_13/predicts/0/ \
+	--fq data/dorado_without_trim_fqs/HEK293T_RNA004.fastq -t 10 -o hek293t_004_hyena_model_002
