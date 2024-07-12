@@ -191,10 +191,12 @@ fn main() -> Result<()> {
                     cli.min_interval_size,
                     cli.approved_interval_number,
                 );
+
                 if smooth_intervals.len() > cli.max_process_intervals || smooth_intervals.is_empty()
                 {
                     return None;
                 }
+
                 let result = smooth_intervals
                     .iter()
                     .map(|interval| predict.seq[interval.start..interval.end].to_string())
