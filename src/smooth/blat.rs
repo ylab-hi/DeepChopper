@@ -1,3 +1,11 @@
+use std::fs::File;
+use std::io::BufReader;
+use std::io::prelude::*;
+use std::io::Write;
+use std::path::Path;
+use std::path::PathBuf;
+use std::process::Command;
+
 use ahash::HashMap;
 use ahash::HashMapExt;
 use anyhow::Result;
@@ -6,13 +14,6 @@ use lexical;
 use log;
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
-use std::io::Write;
-use std::path::Path;
-use std::path::PathBuf;
-use std::process::Command;
 use tempfile::tempdir;
 
 pub const MIN_SEQ_SIZE: usize = 20;
@@ -148,14 +149,14 @@ pub fn blat<P: AsRef<Path> + AsRef<std::ffi::OsStr>>(
 ) -> Result<Vec<PslAlignment>> {
     log::debug!("blat_cli: {}", seq);
 
-    // Create a file inside of `std::env::temp_dir()`.
+    // Create a file inside `std::env::temp_dir()`.
     let dir = tempdir()?;
     let file1 = dir.path().join("seq.fa");
     let mut tmp_file1 = File::create(file1.clone())?;
     writeln!(tmp_file1, ">seq\n")?;
     writeln!(tmp_file1, "{}", seq)?;
 
-    // Create a directory inside of `std::env::temp_dir()`.
+    // Create a directory inside `std::env::temp_dir()`.
     let output_file = if let Some(value) = output {
         PathBuf::from(value)
     } else {

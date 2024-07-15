@@ -84,3 +84,6 @@ stringzilla = ">=3"
 
 
 [dev-dependencies]
+
+[build-dependencies]
+pyo3-build-config = "0.22"
