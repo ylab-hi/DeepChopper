@@ -3,8 +3,8 @@ name = "deepchopper"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 name = "deepchopper"
 crate-type = ["cdylib", "rlib"]
 
@@ -47,7 +47,7 @@ noodles = { version = "0.77.0", features = [
     "bam",
 ] }
 
-bio = "1.5"
+bio = "2.0"
 needletail = "0.5"
 
 
