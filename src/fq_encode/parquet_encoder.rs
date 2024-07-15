@@ -80,8 +80,8 @@ impl ParquetEncoder {
 
         // Populate builders
         data.into_iter().for_each(|parquet_record| {
-            id_builder.append_value(&parquet_record.id.to_string());
-            seq_builder.append_value(&parquet_record.seq.to_string());
+            id_builder.append_value(parquet_record.id.to_string());
+            seq_builder.append_value(parquet_record.seq.to_string());
 
             parquet_record.qual.into_iter().for_each(|qual| {
                 qual_builder.values().append_value(qual);
