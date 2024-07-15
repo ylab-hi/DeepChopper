@@ -4,7 +4,7 @@ import torch
 from lightning import LightningModule
 from torch import nn
 from torchmetrics import MaxMetric, MeanMetric
-from torchmetrics.classification import F1Score
+from torchmetrics.classification import F1Score, PrecisionRecallCurve
 
 
 class ContinuousIntervalLoss(nn.Module):
@@ -71,6 +71,9 @@ class TokenClassificationLit(LightningModule):
         self.test_acc = F1Score(
             task="binary", num_classes=net.number_of_classes, ignore_index=self.criterion.ignore_index
         )
+        self.test_prc = PrecisionRecallCurve(
+            task="binary", num_classes=net.number_of_classes, ignore_index=self.criterion.ignore_index
+        )
 
         # for averaging loss across batches
         self.train_loss = MeanMetric()
@@ -128,8 +131,10 @@ class TokenClassificationLit(LightningModule):
         # update and log metrics
         self.train_loss(loss)
         self.train_acc(preds, targets)
+
         self.log("train/loss", self.train_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("train/f1", self.train_acc, on_step=False, on_epoch=True, prog_bar=True)
+
         # return loss or backpropagation will fail
         return loss
 
@@ -148,6 +153,7 @@ class TokenClassificationLit(LightningModule):
         # update and log metrics
         self.val_loss(loss)
         self.val_acc(preds, targets)
+
         self.log("val/loss", self.val_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("val/f1", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
 
@@ -171,11 +177,15 @@ class TokenClassificationLit(LightningModule):
         # update and log metrics
         self.test_loss(loss)
         self.test_acc(preds, targets)
+
+        self.test_prc(preds, targets)
+
         self.log("test/loss", self.test_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("test/f1", self.test_acc, on_step=False, on_epoch=True, prog_bar=True)
 
     def on_test_epoch_end(self) -> None:
         """Lightning hook that is called when a test epoch ends."""
+        percision, recall, thresholds = self.test_prc.compute()
 
     def predict_step(self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Perform a single prediction step on a batch of data from the test set.
