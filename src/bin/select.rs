@@ -77,40 +77,7 @@ fn select_by_name<P: AsRef<Path>>(
     names: &HashSet<String>,
     threads: Option<usize>,
 ) -> Result<()> {
-    let fq_records = if fq.as_ref().extension().map_or(false, |e| e == "gz") {
-        let decoder = bgzf::Reader::new(File::open(fq.as_ref())?);
-        let mut reader = fastq::Reader::new(decoder);
-        reader
-            .records()
-            .par_bridge()
-            .filter(|record| {
-                let record = record.as_ref().unwrap();
-                let id = String::from_utf8(record.definition().name().as_bytes().to_vec()).unwrap();
-                if names.contains(&id) {
-                    return true;
-                }
-                false
-            })
-            .map(|record| record.unwrap())
-            .collect::<Vec<_>>()
-    } else {
-        let mut reader = File::open(fq.as_ref())
-            .map(BufReader::new)
-            .map(fastq::Reader::new)?;
-        reader
-            .records()
-            .par_bridge()
-            .filter(|record| {
-                let record = record.as_ref().unwrap();
-                let id = String::from_utf8(record.definition().name().as_bytes().to_vec()).unwrap();
-                if names.contains(&id) {
-                    return true;
-                }
-                false
-            })
-            .map(|record| record.unwrap())
-            .collect::<Vec<_>>()
-    };
+    let fq_records = output::read_noodel_records_from_fq_or_zip_fq(fq)?;
     output::write_fq_parallel_for_noodle_record(
         &fq_records,
         output_file.as_ref().to_path_buf(),
@@ -171,7 +138,6 @@ fn main() -> Result<()> {
         .num_threads(cli.threads.unwrap())
         .build_global()
         .unwrap();
-
     let mut selected_type = ChopType::default();
 
     if cli.terminal && cli.internal {
@@ -188,11 +154,13 @@ fn main() -> Result<()> {
         let name_file = File::open(names)?;
         let reader = std::io::BufReader::new(name_file);
         let names = reader.lines().collect::<Result<HashSet<String>, _>>()?;
+
         let output_file = if let Some(prefix) = cli.output_prefix {
             format!("{}.fq.gz", prefix)
         } else {
             "selected.fq.gz".to_string()
         };
+
         select_by_name(cli.fq, output_file.into(), &names, cli.threads)?;
 
         let elapsed = start.elapsed();

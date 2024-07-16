@@ -68,6 +68,7 @@ pub fn has_overlap(
     );
     ratio > overlap_threshold
 }
+
 pub fn process_no_interval(
     overlap_results: &mut HashMap<String, Vec<String>>,
     bam_record: &BamRecord,
