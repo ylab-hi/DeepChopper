@@ -91,7 +91,12 @@ fn select_by_name<P: AsRef<Path>>(
         .into_par_iter()
         .filter(|record| {
             let id = String::from_utf8(record.definition().name().as_bytes().to_vec()).unwrap();
-            names.iter().any(|name| id.contains(name))
+            if id.contains('|') {
+                let name = id.split('|').next().unwrap();
+                names.contains(name)
+            } else {
+                names.contains(&id)
+            }
         })
         .collect::<Vec<_>>();
 
