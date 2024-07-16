@@ -111,14 +111,17 @@ fn select_by_type<P: AsRef<Path>>(
     selected_type: ChopType,
     threads: Option<usize>,
 ) -> Result<()> {
-    let decoder = bgzf::Reader::new(File::open(fq.as_ref())?);
-    let mut reader = fastq::Reader::new(decoder);
+    let fq_records_rs =
+        output::read_noodel_records_from_fq_or_zip_fq(&fq).context("Failed to read records");
+    let fq_records = if let Ok(fq_records) = fq_records_rs {
+        fq_records
+    } else {
+        output::read_noodle_records_from_bzip_fq(fq).context("Failed to read records")?
+    };
 
-    let fq_records = reader
-        .records()
-        .par_bridge()
+    let filter_records = fq_records
+        .into_par_iter()
         .filter(|record| {
-            let record = record.as_ref().unwrap();
             let id = record.definition().name().as_bytes();
             if id.contains(&b'|') {
                 // name|region|anno
@@ -130,13 +133,14 @@ fn select_by_type<P: AsRef<Path>>(
             }
             false
         })
-        .map(|record| record.unwrap())
         .collect::<Vec<_>>();
+
     output::write_fq_parallel_for_noodle_record(
-        &fq_records,
+        &filter_records,
         output_file.as_ref().to_path_buf(),
         threads,
     )?;
+
     Ok(())
 }
 
