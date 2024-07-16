@@ -75,7 +75,9 @@ class TokenClassificationLit(LightningModule):
         self.test_precision = Precision(
             task="binary", num_classes=net.number_of_classes, ignore_index=self.criterion.ignore_index
         )
-        self.test_recall = Recall(task="binary", num_classes=net.number_of_classes, ignore_index=self.criterion.ignore)
+        self.test_recall = Recall(
+            task="binary", num_classes=net.number_of_classes, ignore_index=self.criterion.ignore_index
+        )
 
         # for averaging loss across batches
         self.train_loss = MeanMetric()
