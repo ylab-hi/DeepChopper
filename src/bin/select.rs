@@ -78,8 +78,20 @@ fn select_by_name<P: AsRef<Path>>(
     threads: Option<usize>,
 ) -> Result<()> {
     let fq_records = output::read_noodel_records_from_fq_or_zip_fq(fq)?;
+
+    let filter_records = fq_records
+        .into_par_iter()
+        .filter(|record| {
+            let id = String::from_utf8(record.definition().name().as_bytes().to_vec()).unwrap();
+            if names.contains(&id) {
+                return true;
+            }
+            false
+        })
+        .collect::<Vec<_>>();
+
     output::write_fq_parallel_for_noodle_record(
-        &fq_records,
+        &filter_records,
         output_file.as_ref().to_path_buf(),
         threads,
     )?;
@@ -170,15 +182,14 @@ fn main() -> Result<()> {
 
     if cli.print_names {
         log::info!("Printing names of selected reads");
-        let decoder = bgzf::Reader::new(File::open(cli.fq)?);
-        let mut reader = fastq::Reader::new(decoder);
+        let fq_records = output::read_noodel_records_from_fq_or_zip_fq(cli.fq)?;
+
         let stdout = std::io::stdout();
         let mut writer = std::io::BufWriter::new(stdout.lock());
-        let res: HashSet<_> = reader
-            .records()
-            .par_bridge()
+
+        let res: HashSet<_> = fq_records
+            .into_par_iter()
             .filter_map(|record| {
-                let record = record.unwrap();
                 let id = record.definition().name().as_bytes();
                 if id.contains(&b'|') {
                     // name|region|anno
