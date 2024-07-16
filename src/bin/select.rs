@@ -1,4 +1,7 @@
+use anyhow::Context;
 use anyhow::Result;
+use human_panic::setup_panic;
+
 use clap::Parser;
 use deepchopper::output;
 use noodles::bgzf;
@@ -77,16 +80,20 @@ fn select_by_name<P: AsRef<Path>>(
     names: &HashSet<String>,
     threads: Option<usize>,
 ) -> Result<()> {
-    let fq_records = output::read_noodel_records_from_fq_or_zip_fq(fq)?;
+    let fq_records_rs =
+        output::read_noodel_records_from_fq_or_zip_fq(&fq).context("Failed to read records");
+
+    let fq_records = if let Ok(fq_records) = fq_records_rs {
+        fq_records
+    } else {
+        output::read_noodle_records_from_bzip_fq(fq).context("Failed to read records")?
+    };
 
     let filter_records = fq_records
         .into_par_iter()
         .filter(|record| {
             let id = String::from_utf8(record.definition().name().as_bytes().to_vec()).unwrap();
-            if names.contains(&id) {
-                return true;
-            }
-            false
+            names.iter().any(|name| id.contains(name))
         })
         .collect::<Vec<_>>();
 
@@ -134,6 +141,8 @@ fn select_by_type<P: AsRef<Path>>(
 }
 
 fn main() -> Result<()> {
+    setup_panic!();
+
     let start = std::time::Instant::now();
     let cli = Cli::parse();
 
@@ -163,9 +172,12 @@ fn main() -> Result<()> {
         selected_type = ChopType::Internal;
     } else if let Some(names) = cli.names {
         log::info!("Selecting by names");
+
         let name_file = File::open(names)?;
-        let reader = std::io::BufReader::new(name_file);
-        let names = reader.lines().collect::<Result<HashSet<String>, _>>()?;
+        let reader = BufReader::new(name_file);
+        let names = reader.lines().collect::<Result<HashSet<_>, _>>()?;
+
+        log::info!("{} names loaded", names.len());
 
         let output_file = if let Some(prefix) = cli.output_prefix {
             format!("{}.fq.gz", prefix)
