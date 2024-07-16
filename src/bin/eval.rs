@@ -1,5 +1,6 @@
 use clap::Parser;
 use deepchopper::smooth::*;
+use human_panic::setup_panic;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -63,6 +64,8 @@ struct Cli {
 }
 
 fn main() {
+    setup_panic!();
+
     let start = std::time::Instant::now();
     let cli = Cli::parse();
 

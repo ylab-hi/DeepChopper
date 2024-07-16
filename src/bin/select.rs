@@ -4,7 +4,6 @@ use human_panic::setup_panic;
 
 use clap::Parser;
 use deepchopper::output;
-use noodles::bgzf;
 use parquet::data_type::AsBytes;
 use rayon::prelude::*;
 use std::io::BufRead;
@@ -13,7 +12,6 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 
-use noodles::fastq;
 use std::fs::File;
 
 use ahash::HashSet;
