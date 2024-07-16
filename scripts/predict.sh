@@ -11,8 +11,8 @@ cnn_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-
 caduceus_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-05-25_19-42-45/checkpoints/epoch_002_f1_0.9982.ckpt"
 
 # Default model selection
-sample_name="du145_hyena_model_002"
-data_folder="data/dorado_without_trim_fqs/du145.fq_chunks"
+sample_name="vcap_002_cnn_model"
+data_folder="data/dorado_without_trim_fqs/VCaP.fastq_chunks"
 
 num_workers=60
 batch_size=64

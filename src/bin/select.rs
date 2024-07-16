@@ -84,8 +84,11 @@ fn select_by_name<P: AsRef<Path>>(
     let fq_records = if let Ok(fq_records) = fq_records_rs {
         fq_records
     } else {
+        log::info!("read bzip file");
         output::read_noodle_records_from_bzip_fq(fq).context("Failed to read records")?
     };
+
+    log::info!("Collect {} records", fq_records.len());
 
     let filter_records = fq_records
         .into_par_iter()
