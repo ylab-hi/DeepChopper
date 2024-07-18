@@ -1,26 +1,24 @@
-use serde::Deserialize;
-use serde::Serialize;
 use std::ops::Range;
 use std::path::PathBuf;
 
-use crate::default;
-use crate::smooth::{ascii_list2str, id_list2seq_i64};
-use crate::utils::{get_label_region, summary_predict_generic};
-
-use super::majority_voting;
+use ahash::HashMap;
+use ahash::HashMapExt;
 use anyhow::Result;
 use candle_core::{self, pickle};
 use log::info;
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
-
-use ahash::HashMap;
-use ahash::HashMapExt;
-
 use rayon::prelude::*;
+use serde::Deserialize;
+use serde::Serialize;
 use walkdir::WalkDir;
 
+use crate::default;
+use crate::smooth::{ascii_list2str, id_list2seq_i64};
+use crate::utils::{get_label_region, summary_predict_generic};
 use crate::vis;
+
+use super::majority_voting;
 
 #[pyfunction]
 pub fn test_predicts(predicts: Vec<PyRef<Predict>>) {
@@ -216,7 +214,7 @@ pub fn load_predicts_from_batch_pts(
     max_predicts: Option<usize>,
 ) -> Result<HashMap<String, Predict>> {
     // iter over the pt files under the path
-    // make sure there is only one pt file
+    // makes sure there is only one pt file
     let mut pt_files: Vec<_> = WalkDir::new(&pt_path)
         .into_iter()
         .par_bridge()

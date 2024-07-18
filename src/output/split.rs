@@ -1,11 +1,12 @@
-use anyhow::{Error, Result};
-use bstr::BStr;
-use rayon::prelude::*;
 use std::ops::Range;
 
-use crate::{error::EncodingError, fq_encode::RecordData};
+use anyhow::{Error, Result};
+use bstr::BStr;
 use noodles::fastq;
 use noodles::fastq::record::Record as FastqRecord;
+use rayon::prelude::*;
+
+use crate::{error::EncodingError, fq_encode::RecordData};
 
 fn _split_records_by_remove_internal<'a>(
     seq: &'a BStr,
@@ -41,7 +42,7 @@ fn _split_records_by_remove_internal<'a>(
         ));
     }
 
-    // ensure the seq and qual length is the same
+    // ensure the seq and qual length are the same
     for (seq, qual) in seqs.iter().zip(quals.iter()) {
         if seq.len() != qual.len() {
             return Err(Error::new(
@@ -66,7 +67,39 @@ fn _split_records_by_remove_internal<'a>(
     Ok((ids, seqs, quals))
 }
 
-pub fn split_noodel_records_by_remove_interval(
+pub fn split_noodle_records_by_intervals(
+    seq: &BStr,
+    id: &BStr,
+    qual: &[u8],
+    target: &[Range<usize>],
+) -> Result<Vec<FastqRecord>> {
+    // get seq by target intervals
+    let seqs = target
+        .par_iter()
+        .map(|interval| seq.get(interval.clone()).unwrap())
+        .collect::<Vec<_>>();
+    let quals = target
+        .par_iter()
+        .map(|interval| qual.get(interval.clone()).unwrap())
+        .collect::<Vec<_>>();
+    let ids = target
+        .par_iter()
+        .map(|interval| format!("{}|{}:{}", id, interval.start, interval.end))
+        .collect::<Vec<_>>();
+
+    Ok(ids
+        .into_par_iter()
+        .zip(seqs.into_par_iter().zip(quals.into_par_iter()))
+        .map(|(id, (seq, qual))| {
+            FastqRecord::new(
+                fastq::record::Definition::new(id, ""),
+                seq.to_vec(),
+                qual.to_vec(),
+            )
+        })
+        .collect())
+}
+pub fn split_noodle_records_by_remove_intervals(
     seq: &BStr,
     id: &BStr,
     qual: &[u8],
@@ -158,7 +191,7 @@ pub fn generate_unmaped_intervals(
         current_start = range.end;
     }
 
-    // Optionally handle the case after the last interval if necessary
+    // Optionally handle the case after the last interval if necessary,
     // For example, if you know the total length and want to add an interval up to that length
 
     if current_start < total_length - 1 {

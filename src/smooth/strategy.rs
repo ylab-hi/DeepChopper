@@ -122,7 +122,8 @@ pub fn process_one_interval(
                 return Ok(());
             }
 
-            let blat_result = blat(predict_seq, &options.blat_cli, &options.hg38_2bit, None);
+            let blat_result: std::result::Result<Vec<super::PslAlignment>, anyhow::Error> =
+                blat(predict_seq, &options.blat_cli, &options.hg38_2bit, None);
             if blat_result.is_err() {
                 overlap_results
                     .entry("terminal_chop_nosc_blat_fail".to_string())

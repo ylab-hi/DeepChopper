@@ -1,14 +1,14 @@
-use anyhow::Result;
-use clap::Parser;
-use rayon::prelude::*;
 use std::path::PathBuf;
 
+use ahash::HashMap;
+use anyhow::Result;
 use bstr::BStr;
+use clap::Parser;
+use rayon::prelude::*;
+
 use deepchopper::default;
 use deepchopper::output;
 use deepchopper::smooth::*;
-
-use ahash::HashMap;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -48,6 +48,10 @@ struct Cli {
     /// min read length after chop
     #[arg(long = "mcr", default_value = "20")]
     min_read_length_after_chop: usize,
+
+    /// output chopped fq file
+    #[arg(long = "ocq", default_value = "false")]
+    output_chopped_seqs: Option<bool>,
 
     /// prefix for output files
     #[arg(short, long)]
@@ -130,18 +134,27 @@ fn main() -> Result<()> {
             }
 
             if predict.seq.len() != fq_record.quality_scores().len() {
-                // trucate seq prediction, do not process
+                // truncate seq prediction, do not process
                 return Ok(vec![fq_record.clone()]);
             };
 
-            output::split_noodel_records_by_remove_interval(
-                BStr::new(&predict.seq),
-                id.as_bytes().into(),
-                fq_record.quality_scores(),
-                &smooth_intervals,
-                cli.min_read_length_after_chop,
-                true, // NOTE: add annotation for terminal or internal chop
-            )
+            if cli.output_chopped_seqs.is_some() {
+                output::split_noodle_records_by_intervals(
+                    BStr::new(&predict.seq),
+                    id.as_bytes().into(),
+                    fq_record.quality_scores(),
+                    &smooth_intervals,
+                )
+            } else {
+                output::split_noodle_records_by_remove_intervals(
+                    BStr::new(&predict.seq),
+                    id.as_bytes().into(),
+                    fq_record.quality_scores(),
+                    &smooth_intervals,
+                    cli.min_read_length_after_chop,
+                    true, // NOTE: add annotation for terminal or internal chop
+                )
+            }
         })
         .collect::<Result<Vec<_>>>()?
         .into_par_iter()
