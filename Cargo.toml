@@ -9,19 +9,8 @@ name = "deepchopper"
 crate-type = ["cdylib", "rlib"]
 
 [profile.dev]
-debug = 0
+debug = 1
 
-[profile.release]
-debug = false
-strip = "none"
-lto = true
-opt-level = 3
-codegen-units = 1
-panic = "abort"
-
-[profile.no-opt]
-inherits = "dev"
-opt-level = 0
 
 [dependencies]
 thiserror = "1.0"
@@ -85,6 +74,7 @@ human-panic = "2.0"
 
 
 [dev-dependencies]
+
 
 [build-dependencies]
 pyo3-build-config = "0.22"
