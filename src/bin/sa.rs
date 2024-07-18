@@ -1,8 +1,11 @@
+use ahash::HashSet;
 use anyhow::Result;
 use bstr::BString;
 use clap::Parser;
 use noodles::bgzf;
 use rayon::prelude::*;
+use std::io::BufRead;
+use std::io::BufReader;
 use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
@@ -23,6 +26,10 @@ struct Cli {
     #[arg(value_name = "bam")]
     bam: PathBuf,
 
+    /// names of the selected reads
+    #[arg(short, long)]
+    names: Option<PathBuf>,
+
     /// threads number
     #[arg(short, long, default_value = "2")]
     threads: Option<usize>,
@@ -39,6 +46,7 @@ struct Cli {
 fn summary_sa_info<P: AsRef<Path>>(
     bam: P,
     threads: Option<usize>,
+    names: Option<HashSet<String>>,
 ) -> Result<HashMap<String, Vec<String>>> {
     let worker_count = if let Some(threads) = threads {
         std::num::NonZeroUsize::new(threads)
@@ -62,13 +70,26 @@ fn summary_sa_info<P: AsRef<Path>>(
             let is_mapped = !record.flags().is_unmapped();
             let is_not_secondary = !record.flags().is_secondary();
             let is_primary = !record.flags().is_supplementary();
+
             if is_primary && is_mapped && is_not_secondary {
-                return Some(record);
+                let name = String::from_utf8(record.name().unwrap().as_bytes().to_vec()).unwrap();
+
+                if let Some(names_v) = &names {
+                    if name.contains('|') {
+                        let id = name.split('|').next().unwrap();
+                        if names_v.contains(id) {
+                            return Some((name, record));
+                        }
+                    } else if names_v.contains(&name) {
+                        return Some((name, record));
+                    }
+                } else {
+                    return Some((name, record));
+                }
             }
             None
         })
-        .map(|record| {
-            let name = BString::new(record.name().unwrap().as_bytes().to_vec());
+        .map(|(name, record)| {
             let reference_id = record.reference_sequence_id().unwrap().unwrap();
             // get the reference name
             let reference_name = references.get_index(reference_id).unwrap().0;
@@ -79,14 +100,14 @@ fn summary_sa_info<P: AsRef<Path>>(
             if let Some(Ok(Value::String(sa_string))) = record.data().get(&Tag::OTHER_ALIGNMENTS) {
                 // has sa tag
                 let mut splits = sa_string.split(|c| c == &b',');
+
                 let sa_reference_name = BString::new(splits.next().unwrap().to_vec());
                 let sa_start = BString::new(splits.next().unwrap().to_vec());
 
                 let sa_alignment_info = format!("{}:{}", sa_reference_name, sa_start);
                 res.push(sa_alignment_info);
             }
-
-            (name.to_string(), res)
+            (name, res)
         })
         .collect();
 
@@ -111,7 +132,17 @@ fn main() -> Result<()> {
         .build_global()
         .unwrap();
 
-    let res = summary_sa_info(cli.bam, cli.threads)?;
+    let mut names = None;
+
+    if let Some(names_file) = cli.names {
+        log::info!("Selecting by names");
+
+        let name_file_handle = File::open(names_file)?;
+        let reader = BufReader::new(name_file_handle);
+        names = Some(reader.lines().collect::<Result<HashSet<_>, _>>()?);
+    }
+
+    let res = summary_sa_info(cli.bam, cli.threads, names)?;
 
     let num_sa = res
         .par_iter()
