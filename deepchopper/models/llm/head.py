@@ -1,5 +1,39 @@
 import torch
+import torch.nn.functional as F  # noqa: N812
 from torch import nn
+
+
+class TokenClassificationCnnHead(nn.Module):
+    def __init__(
+        self,
+        input_size,
+        number_of_classes,
+        num_filters,
+        filter_sizes,
+    ):
+        super().__init__()
+        self.number_of_classes = number_of_classes
+
+        self.qual_linear1 = nn.Linear(num_filters, number_of_classes)
+
+        layers = []
+        in_channels = input_size
+
+        for idx, fs in enumerate(filter_sizes):
+            layers.append(nn.Conv1d(in_channels=in_channels, out_channels=num_filters, kernel_size=fs, padding="same"))
+            layers.append(nn.BatchNorm1d(num_filters[idx]))
+            layers.append(nn.ReLU())
+            in_channels = num_filters[idx]
+
+        self.model = nn.Sequential(*layers)
+        self.dense = nn.Linear(in_channels, number_of_classes)
+
+    def forward(self, x: torch.Tensor, input_quals: torch.Tensor):
+        x = F.relu(x + self.qual_linear1(input_quals.unsqueeze(-1)))
+        x = x.transpose(1, 2)  # (batch, num_filters, seq_len)
+        x = self.model(x)  # (batch, num_filters, seq_len)
+        x = x.transpose(1, 2)  # (batch, seq_len, num_filters)
+        return self.dense(x)
 
 
 class TokenClassificationHead(nn.Module):

@@ -194,6 +194,8 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(
     let mut reader = bam::io::Reader::from(decoder);
     let _header = reader.read_header()?;
 
+    println!("Reading bam file with {} threads", worker_count);
+
     let res: Result<HashMap<String, BamRecord>> = reader
         .records()
         .par_bridge()

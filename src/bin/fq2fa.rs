@@ -1,3 +1,4 @@
+use anyhow::Context;
 use anyhow::Result;
 use clap::Parser;
 use rayon::prelude::*;
@@ -22,7 +23,9 @@ struct Cli {
 }
 
 fn covert<P: AsRef<Path>>(fq: P) -> Result<()> {
-    let fq_records = output::read_noodel_records_from_fq_or_zip_fq(fq)?;
+    let fq_records = output::read_noodle_records_from_bzip_fq(&fq)?;
+    log::info!("converting {} records", fq_records.len());
+
     let handle = std::io::stdout().lock();
     let mut writer = fasta::io::Writer::new(handle);
 
@@ -38,6 +41,7 @@ fn covert<P: AsRef<Path>>(fq: P) -> Result<()> {
     for fa_record in fa_records {
         writer.write_record(&fa_record)?;
     }
+
     Ok(())
 }
 

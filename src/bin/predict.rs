@@ -49,9 +49,9 @@ struct Cli {
     #[arg(long = "mcr", default_value = "20")]
     min_read_length_after_chop: usize,
 
-    /// output chopped fq file
-    #[arg(long = "ocq", default_value = "false")]
-    output_chopped_seqs: Option<bool>,
+    /// output chopped fq file only
+    #[arg(long = "ocq", action=clap::ArgAction::SetTrue)]
+    output_chopped_seqs: bool,
 
     /// prefix for output files
     #[arg(short, long)]
@@ -138,7 +138,7 @@ fn main() -> Result<()> {
                 return Ok(vec![fq_record.clone()]);
             };
 
-            if cli.output_chopped_seqs.is_some() {
+            if cli.output_chopped_seqs {
                 output::split_noodle_records_by_intervals(
                     BStr::new(&predict.seq),
                     id.as_bytes().into(),
@@ -177,6 +177,10 @@ fn main() -> Result<()> {
             res.len()
         )
     };
+
+    if cli.output_chopped_seqs {
+        log::info!("Output chopped adapters");
+    }
 
     output::write_fq_parallel_for_noodle_record(&res, output_file.clone().into(), cli.threads)?;
 

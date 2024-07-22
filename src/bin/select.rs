@@ -205,7 +205,13 @@ fn main() -> Result<()> {
 
     if cli.print_names {
         log::info!("Printing names of selected reads");
-        let fq_records = output::read_noodel_records_from_fq_or_zip_fq(cli.fq)?;
+        let fq_records_rs = output::read_noodel_records_from_fq_or_zip_fq(&cli.fq)
+            .context("Failed to read records");
+        let fq_records = if let Ok(fq_records) = fq_records_rs {
+            fq_records
+        } else {
+            output::read_noodle_records_from_bzip_fq(&cli.fq).context("Failed to read records")?
+        };
 
         let stdout = std::io::stdout();
         let mut writer = std::io::BufWriter::new(stdout.lock());
