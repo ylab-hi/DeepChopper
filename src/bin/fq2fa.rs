@@ -1,4 +1,3 @@
-use anyhow::Context;
 use anyhow::Result;
 use clap::Parser;
 use rayon::prelude::*;
