@@ -267,7 +267,7 @@ fn normalize_seq(seq: String, iupac: bool) -> String {
     String::from_utf8_lossy(&seq.as_bytes().normalize(iupac)).to_string()
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 #[pyfunction]
 fn encode_fq_paths_to_tensor(
     py: Python,
@@ -314,7 +314,7 @@ fn encode_fq_paths_to_tensor(
     ))
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 #[pyfunction]
 fn encode_fq_path_to_tensor(
     py: Python,
@@ -483,6 +483,7 @@ fn summary_predict(
     utils::summary_predict(&predictions, &labels, ignore_label)
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pyfunction]
 fn collect_and_split_dataset(
     internal_fq_path: PathBuf,
@@ -510,6 +511,7 @@ fn collect_and_split_dataset(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pyfunction]
 fn collect_and_split_dataset_with_natural_terminal_adapters(
     internal_fq_path: PathBuf,
@@ -567,6 +569,7 @@ fn smooth_label_region(
     .collect()
 }
 
+#[allow(clippy::type_complexity)]
 #[pyfunction]
 fn remove_intervals_and_keep_left(
     seq: String,

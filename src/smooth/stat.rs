@@ -42,6 +42,7 @@ pub struct StatResult {
 
 #[pymethods]
 impl StatResult {
+    #[allow(clippy::too_many_arguments)]
     #[new]
     pub fn new(
         predicts_with_chop: Vec<String>,

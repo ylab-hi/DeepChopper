@@ -136,6 +136,7 @@ pub fn kmers_to_seq(kmers: Vec<&[u8]>) -> Result<Vec<u8>> {
     Ok(res)
 }
 
+#[allow(clippy::type_complexity)]
 pub fn seq_to_kmers_and_offset(
     seq: &[u8],
     kmer_size: usize,
