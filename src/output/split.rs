@@ -2,17 +2,54 @@ use std::ops::Range;
 
 use anyhow::{Error, Result};
 use bstr::BStr;
+use itertools::Itertools;
 use noodles::fastq;
 use noodles::fastq::record::Record as FastqRecord;
 use rayon::prelude::*;
 
 use crate::{error::EncodingError, fq_encode::RecordData};
 
+use std::str::FromStr;
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum ChopType {
+    Terminal,
+    Internal,
+    All,
+}
+
+impl FromStr for ChopType {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "terminal" => Ok(ChopType::Terminal),
+            "internal" => Ok(ChopType::Internal),
+            "all" => Ok(ChopType::All),
+            _ => Err(anyhow::anyhow!("Invalid chop type")),
+        }
+    }
+}
+
+impl ChopType {
+    pub fn is_terminal(&self) -> bool {
+        matches!(self, ChopType::Terminal)
+    }
+
+    pub fn is_internal(&self) -> bool {
+        matches!(self, ChopType::Internal)
+    }
+
+    pub fn is_all(&self) -> bool {
+        matches!(self, ChopType::All)
+    }
+}
+
 fn _split_records_by_remove_internal<'a>(
     seq: &'a BStr,
     id: &'a BStr,
     qual: &'a [u8],
     target: &'a [Range<usize>],
+    min_retain_interval_length: Option<usize>,
 ) -> Result<(Vec<String>, Vec<&'a BStr>, Vec<&'a BStr>)> {
     let mut seqs = Vec::new();
     let mut quals = Vec::new();
@@ -64,6 +101,16 @@ fn _split_records_by_remove_internal<'a>(
             )
         })
         .collect();
+
+    if let Some(min_retain_interval_length) = min_retain_interval_length {
+        let (filter_ids, (filter_seqs, filter_quals)) = ids
+            .into_iter()
+            .zip(seqs.into_iter().zip(quals.into_iter()))
+            .filter(|(id, (seq, qual))| seq.len() > min_retain_interval_length)
+            .unzip();
+        return Ok((filter_ids, filter_seqs, filter_quals));
+    }
+
     Ok((ids, seqs, quals))
 }
 
@@ -99,6 +146,7 @@ pub fn split_noodle_records_by_intervals(
         })
         .collect())
 }
+
 pub fn split_noodle_records_by_remove_intervals(
     seq: &BStr,
     id: &BStr,
@@ -106,28 +154,48 @@ pub fn split_noodle_records_by_remove_intervals(
     target: &[Range<usize>],
     min_chop_read_length: usize,
     id_annotation: bool,
+    chop_type: &ChopType,
 ) -> Result<Vec<FastqRecord>> {
-    let (ids, seqs, quals) = _split_records_by_remove_internal(seq, id, qual, target)?;
+    let (ids, seqs, quals) =
+        _split_records_by_remove_internal(seq, id, qual, target, Some(min_chop_read_length))?;
     let ids_length = ids.len();
+
+    let current_chop_type = if ids_length == 1 {
+        ChopType::Terminal
+    } else {
+        ChopType::Internal
+    };
+
+    if (chop_type.is_terminal() && current_chop_type.is_internal())
+        || (chop_type.is_internal() && current_chop_type.is_terminal())
+        || (current_chop_type.is_terminal() && seqs[0].len() == seq.len())
+    {
+        let record = FastqRecord::new(
+            fastq::record::Definition::new(id.to_vec(), ""),
+            seq.to_vec(),
+            qual.to_vec(),
+        );
+        return Ok(vec![record]);
+    }
 
     let records = ids
         .into_par_iter()
         .zip(seqs.into_par_iter().zip(quals.into_par_iter()))
-        .filter(|(_, (seq, _))| seq.len() >= min_chop_read_length)
-        .map(|(id, (seq, qual))| {
+        .map(|(rid, (rseq, rqual))| {
             let id_str = if id_annotation {
-                if ids_length == 1 {
-                    format!("{}|{}", id, 'T')
+                if current_chop_type == ChopType::Terminal {
+                    format!("{}|{}", rid, 'T')
                 } else {
-                    format!("{}|{}", id, 'I')
+                    format!("{}|{}", rid, 'I')
                 }
             } else {
-                id
+                rid
             };
+
             FastqRecord::new(
                 fastq::record::Definition::new(id_str, ""),
-                seq.to_vec(),
-                qual.to_vec(),
+                rseq.to_vec(),
+                rqual.to_vec(),
             )
         })
         .collect();
@@ -143,13 +211,13 @@ pub fn split_records_by_remove_interval(
     min_chop_read_length: usize,
     id_annotation: bool,
 ) -> Result<Vec<RecordData>> {
-    let (ids, seqs, quals) = _split_records_by_remove_internal(seq, id, qual, target)?;
+    let (ids, seqs, quals) =
+        _split_records_by_remove_internal(seq, id, qual, target, Some(min_chop_read_length))?;
     let ids_length = ids.len();
 
     let records = ids
         .into_par_iter()
         .zip(seqs.into_par_iter().zip(quals.into_par_iter()))
-        .filter(|(_, (seq, _))| seq.len() >= min_chop_read_length)
         .map(|(id, (seq, qual))| {
             let id_str = if id_annotation {
                 if ids_length == 1 {
@@ -239,13 +307,19 @@ mod tests {
         // |a| bcde |fghij| klmno |pqrst| uvwxyz
 
         let intervals = vec![1..5, 10..15, 20..25];
-        let (seq, _inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
-        assert_eq!(seq, vec!["a", "fghij", "pqrst"]);
+        let (seqs, _inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
+        assert_eq!(seqs, vec!["a", "fghij", "pqrst"]);
 
         let seq = b"abcdefghijklmnopqrstuvwxyz";
         let intervals = vec![5..10, 15..20];
-        let (seq, _inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
-        assert_eq!(seq, vec!["abcde", "klmno", "uvwxy"]);
+        let (seqs, _inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
+        assert_eq!(seqs, vec!["abcde", "klmno", "uvwxy"]);
+
+        let seq = b"abcdefghijklmnopqrstuvwxyz";
+        let intervals = Vec::new();
+
+        let (seqs, _inters) = remove_intervals_and_keep_left(seq, &intervals).unwrap();
+        assert_eq!(seqs[0].to_vec(), seq);
     }
 
     #[test]

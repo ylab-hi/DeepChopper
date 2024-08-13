@@ -8,6 +8,7 @@ use rayon::prelude::*;
 
 use deepchopper::default;
 use deepchopper::output;
+use deepchopper::output::ChopType;
 use deepchopper::smooth::*;
 
 #[derive(Parser, Debug)]
@@ -52,6 +53,10 @@ struct Cli {
     /// output chopped fq file only
     #[arg(long = "ocq", action=clap::ArgAction::SetTrue)]
     output_chopped_seqs: bool,
+
+    /// selected chopped type
+    #[arg(long = "ct", default_value = "ChopType::All")]
+    chop_type: ChopType,
 
     /// prefix for output files
     #[arg(short, long)]
@@ -153,6 +158,7 @@ fn main() -> Result<()> {
                     &smooth_intervals,
                     cli.min_read_length_after_chop,
                     true, // NOTE: add annotation for terminal or internal chop
+                    &cli.chop_type,
                 )
             }
         })

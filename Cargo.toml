@@ -11,7 +11,6 @@ crate-type = ["cdylib", "rlib"]
 [profile.dev]
 debug = 1
 
-
 [dependencies]
 thiserror = "1.0"
 anyhow = "1.0"
