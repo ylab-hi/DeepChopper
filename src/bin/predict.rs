@@ -55,7 +55,7 @@ struct Cli {
     output_chopped_seqs: bool,
 
     /// selected chopped type
-    #[arg(long = "ct", default_value = "ChopType::All")]
+    #[arg(long = "ct",  default_value_t = ChopType::All)]
     chop_type: ChopType,
 
     /// prefix for output files
@@ -84,6 +84,8 @@ fn main() -> Result<()> {
         .num_threads(cli.threads.unwrap())
         .build_global()
         .unwrap();
+
+    log::info!("export {:?} chopped type ", cli.chop_type);
 
     let all_predicts = cli
         .predicts

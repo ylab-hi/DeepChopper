@@ -2,20 +2,31 @@ use std::ops::Range;
 
 use anyhow::{Error, Result};
 use bstr::BStr;
-use itertools::Itertools;
 use noodles::fastq;
 use noodles::fastq::record::Record as FastqRecord;
 use rayon::prelude::*;
 
 use crate::{error::EncodingError, fq_encode::RecordData};
 
+use clap::ValueEnum;
+use std::fmt::Display;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, ValueEnum)]
 pub enum ChopType {
     Terminal,
     Internal,
     All,
+}
+
+impl Display for ChopType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ChopType::Terminal => write!(f, "terminal"),
+            ChopType::Internal => write!(f, "internal"),
+            ChopType::All => write!(f, "all"),
+        }
+    }
 }
 
 impl FromStr for ChopType {
@@ -105,8 +116,8 @@ fn _split_records_by_remove_internal<'a>(
     if let Some(min_retain_interval_length) = min_retain_interval_length {
         let (filter_ids, (filter_seqs, filter_quals)) = ids
             .into_iter()
-            .zip(seqs.into_iter().zip(quals.into_iter()))
-            .filter(|(id, (seq, qual))| seq.len() > min_retain_interval_length)
+            .zip(seqs.into_iter().zip(quals))
+            .filter(|(_id, (seq, _qual))| seq.len() > min_retain_interval_length)
             .unzip();
         return Ok((filter_ids, filter_seqs, filter_quals));
     }
