@@ -44,4 +44,4 @@ cargo run --bin predict -r -- \
 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_7/predicts/0/ \
 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_8/predicts/0/ \
 	--pdt /projects/b1171/ylk4626/project/DeepChopper/logs/eval/runs/vcap/VCaP.fastq_9/predicts/0/ \
-	--fq data/dorado_without_trim_fqs/VCaP.fastq -t 10 -o vcap_002_hyena_only_internal
+	--fq data/dorado_without_trim_fqs/VCaP.fastq --ct internal --mcr 70 -t 10 -o vcap_002_hyena_only_internal_mcr_70
