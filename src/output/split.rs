@@ -61,7 +61,7 @@ fn _split_records_by_remove_internal<'a>(
     qual: &'a [u8],
     target: &'a [Range<usize>],
     min_retain_interval_length: Option<usize>,
-) -> Result<(Vec<String>, Vec<&'a BStr>, Vec<&'a BStr>)> {
+) -> Result<(usize, Vec<String>, Vec<&'a BStr>, Vec<&'a BStr>)> {
     let mut seqs = Vec::new();
     let mut quals = Vec::new();
     let mut selected_intervals = Vec::new();
@@ -103,6 +103,7 @@ fn _split_records_by_remove_internal<'a>(
             ));
         }
     }
+
     let ids: Vec<String> = (0..seqs.len())
         .into_par_iter()
         .map(|x| {
@@ -113,16 +114,23 @@ fn _split_records_by_remove_internal<'a>(
         })
         .collect();
 
+    let record_count_before_filter = seqs.len();
+
     if let Some(min_retain_interval_length) = min_retain_interval_length {
         let (filter_ids, (filter_seqs, filter_quals)) = ids
             .into_iter()
             .zip(seqs.into_iter().zip(quals))
-            .filter(|(_id, (seq, _qual))| seq.len() > min_retain_interval_length)
+            .filter(|(_id, (seq, _qual))| seq.len() >= min_retain_interval_length)
             .unzip();
-        return Ok((filter_ids, filter_seqs, filter_quals));
+        return Ok((
+            record_count_before_filter,
+            filter_ids,
+            filter_seqs,
+            filter_quals,
+        ));
     }
 
-    Ok((ids, seqs, quals))
+    Ok((record_count_before_filter, ids, seqs, quals))
 }
 
 pub fn split_noodle_records_by_intervals(
@@ -167,9 +175,10 @@ pub fn split_noodle_records_by_remove_intervals(
     id_annotation: bool,
     chop_type: &ChopType,
 ) -> Result<Vec<FastqRecord>> {
-    let (ids, seqs, quals) =
+    let (record_count_before_filter, ids, seqs, quals) =
         _split_records_by_remove_internal(seq, id, qual, target, Some(min_chop_read_length))?;
-    let ids_length = ids.len();
+
+    let ids_length = record_count_before_filter;
 
     let current_chop_type = if ids_length == 1 {
         ChopType::Terminal
@@ -179,7 +188,7 @@ pub fn split_noodle_records_by_remove_intervals(
 
     if (chop_type.is_terminal() && current_chop_type.is_internal())
         || (chop_type.is_internal() && current_chop_type.is_terminal())
-        || (current_chop_type.is_terminal() && seqs[0].len() == seq.len())
+        || (!seqs.is_empty() && seqs[0].len() == seq.len())
     {
         let record = FastqRecord::new(
             fastq::record::Definition::new(id.to_vec(), ""),
@@ -222,9 +231,9 @@ pub fn split_records_by_remove_interval(
     min_chop_read_length: usize,
     id_annotation: bool,
 ) -> Result<Vec<RecordData>> {
-    let (ids, seqs, quals) =
+    let (record_count_before_filter, ids, seqs, quals) =
         _split_records_by_remove_internal(seq, id, qual, target, Some(min_chop_read_length))?;
-    let ids_length = ids.len();
+    let ids_length = record_count_before_filter;
 
     let records = ids
         .into_par_iter()

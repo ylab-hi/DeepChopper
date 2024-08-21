@@ -171,7 +171,7 @@ fn main() -> Result<()> {
 
     let output_file = if let Some(prefix) = cli.output_prefix {
         format!(
-            "{}.{}pd.{}record.chop.fq.gz",
+            "{}.{}pd.{}record.chop.fq.bgz",
             prefix,
             all_predicts_number,
             res.len()
@@ -179,7 +179,7 @@ fn main() -> Result<()> {
     } else {
         let file_stem = cli.fq.file_stem().unwrap().to_str().unwrap();
         format!(
-            "{}.{}pd.{}record.chop.fq.gz",
+            "{}.{}pd.{}record.chop.fq.bgz",
             file_stem,
             all_predicts_number,
             res.len()
