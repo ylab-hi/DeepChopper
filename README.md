@@ -1,4 +1,4 @@
-# <img src="./documentation/logo.webp" alt="logo" height=100> **Project X** [![social](https://img.shields.io/github/stars/ylab-hi/DeepChopper?style=social)](https://github.com/ylab-hi/DeepChopper/stargazers)
+# <img src="./documentation/logo.webp" alt="logo" height=100> **DeepChopper** [![social](https://img.shields.io/github/stars/ylab-hi/DeepChopper?style=social)](https://github.com/ylab-hi/DeepChopper/stargazers)
 
 <!--toc:start-->
 
@@ -7,15 +7,23 @@
 
 <!--toc:end-->
 
-deep learning adapter chopper for ont direct-rna data
+Language models identify chimeric artificial reads in NanoPore direct-RNA sequencing data.
+DeepChopper leverages language model to accurately detect and chop these aritificial sequences which may cause chimeric reads, ensuring higher quality and more reliable sequencing results.
+By integrating seamlessly with existing workflows, DeepChopper provides a robust solution for researchers and bioinformaticians working with NanoPorea direct-RNA sequencing data.
 
-## 🚀 Feature
+## Install
 
-- [ ] Rust
-- [ ] Fast
-- [ ] Fast
-- [ ] Fast
-- [ ] Fasst
+## Usage
+
+```bash
+deepchopper predict --input <input> --output <output>
+```
+
+```bash
+deepchopper chop --input <input> --output <output>
+```
+
+## Cite
 
 ## 🤜 Contribution
 
