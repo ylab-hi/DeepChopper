@@ -13,7 +13,43 @@ By integrating seamlessly with existing workflows, DeepChopper provides a robust
 
 ## Install
 
+DeepChopper can be installed using pip, the Python package installer. Follow these steps to install:
+
+1. Ensure you have Python 3.10 or later installed on your system.
+
+2. It's recommended to create a virtual environment:
+
+   ```bash
+   python -m venv deepchopper_env
+   source deepchopper_env/bin/activate  # On Windows use `deepchopper_env\Scripts\activate`
+   ```
+
+3. Install DeepChopper:
+
+   ```bash
+   pip install deepchopper
+   ```
+
+4. Verify the installation:
+
+   ```bash
+   deepchopper --version
+   ```
+
+For GPU support, ensure you have CUDA installed on your system, then install the GPU version:
+
+```bash
+pip install deepchopper[gpu]
+```
+
+Note: If you encounter any issues,
+please check our GitHub repository for troubleshooting guides or to report a problem.
+
 ## Usage
+
+```bash
+deepchopper endcode --input <input>
+```
 
 ```bash
 deepchopper predict --input <input> --output <output>

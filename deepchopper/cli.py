@@ -8,7 +8,6 @@ import typer
 from datasets import load_dataset
 from rich import print
 from rich.logging import RichHandler
-from torch import Tensor
 from transformers import AutoTokenizer, Trainer, TrainingArguments
 
 from .deepchopper import (
@@ -16,9 +15,6 @@ from .deepchopper import (
     default,
     encode_fq_path_to_parquet,
     encode_fq_path_to_parquet_chunk,
-    remove_intervals_and_keep_left,
-    smooth_label_region,
-    write_predicts,
 )
 from .models.llm import (
     DataCollatorForTokenClassificationWithQual,
@@ -27,9 +23,7 @@ from .models.llm import (
     tokenize_and_align_labels_and_quals,
 )
 from .utils import (
-    alignment_predict,
     highlight_target,
-    hightlight_predicts,
     summary_predict,
 )
 
@@ -181,50 +175,50 @@ def predict(
 
     true_prediction, true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
 
-    if show_sample:
-        alignment_predict(true_prediction[0], true_label[0])
-        for idx, preds in enumerate(true_prediction):
-            record_id = eval_dataset[idx]["id"]
-            seq = eval_dataset[idx]["seq"]
-            smooth_predict_targets = smooth_label_region(
-                preds,
-                min_region_length_for_smooth,
-                max_distance_for_smooth,
-                min_interval_length_for_discard=0,
-            )
+    # if show_sample:
+    #     alignment_predict(true_prediction[0], true_label[0])
+    #     for idx, preds in enumerate(true_prediction):
+    #         record_id = eval_dataset[idx]["id"]
+    #         seq = eval_dataset[idx]["seq"]
+    #         smooth_predict_targets = smooth_label_region(
+    #             preds,
+    #             min_region_length_for_smooth,
+    #             max_distance_for_smooth,
+    #             min_interval_length_for_discard=0,
+    #         )
 
-            targets = eval_dataset[idx]["target"]
+    #         targets = eval_dataset[idx]["target"]
 
-            if isinstance(targets, Tensor):
-                targets = targets.tolist()
-            # zip two consecutive elements
-            targets = [(targets[i], targets[i + 1]) for i in range(0, len(targets), 2)]
-            print(f"{record_id=}")
-            hightlight_predicts(seq, targets, smooth_predict_targets)
+    #         if isinstance(targets, Tensor):
+    #             targets = targets.tolist()
+    #         # zip two consecutive elements
+    #         targets = [(targets[i], targets[i + 1]) for i in range(0, len(targets), 2)]
+    #         print(f"{record_id=}")
+    #         hightlight_predicts(seq, targets, smooth_predict_targets)
 
-            _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(seq, smooth_predict_targets)
+    #         _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(seq, smooth_predict_targets)
 
-        print(predicts[2])
-    elif save_predict:
-        del eval_dataset
-        del tokenized_eval_dataset
-        if output_path is None:
-            outout_path = data_path.with_suffix(".chopped.fq.gz")
-        else:
-            if not output_path.exists():
-                output_path.mkdir(parents=True, exist_ok=True)
-            outout_path = output_path / data_path.with_suffix(".chopped.fq.gz").name
+    #     print(predicts[2])
+    # elif save_predict:
+    #     del eval_dataset
+    #     del tokenized_eval_dataset
+    #     if output_path is None:
+    #         outout_path = data_path.with_suffix(".chopped.fq.gz")
+    #     else:
+    #         if not output_path.exists():
+    #             output_path.mkdir(parents=True, exist_ok=True)
+    #         outout_path = output_path / data_path.with_suffix(".chopped.fq.gz").name
 
-        write_predicts(
-            data_path,
-            outout_path,
-            true_prediction,
-            min_region_length_for_smooth,
-            max_distance_for_smooth,
-        )
+    #     write_predicts(
+    #         data_path,
+    #         outout_path,
+    #         true_prediction,
+    #         min_region_length_for_smooth,
+    #         max_distance_for_smooth,
+    #     )
 
-    if TMPOUTPUT.exists():
-        TMPOUTPUT.rmdir()
+    # if TMPOUTPUT.exists():
+    #     TMPOUTPUT.rmdir()
 
 
 @app.command(
