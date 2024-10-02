@@ -5,10 +5,14 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+import torch
+import lightning
 from datasets import load_dataset
 from rich import print
 from rich.logging import RichHandler
 from transformers import AutoTokenizer, Trainer, TrainingArguments
+
+import deepchopper
 
 from .deepchopper import (
     convert_multiple_fqs_to_one_fq,
@@ -208,72 +212,54 @@ def predict(
     output_path: Path | None = None,
     batch_size: int = 12,
     max_sample: int | None = None,
-    min_region_length_for_smooth: int = 1,
-    max_distance_for_smooth: Annotated[int, typer.Option()] = 1,
     *,
     show_metrics: Annotated[bool, typer.Option(help="if show metrics")] = False,
     show_sample: Annotated[bool, typer.Option(help="if show sample")] = False,
     save_predict: Annotated[bool, typer.Option(help="if save predict")] = False,
 ):
     """Predict the given dataset using the given model and tokenizer."""
-    resume_tokenizer, resume_model = load_model_from_checkpoint(check_point)
-    (
-        eval_dataset,
-        tokenized_eval_dataset,
-    ) = load_dataset_from_checkpont(check_point, data_path, resume_tokenizer, max_sample)
-
-    if show_sample:
-        random_show_seq(eval_dataset, sample=3)
-
-    trainer = load_trainer(resume_tokenizer, resume_model, batch_size=batch_size, show_metrics=show_metrics)
-    predicts = trainer.predict(tokenized_eval_dataset)  # type: ignore
-
-    true_prediction, true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
-
     # if show_sample:
-    #     alignment_predict(true_prediction[0], true_label[0])
-    #     for idx, preds in enumerate(true_prediction):
-    #         record_id = eval_dataset[idx]["id"]
-    #         seq = eval_dataset[idx]["seq"]
-    #         smooth_predict_targets = smooth_label_region(
-    #             preds,
-    #             min_region_length_for_smooth,
-    #             max_distance_for_smooth,
-    #             min_interval_length_for_discard=0,
-    #         )
+    #     random_show_seq(eval_dataset, sample=3)
 
-    #         targets = eval_dataset[idx]["target"]
+    tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
 
-    #         if isinstance(targets, Tensor):
-    #             targets = targets.tolist()
-    #         # zip two consecutive elements
-    #         targets = [(targets[i], targets[i + 1]) for i in range(0, len(targets), 2)]
-    #         print(f"{record_id=}")
-    #         hightlight_predicts(seq, targets, smooth_predict_targets)
+    datamodule: LightningDataModule = deepchopper.data.fq_data_module.FqDataModule(
+        tokenizer=tokenizer,
+        predict_data_path=data_path,
+        batch_size=batch_size,
+        max_predict_samples=max_sample,
+    )
+    model = deepchopper.models.basic_module.TokenClassificationLit(
+        optimizer=torch.optim.Adam(lr=0.00002, weight_decay=0.0),
+        scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(mode="min", factor=0.1, patience=10),
+        net=deepchopper.models.llm.hyena.TokenClassificationModule(
+            number_of_classes=2,
+            backbone_name="hyenadna-small-32k-seqlen",
+            freeze_backbone=False,
+            head=deepchopper.models.llm.TokenClassificationHead(
+                input_size=256,
+                lin1_size=1024,
+                lin2_size=1024,
+                num_class=2,
+                use_identity_layer_for_qual=True,
+                use_qual=True,
+            ),
+        ),
+        criterion=deepchopper.models.basic_module.ContinuousIntervalLoss(lambda_penalty=0),
+    )
+    accelerator = "cpu" if torch.cuda.is_available() else "gpu"
 
-    #         _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(seq, smooth_predict_targets)
+    trainer = lightning.pytorch.trainer.Trainer(
+        default_root_dir=".",
+        accelerator=accelerator, w w
+        devices=-1,
+        deterministic=False,
+    )
 
-    #     print(predicts[2])
-    # elif save_predict:
-    #     del eval_dataset
-    #     del tokenized_eval_dataset
-    #     if output_path is None:
-    #         outout_path = data_path.with_suffix(".chopped.fq.gz")
-    #     else:
-    #         if not output_path.exists():
-    #             output_path.mkdir(parents=True, exist_ok=True)
-    #         outout_path = output_path / data_path.with_suffix(".chopped.fq.gz").name
+    import multiprocess.context as ctx
 
-    #     write_predicts(
-    #         data_path,
-    #         outout_path,
-    #         true_prediction,
-    #         min_region_length_for_smooth,
-    #         max_distance_for_smooth,
-    #     )
-
-    # if TMPOUTPUT.exists():
-    #     TMPOUTPUT.rmdir()
+    ctx._force_start_method("spawn")
+    trainer.predict(model=model, dataloaders=datamodule, ckpt_path=check_point, return_predictions=False)
 
 
 @app.command(
