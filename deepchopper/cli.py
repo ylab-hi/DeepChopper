@@ -280,14 +280,14 @@ def predict(
     help="DeepChopper is All You Need: chop your reads!",
 )
 def chop(
-    predicts: list[Path | str],
-    fq: Path | str,
+    predicts: list[Path],
+    fq: Path,
     smooth_window_size: int = 21,
     min_interval_size: int = 13,
     approved_interval_number: int = 20,
     max_process_intervals: int = 4,
     min_read_length_after_chop: int = 20,
-    output_chopped_seqs: bool = false,
+    output_chopped_seqs: Annotated[bool, typer.Option(help="if outupt chopped seqs")] = False,
     chop_type: str = "all",
     threads: int = 2,
     output_prefix: str | None = None,
