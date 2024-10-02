@@ -1,4 +1,5 @@
 use crate::{
+    cli::{self, predict_cli},
     default::{BASES, KMER_SIZE, MIN_CHOPED_SEQ_LEN, QUAL_OFFSET, VECTORIZED_TARGET},
     fq_encode::{self, Encoder},
     kmer::{self, vertorize_target},
@@ -14,6 +15,7 @@ use numpy::{IntoPyArray, PyArray2, PyArray3};
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use pyo3::prelude::*;
 use rayon::prelude::*;
+use std::str::FromStr;
 use std::{ops::Range, path::PathBuf};
 
 use ahash::HashMap;
@@ -702,6 +704,55 @@ fn parse_psl_by_qname(file_path: PathBuf) -> Result<HashMap<String, Vec<smooth::
     smooth::parse_psl_by_qname(file_path)
 }
 
+/// CLI func exported to Python
+#[pyfunction(name = "predict_cli")]
+#[pyo3(signature = (
+    predicts,
+    fq,
+    smooth_window_size=21,
+    min_interval_size=13,
+    approved_interval_number=20,
+    max_process_intervals=4,
+    min_read_length_after_chop=20,
+    output_chopped_seqs=false,
+    chop_type="all",
+    threads=2,
+    output_prefix=None,
+    max_batch_size=None,
+))]
+fn py_predict_cli(
+    predicts: Vec<PathBuf>,
+    fq: PathBuf,
+    smooth_window_size: usize,
+    min_interval_size: usize,
+    approved_interval_number: usize,
+    max_process_intervals: usize,
+    min_read_length_after_chop: usize,
+    output_chopped_seqs: bool,
+    chop_type: &str,
+    threads: Option<usize>,
+    output_prefix: Option<String>,
+    max_batch_size: Option<usize>,
+) -> Result<()> {
+    let chop_type = output::ChopType::from_str(chop_type).unwrap();
+
+    let options = cli::PredictOptions {
+        predicts,
+        fq,
+        threads,
+        max_batch_size,
+        smooth_window_size,
+        min_interval_size,
+        approved_interval_number,
+        max_process_intervals,
+        min_read_length_after_chop,
+        output_chopped_seqs,
+        chop_type,
+        output_prefix,
+    };
+    predict_cli(&options)
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -761,6 +812,9 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(smooth::load_predicts_from_batch_pt, m)?)?;
     m.add_function(wrap_pyfunction!(smooth::load_predicts_from_batch_pts, m)?)?;
     m.add_function(wrap_pyfunction!(parse_psl_by_qname, m)?)?;
+
+    // add clis
+    m.add_function(wrap_pyfunction!(py_predict_cli, m)?)?;
 
     m.add_class::<PyRecordData>()?;
     m.add_class::<fq_encode::FqEncoderOption>()?;
