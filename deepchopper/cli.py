@@ -15,6 +15,7 @@ from .deepchopper import (
     default,
     encode_fq_path_to_parquet,
     encode_fq_path_to_parquet_chunk,
+    predict_cli,
 )
 from .models.llm import (
     DataCollatorForTokenClassificationWithQual,
@@ -145,6 +146,60 @@ app = typer.Typer(
 
 
 @app.command(
+    help="DeepChopper is All You Need: collect the given fastq",
+)
+def collect(data_folder: Path, output: Path):
+    """Collect multiple fastq files to one fastq file."""
+    if not data_folder.exists():
+        msg = f"Folder {data_folder} does not exist."
+        raise ValueError(msg)
+
+    fq_files = (
+        [data_folder]
+        if data_folder.is_file()
+        else list(data_folder.glob("*.fq"))
+        + list(data_folder.glob("*.fastq"))
+        + list(data_folder.glob("*.fq.gz"))
+        + list(data_folder.glob("*.fastq.gz"))
+    )
+    convert_multiple_fqs_to_one_fq(fq_files, output)
+
+
+@app.command(
+    help="DeepChopper is All You Need: encode the given fastq",
+)
+def encode(data_folder: Path, *, chunk: bool = False, chunk_size: int = 1000000, parallel: bool = False):
+    """Encode the given fastq files to parquet format."""
+    if not data_folder.exists():
+        msg = f"Folder {data_folder} does not exist."
+        logging.error(msg)
+
+    fq_files = (
+        [data_folder] if data_folder.is_file() else list(data_folder.glob("*.fq")) + list(data_folder.glob("*.fastq"))
+    )
+
+    for fq_file in fq_files:
+        logging.info(f"Processing {fq_file}")
+        if not chunk:
+            encode_fq_path_to_parquet(
+                fq_file,
+                default.KMER_SIZE,
+                bases=default.BASES,
+                qual_offset=default.QUAL_OFFSET,
+                vectorized_target=default.VECTORIZED_TARGET,
+            )
+        else:
+            encode_fq_path_to_parquet_chunk(
+                fq_file,
+                chunk_size=chunk_size,
+                parallel=parallel,
+                bases=default.BASES,
+                qual_offset=default.QUAL_OFFSET,
+                vectorized_target=default.VECTORIZED_TARGET,
+            )
+
+
+@app.command(
     help="DeepChopper is All You Need",
 )
 def predict(
@@ -222,57 +277,36 @@ def predict(
 
 
 @app.command(
-    help="DeepChopper is All You Need: encode the given fastq",
+    help="DeepChopper is All You Need: chop your reads!",
 )
-def encode(data_folder: Path, *, chunk: bool = False, chunk_size: int = 1000000, parallel: bool = False):
-    """Encode the given fastq files to parquet format."""
-    if not data_folder.exists():
-        msg = f"Folder {data_folder} does not exist."
-        logging.error(msg)
-
-    fq_files = (
-        [data_folder] if data_folder.is_file() else list(data_folder.glob("*.fq")) + list(data_folder.glob("*.fastq"))
+def chop(
+    predicts: list[Path | str],
+    fq: Path | str,
+    smooth_window_size: int = 21,
+    min_interval_size: int = 13,
+    approved_interval_number: int = 20,
+    max_process_intervals: int = 4,
+    min_read_length_after_chop: int = 20,
+    output_chopped_seqs: bool = false,
+    chop_type: str = "all",
+    threads: int = 2,
+    output_prefix: str | None = None,
+    max_batch_size: int | None = None,
+):
+    predict_cli(
+        predicts,
+        fq,
+        smooth_window_size,
+        min_interval_size,
+        approved_interval_number,
+        max_process_intervals,
+        min_read_length_after_chop,
+        output_chopped_seqs,
+        chop_type,
+        threads,
+        output_prefix,
+        max_batch_size,
     )
-
-    for fq_file in fq_files:
-        logging.info(f"Processing {fq_file}")
-        if not chunk:
-            encode_fq_path_to_parquet(
-                fq_file,
-                default.KMER_SIZE,
-                bases=default.BASES,
-                qual_offset=default.QUAL_OFFSET,
-                vectorized_target=default.VECTORIZED_TARGET,
-            )
-        else:
-            encode_fq_path_to_parquet_chunk(
-                fq_file,
-                chunk_size=chunk_size,
-                parallel=parallel,
-                bases=default.BASES,
-                qual_offset=default.QUAL_OFFSET,
-                vectorized_target=default.VECTORIZED_TARGET,
-            )
-
-
-@app.command(
-    help="DeepChopper is All You Need: collect the given fastq",
-)
-def collect(data_folder: Path, output: Path):
-    """Collect multiple fastq files to one fastq file."""
-    if not data_folder.exists():
-        msg = f"Folder {data_folder} does not exist."
-        raise ValueError(msg)
-
-    fq_files = (
-        [data_folder]
-        if data_folder.is_file()
-        else list(data_folder.glob("*.fq"))
-        + list(data_folder.glob("*.fastq"))
-        + list(data_folder.glob("*.fq.gz"))
-        + list(data_folder.glob("*.fastq.gz"))
-    )
-    convert_multiple_fqs_to_one_fq(fq_files, output)
 
 
 if __name__ == "__main__":
