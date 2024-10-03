@@ -110,7 +110,7 @@ def load_tokenizer_from_hyena_model(model_name):
     # bfloat16 for better speed and reduced memory usage
     model_name = f"LongSafari/{model_name}-hf"
     return AutoTokenizer.from_pretrained(
-        model_name, max_length=max_length, truncation=True, padding=True, trust_remote_code=True
+        model_name, max_length=max_length, truncation=True, padding=True, trust_remote_code=True, force_download=False
     )
 
 

@@ -54,6 +54,7 @@ torch = [
     { version = "^2.1.0+cu118", source = "pytorch", markers = "sys_platform == 'linux'" },
     { version = "^2.1.0", source = "PyPI", markers = "sys_platform == 'darwin'" },
 ]
+
 lightning = "^2.1.2"
 torchmetrics = "^1.2.0"
 rich = "^13.7.0"
@@ -78,7 +79,6 @@ priority = "explicit"
 [[tool.poetry.source]]
 name = "PyPI"
 priority = "primary"
-
 
 [tool.poetry.group.dev.dependencies]
 pyarrow = "^15.0.0"

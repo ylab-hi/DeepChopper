@@ -1,31 +1,20 @@
 import logging
-import multiprocessing
-from functools import partial
 from pathlib import Path
 from typing import Annotated
 
 import lightning
 import torch
 import typer
-from datasets import load_dataset
 from rich import print
 from rich.logging import RichHandler
-from transformers import AutoTokenizer, Trainer, TrainingArguments
 
 import deepchopper
 
 from .deepchopper import (
-    convert_multiple_fqs_to_one_fq,
     default,
     encode_fq_path_to_parquet,
     encode_fq_path_to_parquet_chunk,
     predict_cli,
-)
-from .models.llm import (
-    DataCollatorForTokenClassificationWithQual,
-    TokenClassification,
-    compute_metrics,
-    tokenize_and_align_labels_and_quals,
 )
 from .utils import (
     highlight_target,
@@ -38,15 +27,13 @@ logging.basicConfig(
     handlers=[RichHandler()],
 )
 
-TMPOUTPUT = Path.cwd() / "deepchopper_predict"
-
 
 def random_show_seq(dataset, sample: int = 3):
     """Randomly selects 'sample' number of sequences from the given dataset and prints their IDs and targets.
 
     Parameters:
-    dataset : A list of dictionaries where each dictionary represents a sequence with keys 'id', 'seq', and 'target'.
-    sample (int): The number of sequences to randomly select from the dataset. Default is 3.
+        dataset : A list of dictionaries where each dictionary represents a sequence with keys 'id', 'seq', and 'target'.
+        sample (int): The number of sequences to randomly select from the dataset. Default is 3.
     """
     total = len(dataset)
     import secrets
@@ -57,115 +44,9 @@ def random_show_seq(dataset, sample: int = 3):
         highlight_target(dataset[highlight_id]["seq"], *dataset[highlight_id]["target"])
 
 
-def load_model_from_checkpoint(check_point: Path):
-    """Load the model from the given path."""
-    if isinstance(check_point, str):
-        check_point = Path(check_point)
-    resume_tokenizer = AutoTokenizer.from_pretrained(check_point, trust_remote_code=True)
-    resume_model = TokenClassification.from_pretrained(check_point)
-    return resume_tokenizer, resume_model
-
-
-def load_dataset_from_checkpont(check_point: Path, data_path: Path, resume_tokenizer, max_sample: int | None = None):
-    """Load the dataset and model from the given paths."""
-    if isinstance(check_point, str):
-        check_point = Path(check_point)
-
-    if isinstance(data_path, str):
-        data_path = Path(data_path)
-
-    if data_path.suffix in (".fq", ".fastq"):
-        msg = f"Please Encoded {data_path.with_suffix('.fq')} first using `deepchopper encode`"
-        raise ValueError(msg)
-
-    if data_path.suffix != ".parquet":
-        msg = f"Unsupported file format: {data_path.suffix}"
-        raise ValueError(msg)
-
-    if max_sample is None:
-        max_sample: str = "100%"
-
-    eval_dataset = load_dataset(
-        "parquet",
-        data_files={"predict": data_path.as_posix()},
-        num_proc=multiprocessing.cpu_count(),
-        split=f"predict[:{max_sample}]",
-    ).with_format("torch")
-
-    tokenized_eval_dataset = eval_dataset.map(
-        partial(
-            tokenize_and_align_labels_and_quals,
-            tokenizer=resume_tokenizer,
-            max_length=resume_tokenizer.max_len_single_sentence,
-        ),
-        num_proc=multiprocessing.cpu_count(),  # type: ignore
-    ).remove_columns(["id", "seq", "qual", "target"])
-
-    return eval_dataset, tokenized_eval_dataset
-
-
-def load_trainer(
-    resume_tokenizer,
-    resume_model,
-    batch_size: int = 24,
-    *,
-    show_metrics: bool = False,
-    use_cpu=False,
-):
-    """Load the trainer with the given model and tokenizer."""
-    data_collator = DataCollatorForTokenClassificationWithQual(resume_tokenizer)
-    training_args = TrainingArguments(
-        output_dir=TMPOUTPUT.as_posix(),
-        learning_rate=2e-5,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
-        num_train_epochs=1,
-        weight_decay=0.01,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        load_best_model_at_end=True,
-        push_to_hub=False,
-        torch_compile=False,
-        report_to="wandb",  # type: ignore
-        run_name="eval",
-        use_cpu=use_cpu,
-    )
-
-    compute_metrics_func = compute_metrics if show_metrics else None
-
-    # Initialize our Trainer
-    return Trainer(
-        model=resume_model,
-        args=training_args,
-        tokenizer=resume_tokenizer,
-        data_collator=data_collator,
-        compute_metrics=compute_metrics_func,
-    )
-
-
 app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
-
-
-@app.command(
-    help="DeepChopper is All You Need: collect the given fastq",
-)
-def collect(data_folder: Path, output: Path):
-    """Collect multiple fastq files to one fastq file."""
-    if not data_folder.exists():
-        msg = f"Folder {data_folder} does not exist."
-        raise ValueError(msg)
-
-    fq_files = (
-        [data_folder]
-        if data_folder.is_file()
-        else list(data_folder.glob("*.fq"))
-        + list(data_folder.glob("*.fastq"))
-        + list(data_folder.glob("*.fq.gz"))
-        + list(data_folder.glob("*.fastq.gz"))
-    )
-    convert_multiple_fqs_to_one_fq(fq_files, output)
 
 
 @app.command(
@@ -219,15 +100,16 @@ def predict(
     """Predict the given dataset using the given model and tokenizer."""
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
 
-    datamodule: LightningDataModule = deepchopper.data.fq_data_module.FqDataModule(
+    datamodule: LightningDataModule = deepchopper.data.fq_datamodule.FqDataModule(
+        train_data_path="test.parquet",
         tokenizer=tokenizer,
         predict_data_path=data_path,
         batch_size=batch_size,
         max_predict_samples=max_sample,
     )
-    model = deepchopper.models.basic_module.TokenClassificationLit(
-        optimizer=torch.optim.Adam(lr=0.00002, weight_decay=0.0),
-        scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(mode="min", factor=0.1, patience=10),
+
+    model = deepchopper.models.basic_module.TokenClassificationLit.load_from_checkpoint(
+        checkpoint_path=check_point,
         net=deepchopper.models.llm.hyena.TokenClassificationModule(
             number_of_classes=2,
             backbone_name="hyenadna-small-32k-seqlen",
@@ -243,6 +125,7 @@ def predict(
         ),
         criterion=deepchopper.models.basic_module.ContinuousIntervalLoss(lambda_penalty=0),
     )
+
     accelerator = "cpu" if torch.cuda.is_available() else "gpu"
 
     trainer = lightning.pytorch.trainer.Trainer(
@@ -251,11 +134,11 @@ def predict(
         devices=-1,
         deterministic=False,
     )
+    print(model)
 
-    import multiprocess.context as ctx
-
-    ctx._force_start_method("spawn")
-    trainer.predict(model=model, dataloaders=datamodule, ckpt_path=check_point, return_predictions=False)
+    # import multiprocess.context as ctx
+    # ctx._force_start_method("spawn")
+    # trainer.predict(model=model, dataloaders=datamodule, return_predictions=False)
 
 
 @app.command(
