@@ -91,9 +91,11 @@ def predict(
     data_path: Path,
     output_path: Path | None = None,
     batch_size: int = 12,
+    num_workers: int = 0,
     max_sample: int | None = None,
     *,
     show_sample: Annotated[bool, typer.Option(help="if show sample")] = False,
+    limit_predict_batches: int | None = None,
 ):
     """Predict the given dataset using the given model and tokenizer."""
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
@@ -108,19 +110,18 @@ def predict(
 
     model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 
-    accelerator = "cpu" if torch.cuda.is_available() else "gpu"
+    callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir="predictions", write_interval="batch")]
 
+    accelerator = "cpu" if torch.cuda.is_available() else "gpu"
     trainer = lightning.pytorch.trainer.Trainer(
         default_root_dir=".",
         accelerator=accelerator,
         devices=-1,
+        callbacks=callbacks,
         deterministic=False,
+        limit_predict_batches=limit_predict_batches,
     )
-    print(model)
 
-    import multiprocess.context as ctx
-
-    ctx._force_start_method("spawn")
     trainer.predict(model=model, dataloaders=datamodule, return_predictions=False)
 
 
@@ -141,6 +142,8 @@ def chop(
     output_prefix: str | None = None,
     max_batch_size: int | None = None,
 ):
+    print(predicts)
+    print(fq)
     predict_cli(
         predicts,
         fq,
@@ -155,6 +158,13 @@ def chop(
         output_prefix,
         max_batch_size,
     )
+
+
+@app.command(
+    help="DeepChopper is All You Need: ui!",
+)
+def ui():
+    deepchopper.ui.main()
 
 
 if __name__ == "__main__":

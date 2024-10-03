@@ -22,10 +22,6 @@ from deepchopper.utils import (
     summary_predict,
 )
 
-check_point = Path("/Users/ylk4626/ClionProjects/DeepChopper/tests/checkpoint/checkpoint-20007")
-tokenizer, model = load_model_from_checkpoint(check_point)
-trainer = load_trainer(tokenizer, model, show_metrics=False, use_cpu=True)
-
 
 def parse_fq_record(text: str):
     lines = text.strip().split("\n")
@@ -97,7 +93,3 @@ def main():
     )
 
     demo.launch()
-
-
-if __name__ == "__main__":
-    main()

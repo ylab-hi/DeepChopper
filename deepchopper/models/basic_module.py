@@ -1,11 +1,11 @@
 from typing import Any
 
 import torch
+from huggingface_hub import PyTorchModelHubMixin
 from lightning import LightningModule
 from torch import nn
 from torchmetrics import MaxMetric, MeanMetric
 from torchmetrics.classification import F1Score, Precision, Recall
-from huggingface_hub import PyTorchModelHubMixin
 
 
 class ContinuousIntervalLoss(nn.Module):
