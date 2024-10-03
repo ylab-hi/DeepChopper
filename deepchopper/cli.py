@@ -4,9 +4,9 @@ from functools import partial
 from pathlib import Path
 from typing import Annotated
 
-import typer
-import torch
 import lightning
+import torch
+import typer
 from datasets import load_dataset
 from rich import print
 from rich.logging import RichHandler
@@ -29,7 +29,6 @@ from .models.llm import (
 )
 from .utils import (
     highlight_target,
-    summary_predict,
 )
 
 FORMAT = "%(message)s"
@@ -218,9 +217,6 @@ def predict(
     save_predict: Annotated[bool, typer.Option(help="if save predict")] = False,
 ):
     """Predict the given dataset using the given model and tokenizer."""
-    # if show_sample:
-    #     random_show_seq(eval_dataset, sample=3)
-
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
 
     datamodule: LightningDataModule = deepchopper.data.fq_data_module.FqDataModule(
@@ -251,7 +247,7 @@ def predict(
 
     trainer = lightning.pytorch.trainer.Trainer(
         default_root_dir=".",
-        accelerator=accelerator, w w
+        accelerator=accelerator,
         devices=-1,
         deterministic=False,
     )
