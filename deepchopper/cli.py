@@ -87,44 +87,26 @@ def encode(data_folder: Path, *, chunk: bool = False, chunk_size: int = 1000000,
     help="DeepChopper is All You Need",
 )
 def predict(
-    check_point: Path,
+    # check_point: Path,
     data_path: Path,
     output_path: Path | None = None,
     batch_size: int = 12,
     max_sample: int | None = None,
     *,
-    show_metrics: Annotated[bool, typer.Option(help="if show metrics")] = False,
     show_sample: Annotated[bool, typer.Option(help="if show sample")] = False,
-    save_predict: Annotated[bool, typer.Option(help="if save predict")] = False,
 ):
     """Predict the given dataset using the given model and tokenizer."""
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
 
     datamodule: LightningDataModule = deepchopper.data.fq_datamodule.FqDataModule(
-        train_data_path="test.parquet",
+        train_data_path="dummy.parquet",
         tokenizer=tokenizer,
         predict_data_path=data_path,
         batch_size=batch_size,
         max_predict_samples=max_sample,
     )
 
-    model = deepchopper.models.basic_module.TokenClassificationLit.load_from_checkpoint(
-        checkpoint_path=check_point,
-        net=deepchopper.models.llm.hyena.TokenClassificationModule(
-            number_of_classes=2,
-            backbone_name="hyenadna-small-32k-seqlen",
-            freeze_backbone=False,
-            head=deepchopper.models.llm.TokenClassificationHead(
-                input_size=256,
-                lin1_size=1024,
-                lin2_size=1024,
-                num_class=2,
-                use_identity_layer_for_qual=True,
-                use_qual=True,
-            ),
-        ),
-        criterion=deepchopper.models.basic_module.ContinuousIntervalLoss(lambda_penalty=0),
-    )
+    model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 
     accelerator = "cpu" if torch.cuda.is_available() else "gpu"
 
@@ -136,9 +118,10 @@ def predict(
     )
     print(model)
 
-    # import multiprocess.context as ctx
-    # ctx._force_start_method("spawn")
-    # trainer.predict(model=model, dataloaders=datamodule, return_predictions=False)
+    import multiprocess.context as ctx
+
+    ctx._force_start_method("spawn")
+    trainer.predict(model=model, dataloaders=datamodule, return_predictions=False)
 
 
 @app.command(

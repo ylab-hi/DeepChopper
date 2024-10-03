@@ -5,6 +5,7 @@ from lightning import LightningModule
 from torch import nn
 from torchmetrics import MaxMetric, MeanMetric
 from torchmetrics.classification import F1Score, Precision, Recall
+from huggingface_hub import PyTorchModelHubMixin
 
 
 class ContinuousIntervalLoss(nn.Module):
@@ -30,7 +31,7 @@ class ContinuousIntervalLoss(nn.Module):
         return loss + penalty
 
 
-class TokenClassificationLit(LightningModule):
+class TokenClassificationLit(LightningModule, PyTorchModelHubMixin):
     """A PyTorch Lightning module for training a token classification model."""
 
     def __init__(
