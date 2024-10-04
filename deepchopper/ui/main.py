@@ -1,22 +1,12 @@
 import multiprocessing
 from functools import partial
-from pathlib import Path
 
 import gradio as gr
 from datasets import Dataset
 
-from deepchopper.deepchopper import (
-    default,
-    encode_qual,
-    remove_intervals_and_keep_left,
-    smooth_label_region,
-)
+from deepchopper.deepchopper import default, encode_qual, remove_intervals_and_keep_left, smooth_label_region
 from deepchopper.models.llm import (
     tokenize_and_align_labels_and_quals,
-)
-from deepchopper.predict import (
-    load_model_from_checkpoint,
-    load_trainer,
 )
 from deepchopper.utils import (
     summary_predict,

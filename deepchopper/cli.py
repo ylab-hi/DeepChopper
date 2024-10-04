@@ -14,7 +14,6 @@ from .deepchopper import (
     default,
     encode_fq_path_to_parquet,
     encode_fq_path_to_parquet_chunk,
-    predict_cli,
 )
 from .utils import (
     highlight_target,
@@ -110,7 +109,9 @@ def predict(
 
     model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 
-    callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir="predictions", write_interval="batch")]
+    output_path = output_path or "predictions"
+
+    callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir=output_path, write_interval="batch")]
 
     accelerator = "cpu" if torch.cuda.is_available() else "gpu"
     trainer = lightning.pytorch.trainer.Trainer(
@@ -142,29 +143,17 @@ def chop(
     output_prefix: str | None = None,
     max_batch_size: int | None = None,
 ):
-    print(predicts)
-    print(fq)
-    predict_cli(
-        predicts,
-        fq,
-        smooth_window_size,
-        min_interval_size,
-        approved_interval_number,
-        max_process_intervals,
-        min_read_length_after_chop,
-        output_chopped_seqs,
-        chop_type,
-        threads,
-        output_prefix,
-        max_batch_size,
-    )
+    from shutil import which
+
+    if which("deepchopper-chop") is None:
+        logging.error("deepchopper-chop is not installed. Please use `cargo install deepchopper-chop` to install it.")
 
 
-@app.command(
-    help="DeepChopper is All You Need: ui!",
-)
-def ui():
-    deepchopper.ui.main()
+# @app.command(
+#     help="DeepChopper is All You Need: ui!",
+# )
+# def ui():
+#     deepchopper.ui.main()
 
 
 if __name__ == "__main__":

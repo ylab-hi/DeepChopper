@@ -1,14 +1,16 @@
 use crate::{
     cli::{self, predict_cli},
-    default::{BASES, KMER_SIZE, MIN_CHOPED_SEQ_LEN, QUAL_OFFSET, VECTORIZED_TARGET},
+    default::{self, BASES, KMER_SIZE, MIN_CHOPED_SEQ_LEN, QUAL_OFFSET, VECTORIZED_TARGET},
     fq_encode::{self, Encoder},
     kmer::{self, vertorize_target},
     output::{self, write_json, write_parquet},
-    smooth, stat,
+    smooth::{self, load_predicts_from_batch_pts},
+    stat,
     types::{Element, Id2KmerTable, Kmer2IdTable},
     utils,
 };
 use anyhow::Result;
+use bstr::BStr;
 use bstr::BString;
 use needletail::Sequence;
 use numpy::{IntoPyArray, PyArray2, PyArray3};
@@ -704,6 +706,14 @@ fn parse_psl_by_qname(file_path: PathBuf) -> Result<HashMap<String, Vec<smooth::
     smooth::parse_psl_by_qname(file_path)
 }
 
+use rayon::ThreadPoolBuildError;
+
+fn create_pool(num_threads: usize) -> Result<rayon::ThreadPool, ThreadPoolBuildError> {
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(num_threads)
+        .build()
+}
+
 /// CLI func exported to Python
 #[pyfunction(name = "predict_cli")]
 #[pyo3(signature = (
@@ -750,7 +760,9 @@ fn py_predict_cli(
         chop_type,
         output_prefix,
     };
-    predict_cli(&options)
+
+    predict_cli(&options)?;
+    Ok(())
 }
 
 /// A Python module implemented in Rust.

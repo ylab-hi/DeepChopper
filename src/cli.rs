@@ -55,16 +55,11 @@ pub struct PredictOptions {
 }
 
 pub fn predict_cli(cli: &PredictOptions) -> Result<()> {
-    rayon::ThreadPoolBuilder::new()
-        .num_threads(cli.threads.unwrap())
-        .build_global()
-        .unwrap();
-
     log::info!("export {:?} chopped type ", cli.chop_type);
 
     let all_predicts = cli
         .predicts
-        .par_iter()
+        .par_iter() // NOTE: par_iter will hang in python
         .map(|path| {
             load_predicts_from_batch_pts(
                 path.to_path_buf(),
