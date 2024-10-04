@@ -1,16 +1,15 @@
 use crate::{
     cli::{self, predict_cli},
-    default::{self, BASES, KMER_SIZE, MIN_CHOPED_SEQ_LEN, QUAL_OFFSET, VECTORIZED_TARGET},
+    default::{BASES, KMER_SIZE, MIN_CHOPED_SEQ_LEN, QUAL_OFFSET, VECTORIZED_TARGET},
     fq_encode::{self, Encoder},
     kmer::{self, vertorize_target},
     output::{self, write_json, write_parquet},
-    smooth::{self, load_predicts_from_batch_pts},
+    smooth::{self},
     stat,
     types::{Element, Id2KmerTable, Kmer2IdTable},
     utils,
 };
 use anyhow::Result;
-use bstr::BStr;
 use bstr::BString;
 use needletail::Sequence;
 use numpy::{IntoPyArray, PyArray2, PyArray3};
@@ -704,14 +703,6 @@ fn majority_voting(labels: Vec<i8>, window_size: usize) -> Vec<i8> {
 #[pyfunction]
 fn parse_psl_by_qname(file_path: PathBuf) -> Result<HashMap<String, Vec<smooth::PslAlignment>>> {
     smooth::parse_psl_by_qname(file_path)
-}
-
-use rayon::ThreadPoolBuildError;
-
-fn create_pool(num_threads: usize) -> Result<rayon::ThreadPool, ThreadPoolBuildError> {
-    rayon::ThreadPoolBuilder::new()
-        .num_threads(num_threads)
-        .build()
 }
 
 /// CLI func exported to Python

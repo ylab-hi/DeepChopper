@@ -146,7 +146,7 @@ def chop(
     from shutil import which
 
     if which("deepchopper-chop") is None:
-        logging.error("deepchopper-chop is not installed. Please use `cargo install deepchopper-chop` to install it.")
+        print("deepchopper-chop is not installed. Please use `cargo install deepchopper-chop` to install it.")
 
 
 @app.command(
