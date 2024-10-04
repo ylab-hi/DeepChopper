@@ -115,11 +115,11 @@ def predict(
 
     accelerator = "cpu" if torch.cuda.is_available() else "gpu"
     trainer = lightning.pytorch.trainer.Trainer(
-        default_root_dir=".",
         accelerator=accelerator,
         devices=-1,
         callbacks=callbacks,
         deterministic=False,
+        logger=False,
         limit_predict_batches=limit_predict_batches,
     )
 
@@ -149,11 +149,11 @@ def chop(
         logging.error("deepchopper-chop is not installed. Please use `cargo install deepchopper-chop` to install it.")
 
 
-# @app.command(
-#     help="DeepChopper is All You Need: ui!",
-# )
-# def ui():
-#     deepchopper.ui.main()
+@app.command(
+    help="DeepChopper is All You Need: ui!",
+)
+def ui():
+    deepchopper.ui.main()
 
 
 if __name__ == "__main__":
