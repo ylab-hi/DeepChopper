@@ -3,6 +3,8 @@ use noodles::fastq;
 use rayon::prelude::*;
 use std::{fs::File, io::BufReader, ops::Range, path::Path};
 
+use crate::smooth::majority_voting;
+
 pub fn summary_predict_generic<D: PartialEq + Send + Sync + Copy>(
     predictions: &[Vec<D>],
     labels: &[Vec<D>],
@@ -395,67 +397,41 @@ pub fn get_label_region(labels: &[i8]) -> Vec<Range<usize>> {
 /// e.g. 00110011100 -> 0011111100
 pub fn smooth_label_region(
     labels: &[i8],
-    length_between_intervals_for_merge: usize,
-    min_interval_length_threshold: usize,
-    min_interval_length_for_discard: usize,
+    smooth_window_size: usize,
+    min_interval_size: usize,
+    approved_interval_size: usize,
 ) -> Vec<Range<usize>> {
-    let labels_region = get_label_region(labels);
-    let mut smoothed_regions = vec![];
+    let labels_region = get_label_region(&majority_voting(labels, smooth_window_size));
+    let results = labels_region
+        .par_iter()
+        .filter_map(|interval| {
+            if interval.end - interval.start >= min_interval_size {
+                return Some(interval.clone());
+            }
+            None
+        })
+        .collect::<Vec<_>>();
 
-    for region in labels_region {
-        if region.len() < min_interval_length_threshold {
-            continue;
-        }
-
-        if smoothed_regions.is_empty() {
-            smoothed_regions.push(region);
-            continue;
-        }
-
-        let last_region = smoothed_regions.last_mut().unwrap();
-        if region.start - last_region.end <= length_between_intervals_for_merge {
-            last_region.end = region.end;
-        } else {
-            smoothed_regions.push(region);
-        }
+    if results.len() > approved_interval_size {
+        return vec![];
     }
 
-    // remove regions that are too short
-    smoothed_regions.retain(|region| region.len() >= min_interval_length_for_discard);
-    smoothed_regions
+    results
 }
+
 pub fn smooth_label_region_u8(
     labels: &[u8],
-    length_between_intervals_for_merge: usize,
-    min_interval_length_threshold: usize,
-    min_interval_length_for_discard: usize,
+    smooth_window_size: usize,
+    min_interval_size: usize,
+    approved_interval_size: usize,
 ) -> Vec<Range<usize>> {
     let labels = labels.par_iter().map(|x| *x as i8).collect::<Vec<i8>>();
-    let labels_region = get_label_region(&labels);
-
-    let mut smoothed_regions = vec![];
-
-    for region in labels_region {
-        if region.len() < min_interval_length_threshold {
-            continue;
-        }
-
-        if smoothed_regions.is_empty() {
-            smoothed_regions.push(region);
-            continue;
-        }
-
-        let last_region = smoothed_regions.last_mut().unwrap();
-        if region.start - last_region.end <= length_between_intervals_for_merge {
-            last_region.end = region.end;
-        } else {
-            smoothed_regions.push(region);
-        }
-    }
-
-    // remove regions that are too short
-    smoothed_regions.retain(|region| region.len() >= min_interval_length_for_discard);
-    smoothed_regions
+    smooth_label_region(
+        &labels,
+        smooth_window_size,
+        min_interval_size,
+        approved_interval_size,
+    )
 }
 
 #[cfg(test)]
@@ -523,28 +499,5 @@ mod tests {
         let labels = [0, 1, 1, 0, 1, 1];
         let regions = get_label_region(&labels);
         assert_eq!(regions, vec![1..3, 4..6]);
-    }
-
-    #[test]
-    fn test_smooth_label_region() {
-        // Test case 1: no regions to merge
-        let labels1 = [0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0]; // 2,4 and 6,9
-        let merge_threshold1 = 2;
-        let distance_threshold1 = 2;
-        let expected_result1 = vec![2..9];
-        assert_eq!(
-            smooth_label_region(&labels1, merge_threshold1, distance_threshold1, 0),
-            expected_result1
-        );
-
-        // Test case 2: merge 1s regions that are close to each other
-        let labels2 = [0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0]; // 2,4 and 6,9
-        let merge_threshold2 = 1;
-        let distance_threshold2 = 2;
-        let expected_result2 = vec![2..4, 6..9];
-        assert_eq!(
-            smooth_label_region(&labels2, merge_threshold2, distance_threshold2, 0),
-            expected_result2
-        );
     }
 }

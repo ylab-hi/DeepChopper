@@ -147,6 +147,7 @@ def chop(
 
     if which("deepchopper-chop") is None:
         print("deepchopper-chop is not installed. Please use `cargo install deepchopper-chop` to install it.")
+        raise SystemExit
 
 
 @app.command(

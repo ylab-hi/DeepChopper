@@ -557,15 +557,15 @@ fn get_label_region(labels: Vec<i8>) -> Vec<(usize, usize)> {
 #[pyfunction]
 fn smooth_label_region(
     labels: Vec<i8>,
-    length_between_intervals_for_merge: usize,
-    min_interval_length_threshold: usize,
-    min_interval_length_for_discard: usize,
+    smooth_window_size: usize,
+    min_interval_size: usize,
+    approved_interval_number: usize,
 ) -> Vec<(usize, usize)> {
     utils::smooth_label_region(
         &labels,
-        length_between_intervals_for_merge,
-        min_interval_length_threshold,
-        min_interval_length_for_discard,
+        smooth_window_size,
+        min_interval_size,
+        approved_interval_number,
     )
     .par_iter()
     .map(|r| (r.start, r.end))
