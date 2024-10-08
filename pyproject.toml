@@ -69,7 +69,8 @@ tokenizers = "^0.15.2"
 torchinfo = "^1.8.0"
 evaluate = "^0.4.1"
 typer = "^0.9.0"
-gradio = "^4.40.0"
+gradio = "4.26.0"
+fastapi = "0.112.2"
 
 [[tool.poetry.source]]
 name = "pytorch"
