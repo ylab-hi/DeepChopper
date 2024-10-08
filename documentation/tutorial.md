@@ -22,7 +22,7 @@ First, you need to obtain your Nanopore direct-RNA sequencing data. This data is
 wget https://example.com/sample_nanopore_data.fast5
 ```
 
-Ensure you have sufficient storage space, as Nanopore data can be quite large.
+Ensure you have sufficient storage space, as Nanopore data can be quite
 
 ## 2. Basecall Using Dorado
 
@@ -39,7 +39,7 @@ dorado basecaller \
     --device cuda:all \
     --not_trim \
     path/to/your/fast5/files/ \
-    > output.fastq
+    > raw.fastq
 ```
 
 Replace `path/to/your/fast5/files/` with the directory containing your FAST5 files.

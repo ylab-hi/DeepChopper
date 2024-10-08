@@ -20,7 +20,6 @@ use std::str::FromStr;
 use std::{ops::Range, path::PathBuf};
 
 use ahash::HashMap;
-
 use log::{debug, error, info, warn};
 
 #[pyfunction]

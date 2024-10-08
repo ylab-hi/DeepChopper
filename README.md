@@ -14,7 +14,8 @@
 
 <!--toc:end-->
 
-DeepChopper leverages language model to accurately detect and chop artificial sequences which may cause chimeric reads, ensuring higher quality and more reliable sequencing results. By integrating seamlessly with existing workflows, DeepChopper provides a robust solution for researchers and bioinformatics working with NanoPore direct-RNA sequencing data.
+DeepChopper leverages language model to accurately detect and chop artificial sequences which may cause chimeric reads, ensuring higher quality and more reliable sequencing results.
+By integrating seamlessly with existing workflows, DeepChopper provides a robust solution for researchers and bioinformatics working with NanoPore direct-RNA sequencing data.
 
 ## Install
 
@@ -57,11 +58,13 @@ Note: If you encounter any issues, please check our GitHub repository for troubl
 
 ## Usage
 
-We provide a [complete guide](./documentation/tutorial.md) on how to use DeepChopper for nanopore direct-RNA sequencing data.
+We provide a [complete guide](./documentation/tutorial.md) on how to use DeepChopper for NanoPore direct-RNA sequencing data.
+Below is a brief overview of the command-line interface and library usage.
 
 ### Command-Line Interface
 
-DeepChopper provides a command-line interface (CLI) for easy access to its features. In total, there are three commands: `encode`, `predict`, and `chop`. DeepChopper can be used to encode, predict, and chop chimeric reads in direct-RNA sequencing data.
+DeepChopper provides a command-line interface (CLI) for easy access to its features. In total, there are three commands: `encode`, `predict`, and `chop`.
+DeepChopper can be used to encode, predict, and chop chimeric reads in direct-RNA sequencing data.
 
 Firstly, we need to encode the input data using the `encode` command, which will generate a `.parquet` file.
 
@@ -81,7 +84,8 @@ Finally, we can use the `chop` command to chop the chimeric reads in the input d
 deepchopper chop <predictions> raw.fq
 ```
 
-Besides, DeepChopper provides a web-based user interface for users to interact with the tool. However, the web-based application can only take one FASTQ record at a time.
+Besides, DeepChopper provides a web-based user interface for users to interact with the tool.
+However, the web-based application can only take one FASTQ record at a time.
 
 ```bash
 deepchopper web
