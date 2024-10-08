@@ -31,43 +31,26 @@ def parse_fq_record(text: str):
         }
 
 
-def load_dataset(text: str | None, file: str | None, tokenizer):
-    if text:
-        dataset = Dataset.from_generator(parse_fq_record, gen_kwargs={"text": text}).with_format("torch")
-        tokenized_dataset = dataset.map(
-            partial(
-                tokenize_and_align_labels_and_quals,
-                tokenizer=tokenizer,
-                max_length=tokenizer.max_len_single_sentence,
-            ),
-            num_proc=multiprocessing.cpu_count(),  # type: ignore
-        ).remove_columns(["id", "seq", "qual", "target"])
-        return dataset, tokenized_dataset
-
-    if file:
-        text = open(file).read()[:5]
-        dataset = Dataset.from_generator(parse_fq_record, gen_kwargs={"text": text}).with_format("torch")
-        tokenized_dataset = dataset.map(
-            partial(
-                tokenize_and_align_labels_and_quals,
-                tokenizer=tokenizer,
-                max_length=tokenizer.max_len_single_sentence,
-            ),
-            num_proc=multiprocessing.cpu_count(),  # type: ignore
-        ).remove_columns(["id", "seq", "qual", "target"])
-        return dataset, tokenized_dataset
-
-    gr.Warning("Both text and file are empty")
+def load_dataset(text: str, tokenizer):
+    dataset = Dataset.from_generator(parse_fq_record, gen_kwargs={"text": text}).with_format("torch")
+    tokenized_dataset = dataset.map(
+        partial(
+            tokenize_and_align_labels_and_quals,
+            tokenizer=tokenizer,
+            max_length=tokenizer.max_len_single_sentence,
+        ),
+        num_proc=multiprocessing.cpu_count(),  # type: ignore
+    ).remove_columns(["id", "seq", "qual", "target"])
+    return dataset, tokenized_dataset
 
 
 def predict(
     text: str | None = None,
-    file: str | None = None,
     smooth_window_size: int = 21,
     min_interval_size: int = 13,
     approved_interval_number: int = 20,
-    max_process_intervals: int = 4,
-    batch_size: int = 12,
+    max_process_intervals: int = 8,  # default is 4
+    batch_size: int = 1,
     num_workers: int = 1,
 ):
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
@@ -127,7 +110,25 @@ def predict(
     return smooth_interval_json, highted_text
 
 
-def main():
+def process_input(text: str | None, file: str | None):
+    if not text and not file:
+        gr.Warning("Both text and file are empty")
+
+    if file:
+        file_content = []
+        idx = 0
+        for line in open(file):
+            if idx >= 4:
+                break
+            file_content.append(line)
+            idx += 1
+        file_content = "".join(file_content)
+        return predict(text=file_content)
+
+    return predict(text=text)
+
+
+def create_gradio_app():
     example = (
         "@1065:1135|393d635c-64f0-41ed-8531-12174d8efb28+f6a60069-1fcf-4049-8e7c-37523b4e273f\n"
         "GCAGCTATGAATGCAAGGCCACAAGGTGGATGGAAGAGTTGTGGAACCAAAGAGCTGTCTTCCAGAGAAGATTTCGAGATAAGTCGCCCATCAGTGAACAAGATATTGTTGGTGGCATTTGATGAGAACGTTCCAAGATTATTGACAGATTAGTGAAAAGTAAGATTGAAATCATGACTGACCGTAAGTGGCAAGAAAGGGCTTTTGCCTTTGTAACCTTTGACGACCATGACTCCGTGGATAAGATTGTCATTCAGAATACCATACTGTGAATGGCCACATCTTTATTGTGAAGTTAGAAAAGCCCTGTCAAAGCAAGAGATGAATCAGTGCTTCTCCAGCCAAAGAGGTCGAAGTGGTTCTGGAAACTTTGGTGGTGGTCGTGGAGGTGGTTTCGGTGGGAATGACAACTCGGTCGTGGAGGAAACTTCAGTGGTCGTGGTGGCTTTGGTGGCAGCCGTGGTGGTGGTGGATATGGTGGCAGTGGGGATGGCTATAATGGATTTGGTAATGATGGAAGCAATTTGGAGGTGGTGGAAGCTACAATGATTTTGGGAATTACAACAATCAGTCTTCAAATTTTGGACCCCTAGGAGGAAATTTTGGTAGAAGCTCTGGCCCCATGGCGGTGGAGGCCAAATACTTTTGCAAACCACGAAACCAAGGTGGCTATGGCGGTCCAGCAGCAGCAGTAGCTATGGCAGTGGCAGAAGATTTTAATTAGGAAACAAAGCTTAGCAGGAGAGGAGAGCCAGAGAAGTGACAGGGAAGTACAGGTTACAACAGATTTGTGAACTCAGCCCAAGCACAGTGGTGGCAGGGCCTAGCTGCTACAAAGAAGACATGTTTTAGACAAATACTCATGTGTATGGGCAAAACTTGAGGACTGTATTTGTGACTAACTGTATAACAGGTTATTTTAGTTTCTGTTTGTGGAAAGTGTAAAGCATTCCAACAAAGGTTTTTAATGTAGATTTTTTTTTTTGCACCCCATGCTGTTGATTTGCTAAATGTAACAGTCTGATCGTGACGCTGAATAAATGTCTTTTTTAAAAAAAAAAAAAAGCTCCCTCCCATCCCCTGCTGCTAACTGATCCCATTATATCTAACCTGCCCCCCCATATCACCTGCTCCCGAGCTACCTAAGAACAGCTAAAAGAGCACACCCGCATGTAGCAAAATAGTGGGAAGATTATAGGTAGAGGCGACAAACCTACCGAGCCTGGTGATAGCTGGTTGTCCTAGATAGAATCTTAGTTCAACTTTAAATTTGCCCACAGAACCCTCTAAATCCCCTTGTAAATTTAACTGTTAGTCCAAAGAGGAACAGCTCTTTGGACACTAGGAAAAAACCTTGTAGAGAGTAAAAAATCAACACCCA\n"
@@ -135,16 +136,34 @@ def main():
         ".0==?SSSSSSSSSSSH2216<868;SSSSSSSSSQQSRSIIHEDDESSSSSSJIKMGEKISSJJICCBDQ?;;8:;,**(&$'+501)\"#$()+%&&0<5+*/('%'))))'''$##\"\"\"\"%&--$\"\"\"('%)1L3*'')'#\"#&+*$&\"\"#*(&'''+,,<;9<BHGF//.LKORQSK<###%*-89<FSSSSE=BAFHFDB???3313NN?>=ANOSJDCADHGMOQSSD=7>BRRSPIEEEOQSSQ4->LIC7EE045///03IIJQSSSNGE6('.5??@A@=,,EGRSPKJ<==<556GFLLQRANSSSSSSSSG...*%%%(***(%'3@LOOSSSSM...7BCMMSSSSSSSSSSSSSSSDFIPSSSGGGGPOQLIHIL4103HMSILLNOSSSSSSSSSS22CBCGSHHHHSSSSSSSSD??@<<<:DDDSSSSSSSSSSA@6688OSSSSSROJJKLSNNNMSSSSQPOOSOOQSSSSSRRHIHISSRSSSSSSSSSSSJFF=??@SSQRK:424<444FFG///1S@@@ASNNNNPN:4JMDDLPSSSSSSBA?B?@@+'&'BD**8EDEFQPIMLE$$&',79CSJJPSGA+***DN;3-('&(;>6(()/-,,)%')1FRNNJ-:=>GC;&;CHNFFDCEEKJLFA22/27A.....HSQLHL))8<=?JSSSFGSKIHDDCCEFDAA@CFJKLNL>:9/1>>?OSLK@+HPSA;>>>K;;;;SSSSOQLPPMORSSSSSQSSSSSSS=:9**?D889SSRFFEDKJJJEEDKSSSNNOSSS.---,&*++SSSSQRSSSSQPGED<<89<@GJ999:SSKBBBAJHK=SSSJJKNMGHKKHQA<<>OPKFEAACDHJKMORB/)'((6**)15DA99;JSQSSS2())+J))EGMQOMMKJF>?<<AA620..D..,/112SOIIJSQFNEEEOMF?066=>@4,3;B>87FSSSSSSSSSSSSSSS<<::5658@AHMMSSRECC448/=<<>SSCB:5546;<??KF==;;FFEDFHKKJG):C>=>BJHINJFDPPPPPPPPPPPPPP%'*%$%+-%'(-22&&%('''&&&#\"\"%&'+0,,0;:1&\"\"%'(+++8'**(\"$$#&$'**//.3497$\"3CFHLOSSSSR:887:;;FSSRPRSSS4433$#$%&$$-056>@:;>=@?AHEFEC;*EKMSSRSRRDB>=AFRSSSSBSOOPSMDAABHH976951-9DHPQO/---?@ELSSQSRJHKKBKKLSSLINSOSSQSRIMSSSSSS>?MKIINSSGSSSSSSSQQMK544MJKKNKHGGLFFGBDB?EHIKGD?@DHPPIIF555)&(+,ADSSSSRQSSSQSS=9/0JJMSQSOSSO/97=B@=:>"
     )
 
-    demo = gr.Interface(
-        fn=predict,
-        inputs=[
-            gr.Textbox(label="Input Text"),
-            gr.File(label="Input File"),
-        ],
-        outputs=[gr.JSON(label="JSON Output"), gr.HighlightedText(label="Highlighted Text")],
-        examples=[[example]],  # Add an example if you have one
-    )
-    demo.launch()
+    with gr.Blocks(theme=gr.themes.Soft()) as demo:
+        gr.Markdown("# DeepChopper: DNA Sequence Analysis")
+
+        with gr.Row():
+            with gr.Column(scale=1):
+                text_input = gr.Textbox(
+                    label="Input DNA Sequence", placeholder="Paste your DNA sequence here...", lines=10
+                )
+                file_input = gr.File(label="Or upload a FASTQ file")
+                submit_btn = gr.Button("Analyze", variant="primary")
+
+            with gr.Column(scale=1):
+                json_output = gr.JSON(label="Detected Intervals")
+                highlighted_text = gr.HighlightedText(label="Highlighted Sequence")
+
+        submit_btn.click(fn=process_input, inputs=[text_input, file_input], outputs=[json_output, highlighted_text])
+
+        gr.Examples(
+            examples=[[example]],
+            inputs=[text_input],
+        )
+
+    return demo
+
+
+def main():
+    app = create_gradio_app()
+    app.launch()
 
 
 if __name__ == "__main__":
