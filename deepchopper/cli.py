@@ -153,7 +153,7 @@ def chop(
 @app.command(
     help="DeepChopper is All You Need: ui!",
 )
-def ui():
+def web():
     deepchopper.ui.main()
 
 
