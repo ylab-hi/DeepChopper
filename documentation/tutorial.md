@@ -52,10 +52,16 @@ This step prepares the data for the prediction model.
 
 ```bash
 # Encode the FASTQ file
-deepchopper encode output.fastq -o encoded_data.parquet
+deepchopper encode raw.fastq
 ```
 
-This command will generate a Parquet file (`encoded_data.parquet`) containing the encoded sequences.
+If you have a large dataset, you can use `--chunk` to encode dataset by chunk, which avoid memory issues:
+
+```bash
+deepchopper encode raw.fastq --chunk --chunk-size  100000
+```
+
+This command will generate a Parquet file (`encoded_data.parquet`) or multiple Parquets files (if encoding by chunk) containing the encoded sequences.
 
 ## 4. DeepChopper Predict
 
@@ -63,7 +69,11 @@ With our encoded data, we can now use DeepChopper to predict chimeric reads.
 
 ```bash
 # Predict chimeric reads
-deepchopper predict encoded_data.parquet -o predictions.csv
+deepchopper predict raw.parquet --ouput-path predictions
+
+# if encoded by chunk 
+# deepchopper predict raw_chunk1.parquet --ouput-path predictions_chunk1 
+# deepchopper predict raw_chunk2.parquet --ouput-path predictions_chunk2 
 ```
 
 This step will analyze the encoded data and produce a CSV file (`predictions.csv`) containing predictions for each read, indicating whether it's likely to be chimeric or not.
@@ -74,14 +84,18 @@ Finally, we'll use DeepChopper to chop the identified chimeric reads, removing a
 
 ```bash
 # Chop chimeric reads
-deepchopper chop output.fastq predictions.csv -o cleaned_output.fastq
+deepchopper chop predictions/0 raw.fastq
+
+# if encoded by chunk
+# deepchopper chop predictions_chunk1/0 prediction_chunk2/0 raw.fastq
 ```
 
-This command takes the original FASTQ file (`output.fastq`) and the predictions (`predictions.csv`), and produces a new FASTQ file (`cleaned_output.fastq`) with the chimeric reads chopped.
+This command takes the original FASTQ file (`raw.fastq`) and the predictions (`predictions`), and produces a new FASTQ file (with suffix `.chop.fq.bgz`) with the chimeric reads chopped.
 
 ## Conclusion
 
-You've now successfully processed your Nanopore direct-RNA sequencing data using DeepChopper! The `cleaned_output.fastq` file contains your sequencing data with chimeric artificial reads identified and removed, providing you with higher quality data for your downstream analyses.
+You've now successfully processed your Nanopore direct-RNA sequencing data using DeepChopper!
+The file with suffix `.chop.fq.bgz` contains your sequencing data with chimeric artificial reads identified and removed, providing you with higher quality data for your downstream analyses.
 
 Remember to adjust file paths and names according to your specific setup and data.
 For more advanced usage and options, refer to the DeepChopper documentation or use the `--help` flag with each command.

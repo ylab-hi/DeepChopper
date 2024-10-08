@@ -72,13 +72,13 @@ deepchopper endcode <input.fq>
 Next, we can use the `predict` command to predict chimeric reads in the encoded data.
 
 ```bash
-deepchopper predict <input.parquet>
+deepchopper predict <input.parquet> --ouput-path predictions
 ```
 
 Finally, we can use the `chop` command to chop the chimeric reads in the input data.
 
 ```bash
-deepchopper chop <predictions>
+deepchopper chop <predictions> raw.fq
 ```
 
 Besides, DeepChopper provides a web-based user interface for users to interact with the tool. However, the web-based application can only take one FASTQ record at a time.
