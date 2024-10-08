@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import lightning
 import torch
@@ -18,6 +18,9 @@ from .deepchopper import (
 from .utils import (
     highlight_target,
 )
+
+if TYPE_CHECKING:
+    from lightning.pytorch import LightningDataModule
 
 FORMAT = "%(message)s"
 logging.basicConfig(
@@ -93,7 +96,6 @@ def predict(
     num_workers: int = 0,
     max_sample: int | None = None,
     *,
-    show_sample: Annotated[bool, typer.Option(help="if show sample")] = False,
     limit_predict_batches: int | None = None,
 ):
     """Predict the given dataset using the given model and tokenizer."""
@@ -104,12 +106,13 @@ def predict(
         tokenizer=tokenizer,
         predict_data_path=data_path,
         batch_size=batch_size,
+        num_workers=num_workers,
         max_predict_samples=max_sample,
     )
 
     model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 
-    output_path = output_path or "predictions"
+    output_path = Path(output_path or "predictions")
 
     callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir=output_path, write_interval="batch")]
 
@@ -154,6 +157,7 @@ def chop(
     help="DeepChopper is All You Need: ui!",
 )
 def web():
+    """Run the web interface."""
     deepchopper.ui.main()
 
 

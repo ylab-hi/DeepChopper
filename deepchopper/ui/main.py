@@ -1,5 +1,6 @@
 import multiprocessing
 from functools import partial
+from pathlib import Path
 
 import gradio as gr
 import lightning
@@ -18,11 +19,12 @@ from deepchopper.utils import (
 
 
 def parse_fq_record(text: str):
+    """Parse a single FASTQ record into a dictionary."""
     lines = text.strip().split("\n")
     for i in range(0, len(lines), 4):
         content = lines[i : i + 4]
         record_id, seq, _, qual = content
-        assert len(seq) == len(qual)
+        assert len(seq) == len(qual)  # noqa: S101
 
         yield {
             "id": record_id,
@@ -33,6 +35,7 @@ def parse_fq_record(text: str):
 
 
 def load_dataset(text: str, tokenizer):
+    """Load dataset from text."""
     dataset = Dataset.from_generator(parse_fq_record, gen_kwargs={"text": text}).with_format("torch")
     tokenized_dataset = dataset.map(
         partial(
@@ -46,7 +49,7 @@ def load_dataset(text: str, tokenizer):
 
 
 def predict(
-    text: str | None = None,
+    text: str,
     smooth_window_size: int = 21,
     min_interval_size: int = 13,
     approved_interval_number: int = 20,
@@ -70,7 +73,7 @@ def predict(
 
     predicts = trainer.predict(model=model, dataloaders=dataloader, return_predictions=True)
 
-    assert len(predicts) == 1
+    assert len(predicts) == 1  # noqa: S101
 
     smooth_interval_json = []
     highlighted_text = []
@@ -102,17 +105,18 @@ def predict(
 
 
 def process_input(text: str | None, file: str | None):
+    """Process the input and return the prediction."""
     if not text and not file:
         gr.Warning("Both text and file are empty")
 
     if file:
+        MAX_LINES = 4
         file_content = []
-        idx = 0
-        for line in open(file):
-            if idx >= 4:
-                break
-            file_content.append(line)
-            idx += 1
+        with Path(file).open() as f:
+            for idx, line in enumerate(f):
+                if idx >= MAX_LINES:
+                    break
+                file_content.append(line)
         file_content = "".join(file_content)
         return predict(text=file_content)
 
@@ -120,6 +124,7 @@ def process_input(text: str | None, file: str | None):
 
 
 def create_gradio_app():
+    """Create a Gradio app for DeepChopper."""
     example = (
         "@1065:1135|393d635c-64f0-41ed-8531-12174d8efb28+f6a60069-1fcf-4049-8e7c-37523b4e273f\n"
         "GCAGCTATGAATGCAAGGCCACAAGGTGGATGGAAGAGTTGTGGAACCAAAGAGCTGTCTTCCAGAGAAGATTTCGAGATAAGTCGCCCATCAGTGAACAAGATATTGTTGGTGGCATTTGATGAGAACGTTCCAAGATTATTGACAGATTAGTGAAAAGTAAGATTGAAATCATGACTGACCGTAAGTGGCAAGAAAGGGCTTTTGCCTTTGTAACCTTTGACGACCATGACTCCGTGGATAAGATTGTCATTCAGAATACCATACTGTGAATGGCCACATCTTTATTGTGAAGTTAGAAAAGCCCTGTCAAAGCAAGAGATGAATCAGTGCTTCTCCAGCCAAAGAGGTCGAAGTGGTTCTGGAAACTTTGGTGGTGGTCGTGGAGGTGGTTTCGGTGGGAATGACAACTCGGTCGTGGAGGAAACTTCAGTGGTCGTGGTGGCTTTGGTGGCAGCCGTGGTGGTGGTGGATATGGTGGCAGTGGGGATGGCTATAATGGATTTGGTAATGATGGAAGCAATTTGGAGGTGGTGGAAGCTACAATGATTTTGGGAATTACAACAATCAGTCTTCAAATTTTGGACCCCTAGGAGGAAATTTTGGTAGAAGCTCTGGCCCCATGGCGGTGGAGGCCAAATACTTTTGCAAACCACGAAACCAAGGTGGCTATGGCGGTCCAGCAGCAGCAGTAGCTATGGCAGTGGCAGAAGATTTTAATTAGGAAACAAAGCTTAGCAGGAGAGGAGAGCCAGAGAAGTGACAGGGAAGTACAGGTTACAACAGATTTGTGAACTCAGCCCAAGCACAGTGGTGGCAGGGCCTAGCTGCTACAAAGAAGACATGTTTTAGACAAATACTCATGTGTATGGGCAAAACTTGAGGACTGTATTTGTGACTAACTGTATAACAGGTTATTTTAGTTTCTGTTTGTGGAAAGTGTAAAGCATTCCAACAAAGGTTTTTAATGTAGATTTTTTTTTTTGCACCCCATGCTGTTGATTTGCTAAATGTAACAGTCTGATCGTGACGCTGAATAAATGTCTTTTTTAAAAAAAAAAAAAAGCTCCCTCCCATCCCCTGCTGCTAACTGATCCCATTATATCTAACCTGCCCCCCCATATCACCTGCTCCCGAGCTACCTAAGAACAGCTAAAAGAGCACACCCGCATGTAGCAAAATAGTGGGAAGATTATAGGTAGAGGCGACAAACCTACCGAGCCTGGTGATAGCTGGTTGTCCTAGATAGAATCTTAGTTCAACTTTAAATTTGCCCACAGAACCCTCTAAATCCCCTTGTAAATTTAACTGTTAGTCCAAAGAGGAACAGCTCTTTGGACACTAGGAAAAAACCTTGTAGAGAGTAAAAAATCAACACCCA\n"
@@ -153,6 +158,7 @@ def create_gradio_app():
 
 
 def main():
+    """Launch the Gradio app."""
     app = create_gradio_app()
     app.launch()
 
