@@ -10,10 +10,6 @@ from datasets import load_dataset
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
-from deepchopper.deepchopper import (
-    default,
-    encode_fq_path_to_parquet,
-)
 from deepchopper.models.llm import (
     DataCollatorForTokenClassificationWithQual,
     tokenize_and_align_labels_and_quals,

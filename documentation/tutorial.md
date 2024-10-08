@@ -5,13 +5,13 @@ This tutorial will guide you through the process of using DeepChopper to identif
 ## Table of Contents
 
 - [Tutorial: Using DeepChopper for Nanopore Direct-RNA Sequencing Data Analysis](#tutorial-using-deepchopper-for-nanopore-direct-rna-sequencing-data-analysis)
-	- [Table of Contents](#table-of-contents)
-	- [1. Get the Data](#1-get-the-data)
-	- [2. Basecall Using Dorado](#2-basecall-using-dorado)
-	- [3. DeepChopper Encode](#3-deepchopper-encode)
-	- [4. DeepChopper Predict](#4-deepchopper-predict)
-	- [5. DeepChopper Chop](#5-deepchopper-chop)
-	- [Conclusion](#conclusion)
+  - [Table of Contents](#table-of-contents)
+  - [1. Get the Data](#1-get-the-data)
+  - [2. Basecall Using Dorado](#2-basecall-using-dorado)
+  - [3. DeepChopper Encode](#3-deepchopper-encode)
+  - [4. DeepChopper Predict](#4-deepchopper-predict)
+  - [5. DeepChopper Chop](#5-deepchopper-chop)
+  - [Conclusion](#conclusion)
 
 ## 1. Get the Data
 
@@ -26,7 +26,7 @@ Ensure you have sufficient storage space, as Nanopore data can be quite large.
 
 ## 2. Basecall Using Dorado
 
-Next, we'll use Dorado, Oxford Nanopore's high-performance basecaller, to convert the raw signal data into nucleotide sequences. 
+Next, we'll use Dorado, Oxford Nanopore's high-performance basecaller, to convert the raw signal data into nucleotide sequences.
 It's important to run Dorado without the trimming option to preserve potential chimeric sequences for DeepChopper to analyze.
 
 ```bash
@@ -42,12 +42,12 @@ dorado basecaller \
     > output.fastq
 ```
 
-Replace `path/to/your/fast5/files/` with the directory containing your FAST5 files. 
+Replace `path/to/your/fast5/files/` with the directory containing your FAST5 files.
 The output will be a FASTQ file containing the basecalled sequences.
 
 ## 3. DeepChopper Encode
 
-Now that we have our basecalled sequences, we'll use DeepChopper to encode the data. 
+Now that we have our basecalled sequences, we'll use DeepChopper to encode the data.
 This step prepares the data for the prediction model.
 
 ```bash
