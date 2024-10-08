@@ -57,7 +57,7 @@ Note: If you encounter any issues, please check our GitHub repository for troubl
 
 ## Usage
 
-We provide a [complete guide](./documentation/tutorial) on how to use DeepChopper for nanopore direct-RNA sequencing data.
+We provide a [complete guide](./documentation/tutorial.md) on how to use DeepChopper for nanopore direct-RNA sequencing data.
 
 ### Command-Line Interface
 
