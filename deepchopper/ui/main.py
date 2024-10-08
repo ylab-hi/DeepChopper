@@ -5,6 +5,7 @@ import gradio as gr
 import lightning
 import torch
 from datasets import Dataset
+from torch.utils.data import DataLoader
 
 import deepchopper
 from deepchopper.deepchopper import default, encode_qual, remove_intervals_and_keep_left, smooth_label_region
@@ -54,13 +55,9 @@ def predict(
     num_workers: int = 1,
 ):
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
-
-    dataset, tokenized_dataset = load_dataset(text, file, tokenizer)
-
-    from torch.utils.data import DataLoader
+    dataset, tokenized_dataset = load_dataset(text, tokenizer)
 
     dataloader = DataLoader(tokenized_dataset, batch_size=batch_size, num_workers=num_workers)
-
     model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 
     accelerator = "cpu" if torch.cuda.is_available() else "gpu"
@@ -75,10 +72,10 @@ def predict(
 
     assert len(predicts) == 1
 
-    for idx, preds in enumerate(predicts):
-        highted_text = []
-        total_intervals = []
+    smooth_interval_json = []
+    highlighted_text = []
 
+    for idx, preds in enumerate(predicts):
         true_prediction, _true_label = summary_predict(predictions=preds[0], labels=preds[1])
 
         _id = dataset[idx]["id"]
@@ -92,22 +89,16 @@ def predict(
             continue
 
         # zip two consecutive elements
-        _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(seq, smooth_predict_targets)
+        _selected_seqs, selected_intervals = remove_intervals_and_keep_left(seq, smooth_predict_targets)
+        total_intervals = sorted(selected_intervals + smooth_predict_targets)
 
-        total_intervals.extend(_selected_intervals)
-        total_intervals.extend(smooth_predict_targets)
+        smooth_interval_json.extend({"start": i[0], "end": i[1]} for i in smooth_predict_targets)
 
-        smooth_interval_json = [{"start": i[0], "end": i[1]} for i in smooth_predict_targets]
-
-        if total_intervals:
-            total_intervals.sort()
-            for interval in total_intervals:
-                if interval in smooth_predict_targets:
-                    highted_text.append((seq[interval[0] : interval[1]], "ada"))
-                else:
-                    highted_text.append((seq[interval[0] : interval[1]], None))
-
-    return smooth_interval_json, highted_text
+        highlighted_text.extend(
+            (seq[interval[0] : interval[1]], "ada" if interval in smooth_predict_targets else None)
+            for interval in total_intervals
+        )
+    return smooth_interval_json, highlighted_text
 
 
 def process_input(text: str | None, file: str | None):
@@ -148,7 +139,7 @@ def create_gradio_app():
                 submit_btn = gr.Button("Analyze", variant="primary")
 
             with gr.Column(scale=1):
-                json_output = gr.JSON(label="Detected Intervals")
+                json_output = gr.JSON(label="Detected Artificial Regions")
                 highlighted_text = gr.HighlightedText(label="Highlighted Sequence")
 
         submit_btn.click(fn=process_input, inputs=[text_input, file_input], outputs=[json_output, highlighted_text])
