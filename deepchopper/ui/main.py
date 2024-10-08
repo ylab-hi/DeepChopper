@@ -21,6 +21,8 @@ def parse_fq_record(text: str):
     for i in range(0, len(lines), 4):
         content = lines[i : i + 4]
         record_id, seq, _, qual = content
+        assert len(seq) == len(qual)
+
         yield {
             "id": record_id,
             "seq": seq,
@@ -29,22 +31,38 @@ def parse_fq_record(text: str):
         }
 
 
-def load_dataset(text: str, tokenizer):
-    dataset = Dataset.from_generator(parse_fq_record, gen_kwargs={"text": text}).with_format("torch")
-    tokenized_dataset = dataset.map(
-        partial(
-            tokenize_and_align_labels_and_quals,
-            tokenizer=tokenizer,
-            max_length=tokenizer.max_len_single_sentence,
-        ),
-        num_proc=multiprocessing.cpu_count(),  # type: ignore
-    ).remove_columns(["id", "seq", "qual", "target"])
+def load_dataset(text: str | None, file: str | None, tokenizer):
+    if text:
+        dataset = Dataset.from_generator(parse_fq_record, gen_kwargs={"text": text}).with_format("torch")
+        tokenized_dataset = dataset.map(
+            partial(
+                tokenize_and_align_labels_and_quals,
+                tokenizer=tokenizer,
+                max_length=tokenizer.max_len_single_sentence,
+            ),
+            num_proc=multiprocessing.cpu_count(),  # type: ignore
+        ).remove_columns(["id", "seq", "qual", "target"])
+        return dataset, tokenized_dataset
 
-    return dataset, tokenized_dataset
+    if file:
+        text = open(file).read()[:5]
+        dataset = Dataset.from_generator(parse_fq_record, gen_kwargs={"text": text}).with_format("torch")
+        tokenized_dataset = dataset.map(
+            partial(
+                tokenize_and_align_labels_and_quals,
+                tokenizer=tokenizer,
+                max_length=tokenizer.max_len_single_sentence,
+            ),
+            num_proc=multiprocessing.cpu_count(),  # type: ignore
+        ).remove_columns(["id", "seq", "qual", "target"])
+        return dataset, tokenized_dataset
+
+    gr.Warning("Both text and file are empty")
 
 
 def predict(
-    text: str,
+    text: str | None = None,
+    file: str | None = None,
     smooth_window_size: int = 21,
     min_interval_size: int = 13,
     approved_interval_number: int = 20,
@@ -52,9 +70,9 @@ def predict(
     batch_size: int = 12,
     num_workers: int = 1,
 ):
-    print(text)
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
-    dataset, tokenized_dataset = load_dataset(text, tokenizer)
+
+    dataset, tokenized_dataset = load_dataset(text, file, tokenizer)
 
     from torch.utils.data import DataLoader
 
@@ -96,6 +114,8 @@ def predict(
         total_intervals.extend(_selected_intervals)
         total_intervals.extend(smooth_predict_targets)
 
+        smooth_interval_json = [{"start": i[0], "end": i[1]} for i in smooth_predict_targets]
+
         if total_intervals:
             total_intervals.sort()
             for interval in total_intervals:
@@ -104,16 +124,28 @@ def predict(
                 else:
                     highted_text.append((seq[interval[0] : interval[1]], None))
 
-    return highted_text
+    return smooth_interval_json, highted_text
 
 
 def main():
+    example = (
+        "@1065:1135|393d635c-64f0-41ed-8531-12174d8efb28+f6a60069-1fcf-4049-8e7c-37523b4e273f\n"
+        "GCAGCTATGAATGCAAGGCCACAAGGTGGATGGAAGAGTTGTGGAACCAAAGAGCTGTCTTCCAGAGAAGATTTCGAGATAAGTCGCCCATCAGTGAACAAGATATTGTTGGTGGCATTTGATGAGAACGTTCCAAGATTATTGACAGATTAGTGAAAAGTAAGATTGAAATCATGACTGACCGTAAGTGGCAAGAAAGGGCTTTTGCCTTTGTAACCTTTGACGACCATGACTCCGTGGATAAGATTGTCATTCAGAATACCATACTGTGAATGGCCACATCTTTATTGTGAAGTTAGAAAAGCCCTGTCAAAGCAAGAGATGAATCAGTGCTTCTCCAGCCAAAGAGGTCGAAGTGGTTCTGGAAACTTTGGTGGTGGTCGTGGAGGTGGTTTCGGTGGGAATGACAACTCGGTCGTGGAGGAAACTTCAGTGGTCGTGGTGGCTTTGGTGGCAGCCGTGGTGGTGGTGGATATGGTGGCAGTGGGGATGGCTATAATGGATTTGGTAATGATGGAAGCAATTTGGAGGTGGTGGAAGCTACAATGATTTTGGGAATTACAACAATCAGTCTTCAAATTTTGGACCCCTAGGAGGAAATTTTGGTAGAAGCTCTGGCCCCATGGCGGTGGAGGCCAAATACTTTTGCAAACCACGAAACCAAGGTGGCTATGGCGGTCCAGCAGCAGCAGTAGCTATGGCAGTGGCAGAAGATTTTAATTAGGAAACAAAGCTTAGCAGGAGAGGAGAGCCAGAGAAGTGACAGGGAAGTACAGGTTACAACAGATTTGTGAACTCAGCCCAAGCACAGTGGTGGCAGGGCCTAGCTGCTACAAAGAAGACATGTTTTAGACAAATACTCATGTGTATGGGCAAAACTTGAGGACTGTATTTGTGACTAACTGTATAACAGGTTATTTTAGTTTCTGTTTGTGGAAAGTGTAAAGCATTCCAACAAAGGTTTTTAATGTAGATTTTTTTTTTTGCACCCCATGCTGTTGATTTGCTAAATGTAACAGTCTGATCGTGACGCTGAATAAATGTCTTTTTTAAAAAAAAAAAAAAGCTCCCTCCCATCCCCTGCTGCTAACTGATCCCATTATATCTAACCTGCCCCCCCATATCACCTGCTCCCGAGCTACCTAAGAACAGCTAAAAGAGCACACCCGCATGTAGCAAAATAGTGGGAAGATTATAGGTAGAGGCGACAAACCTACCGAGCCTGGTGATAGCTGGTTGTCCTAGATAGAATCTTAGTTCAACTTTAAATTTGCCCACAGAACCCTCTAAATCCCCTTGTAAATTTAACTGTTAGTCCAAAGAGGAACAGCTCTTTGGACACTAGGAAAAAACCTTGTAGAGAGTAAAAAATCAACACCCA\n"
+        "+\n"
+        ".0==?SSSSSSSSSSSH2216<868;SSSSSSSSSQQSRSIIHEDDESSSSSSJIKMGEKISSJJICCBDQ?;;8:;,**(&$'+501)\"#$()+%&&0<5+*/('%'))))'''$##\"\"\"\"%&--$\"\"\"('%)1L3*'')'#\"#&+*$&\"\"#*(&'''+,,<;9<BHGF//.LKORQSK<###%*-89<FSSSSE=BAFHFDB???3313NN?>=ANOSJDCADHGMOQSSD=7>BRRSPIEEEOQSSQ4->LIC7EE045///03IIJQSSSNGE6('.5??@A@=,,EGRSPKJ<==<556GFLLQRANSSSSSSSSG...*%%%(***(%'3@LOOSSSSM...7BCMMSSSSSSSSSSSSSSSDFIPSSSGGGGPOQLIHIL4103HMSILLNOSSSSSSSSSS22CBCGSHHHHSSSSSSSSD??@<<<:DDDSSSSSSSSSSA@6688OSSSSSROJJKLSNNNMSSSSQPOOSOOQSSSSSRRHIHISSRSSSSSSSSSSSJFF=??@SSQRK:424<444FFG///1S@@@ASNNNNPN:4JMDDLPSSSSSSBA?B?@@+'&'BD**8EDEFQPIMLE$$&',79CSJJPSGA+***DN;3-('&(;>6(()/-,,)%')1FRNNJ-:=>GC;&;CHNFFDCEEKJLFA22/27A.....HSQLHL))8<=?JSSSFGSKIHDDCCEFDAA@CFJKLNL>:9/1>>?OSLK@+HPSA;>>>K;;;;SSSSOQLPPMORSSSSSQSSSSSSS=:9**?D889SSRFFEDKJJJEEDKSSSNNOSSS.---,&*++SSSSQRSSSSQPGED<<89<@GJ999:SSKBBBAJHK=SSSJJKNMGHKKHQA<<>OPKFEAACDHJKMORB/)'((6**)15DA99;JSQSSS2())+J))EGMQOMMKJF>?<<AA620..D..,/112SOIIJSQFNEEEOMF?066=>@4,3;B>87FSSSSSSSSSSSSSSS<<::5658@AHMMSSRECC448/=<<>SSCB:5546;<??KF==;;FFEDFHKKJG):C>=>BJHINJFDPPPPPPPPPPPPPP%'*%$%+-%'(-22&&%('''&&&#\"\"%&'+0,,0;:1&\"\"%'(+++8'**(\"$$#&$'**//.3497$\"3CFHLOSSSSR:887:;;FSSRPRSSS4433$#$%&$$-056>@:;>=@?AHEFEC;*EKMSSRSRRDB>=AFRSSSSBSOOPSMDAABHH976951-9DHPQO/---?@ELSSQSRJHKKBKKLSSLINSOSSQSRIMSSSSSS>?MKIINSSGSSSSSSSQQMK544MJKKNKHGGLFFGBDB?EHIKGD?@DHPPIIF555)&(+,ADSSSSRQSSSQSS=9/0JJMSQSOSSO/97=B@=:>"
+    )
+
     demo = gr.Interface(
         fn=predict,
         inputs=[
             gr.Textbox(label="Input Text"),
+            gr.File(label="Input File"),
         ],
         outputs=[gr.JSON(label="JSON Output"), gr.HighlightedText(label="Highlighted Text")],
-        examples=[["example text"]],  # Add an example if you have one
+        examples=[[example]],  # Add an example if you have one
     )
-    demo.launch(debug=True)
+    demo.launch()
+
+
+if __name__ == "__main__":
+    main()
