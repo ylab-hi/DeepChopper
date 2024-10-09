@@ -78,6 +78,12 @@ Next, we can use the `predict` command to predict chimeric reads in the encoded 
 deepchopper predict <input.parquet> --ouput-path predictions
 ```
 
+If you have GPUs, you can use the `--gpus` flag to specify the GPU device.
+
+```bash
+deepchopper predict <input.parquet> --ouput-path predictions --gpus 2
+```
+
 Finally, we can use the `chop` command to chop the chimeric reads in the input data.
 
 ```bash
