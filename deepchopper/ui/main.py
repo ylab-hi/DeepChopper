@@ -75,8 +75,8 @@ def predict(
 
     assert len(predicts) == 1  # noqa: S101
 
-    smooth_interval_json = []
-    highlighted_text = []
+    smooth_interval_json: list[dict[str, int]] = []
+    highlighted_text: list[tuple[str, str | None]] = []
 
     for idx, preds in enumerate(predicts):
         true_prediction, _true_label = summary_predict(predictions=preds[0], labels=preds[1])
@@ -117,8 +117,8 @@ def process_input(text: str | None, file: str | None):
                 if idx >= MAX_LINES:
                     break
                 file_content.append(line)
-        file_content = "".join(file_content)
-        return predict(text=file_content)
+        text = "".join(file_content)
+        return predict(text=text)
 
     return predict(text=text)
 
@@ -132,8 +132,20 @@ def create_gradio_app():
         ".0==?SSSSSSSSSSSH2216<868;SSSSSSSSSQQSRSIIHEDDESSSSSSJIKMGEKISSJJICCBDQ?;;8:;,**(&$'+501)\"#$()+%&&0<5+*/('%'))))'''$##\"\"\"\"%&--$\"\"\"('%)1L3*'')'#\"#&+*$&\"\"#*(&'''+,,<;9<BHGF//.LKORQSK<###%*-89<FSSSSE=BAFHFDB???3313NN?>=ANOSJDCADHGMOQSSD=7>BRRSPIEEEOQSSQ4->LIC7EE045///03IIJQSSSNGE6('.5??@A@=,,EGRSPKJ<==<556GFLLQRANSSSSSSSSG...*%%%(***(%'3@LOOSSSSM...7BCMMSSSSSSSSSSSSSSSDFIPSSSGGGGPOQLIHIL4103HMSILLNOSSSSSSSSSS22CBCGSHHHHSSSSSSSSD??@<<<:DDDSSSSSSSSSSA@6688OSSSSSROJJKLSNNNMSSSSQPOOSOOQSSSSSRRHIHISSRSSSSSSSSSSSJFF=??@SSQRK:424<444FFG///1S@@@ASNNNNPN:4JMDDLPSSSSSSBA?B?@@+'&'BD**8EDEFQPIMLE$$&',79CSJJPSGA+***DN;3-('&(;>6(()/-,,)%')1FRNNJ-:=>GC;&;CHNFFDCEEKJLFA22/27A.....HSQLHL))8<=?JSSSFGSKIHDDCCEFDAA@CFJKLNL>:9/1>>?OSLK@+HPSA;>>>K;;;;SSSSOQLPPMORSSSSSQSSSSSSS=:9**?D889SSRFFEDKJJJEEDKSSSNNOSSS.---,&*++SSSSQRSSSSQPGED<<89<@GJ999:SSKBBBAJHK=SSSJJKNMGHKKHQA<<>OPKFEAACDHJKMORB/)'((6**)15DA99;JSQSSS2())+J))EGMQOMMKJF>?<<AA620..D..,/112SOIIJSQFNEEEOMF?066=>@4,3;B>87FSSSSSSSSSSSSSSS<<::5658@AHMMSSRECC448/=<<>SSCB:5546;<??KF==;;FFEDFHKKJG):C>=>BJHINJFDPPPPPPPPPPPPPP%'*%$%+-%'(-22&&%('''&&&#\"\"%&'+0,,0;:1&\"\"%'(+++8'**(\"$$#&$'**//.3497$\"3CFHLOSSSSR:887:;;FSSRPRSSS4433$#$%&$$-056>@:;>=@?AHEFEC;*EKMSSRSRRDB>=AFRSSSSBSOOPSMDAABHH976951-9DHPQO/---?@ELSSQSRJHKKBKKLSSLINSOSSQSRIMSSSSSS>?MKIINSSGSSSSSSSQQMK544MJKKNKHGGLFFGBDB?EHIKGD?@DHPPIIF555)&(+,ADSSSSRQSSSQSS=9/0JJMSQSOSSO/97=B@=:>"
     )
 
-    with gr.Blocks(theme=gr.themes.Soft()) as demo:
-        gr.Markdown("# DeepChopper: DNA Sequence Analysis")
+    custom_css = """
+    .header { text-align: center; margin-bottom: 30px; }
+    .footer { text-align: center; margin-top: 30px; font-size: 0.8em; color: #666; }
+    """
+
+    with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
+        gr.HTML(
+            """
+            <div class="header">
+                <h1>🧬 DeepChopper: DNA Sequence Analysis</h1>
+                <p>Analyze DNA sequences and detect artificial sequences</p>
+            </div>
+            """
+        )
 
         with gr.Row():
             with gr.Column(scale=1):
@@ -152,6 +164,14 @@ def create_gradio_app():
         gr.Examples(
             examples=[[example]],
             inputs=[text_input],
+        )
+
+        gr.HTML(
+            """
+            <div class="footer">
+                <p>DeepChopper - Powered by AI for DNA sequence analysis</p>
+            </div>
+            """
         )
 
     return demo
