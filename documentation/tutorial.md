@@ -66,8 +66,11 @@ This command will generate a Parquet file (`encoded_data.parquet`) or multiple P
 With our encoded data, we can now use DeepChopper to predict chimeric reads.
 
 ```bash
-# Predict chimeric reads
+# Predict artifical sequences for reads
 deepchopper predict raw.parquet --ouput-path predictions
+
+# Predict artifical sequences for reads using GPU
+deepchopper predict raw.parquet --ouput-path predictions --gpus 2
 
 # if encoded by chunk
 # deepchopper predict raw_chunk1.parquet --ouput-path predictions_chunk1
