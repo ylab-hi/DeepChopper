@@ -74,7 +74,7 @@ deepchopper predict raw.parquet --ouput-path predictions
 # deepchopper predict raw_chunk2.parquet --ouput-path predictions_chunk2
 ```
 
-This step will analyze the encoded data and produce a CSV file (`predictions.csv`) containing predictions for each read, indicating whether it's likely to be chimeric or not.
+This step will analyze the encoded data and produce results containing predictions, indicating whether it's likely to be chimeric or not.
 
 ## 5. DeepChopper Chop
 

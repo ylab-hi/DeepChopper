@@ -89,8 +89,8 @@ def encode(data_folder: Path, *, chunk: bool = False, chunk_size: int = 1000000,
     help="DeepChopper is All You Need",
 )
 def predict(
-    # check_point: Path,
     data_path: Path,
+    gpus: int = 0,
     output_path: Path | None = None,
     batch_size: int = 12,
     num_workers: int = 0,
@@ -116,10 +116,20 @@ def predict(
 
     callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir=output_path, write_interval="batch")]
 
-    accelerator = "cpu" if torch.cuda.is_available() else "gpu"
+    available_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
+
+    if gpus > 0 and available_gpus > 0:
+        accelerator = "gpu"
+        if gpus > available_gpus:
+            logging.warning(f"Number of GPUs requested: {gpus} is greater than available GPUs: {available_gpus}")
+            gpus = available_gpus
+    else:
+        accelerator = "cpu"
+        gpus = None
+
     trainer = lightning.pytorch.trainer.Trainer(
         accelerator=accelerator,
-        devices=-1,
+        devices=gpus,
         callbacks=callbacks,
         deterministic=False,
         logger=False,
