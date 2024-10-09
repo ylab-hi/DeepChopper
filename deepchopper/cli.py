@@ -152,6 +152,40 @@ def chop(
         print("deepchopper-chop is not installed. Please use `cargo install deepchopper-chop` to install it.")
         raise SystemExit
 
+    import subprocess
+
+    predict_files = " ".join([f"--pdt {predict}" for predict in predicts])
+
+    commands = [
+        [
+            "deepchopper-chop",
+            predict_files,
+            "--fq",
+            fq,
+            "-t",
+            threads,
+            "-s",
+            smooth_window_size,
+            "--mis",
+            min_interval_size,
+            "-a",
+            approved_interval_number,
+            "--mpi",
+            max_process_intervals,
+            "--mcr",
+            min_read_length_after_chop,
+            "--ocq",
+            output_chopped_seqs,
+            "--ct",
+            chop_type,
+            "-o",
+            output_prefix,
+            "-m",
+            max_batch_size,
+        ],
+    ]
+    subprocess.run(commands, check=True)
+
 
 @app.command(
     help="DeepChopper is All You Need: ui!",

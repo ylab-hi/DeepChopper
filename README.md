@@ -45,7 +45,7 @@ DeepChopper can be installed using pip, the Python package installer. Follow the
 5. DeepChopper include a Rust command line tool for faster performance.
 
 ```bash
-cargo install deepchopper
+cargo install deepchopper-chop
 ```
 
 For GPU support, ensure you have CUDA installed on your system, then install the GPU version:
