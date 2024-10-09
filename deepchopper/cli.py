@@ -104,7 +104,7 @@ def predict(
     datamodule: LightningDataModule = deepchopper.data.fq_datamodule.FqDataModule(
         train_data_path="dummy.parquet",
         tokenizer=tokenizer,
-        predict_data_path=data_path,
+        predict_data_path=data_path.as_posix(),
         batch_size=batch_size,
         num_workers=num_workers,
         max_predict_samples=max_sample,
@@ -123,6 +123,8 @@ def predict(
         if gpus > available_gpus:
             logging.warning(f"Number of GPUs requested: {gpus} is greater than available GPUs: {available_gpus}")
             gpus = available_gpus
+        elif gpus < available_gpus:
+            logging.info(f"Using {gpus} out of {available_gpus} GPUs for prediction.")
     else:
         accelerator = "cpu"
         gpus = "auto"
