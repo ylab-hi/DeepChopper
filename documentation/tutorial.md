@@ -19,7 +19,7 @@ First, you need to obtain your Nanopore direct-RNA sequencing data. This data is
 
 ```bash
 # Example: Download sample data (replace with your actual data source)
-wget https://example.com/sample_nanopore_data.fast5
+wget https://raw.githubusercontent.com/ylab-hi/DeepChopper/refs/heads/main/tests/data/250_internal.fq
 ```
 
 Ensure you have sufficient storage space, as Nanopore data can be quite
@@ -31,8 +31,6 @@ It's important to run Dorado without the trimming option to preserve potential c
 
 ```bash
 # Install Dorado (if not already installed)
-conda install -c bioconda ont-dorado
-
 # Run Dorado without trimming
 dorado basecaller \
     --model dna_r10.4.1_e8.2_400bps_sup@v4.2.0 \
@@ -71,9 +69,9 @@ With our encoded data, we can now use DeepChopper to predict chimeric reads.
 # Predict chimeric reads
 deepchopper predict raw.parquet --ouput-path predictions
 
-# if encoded by chunk 
-# deepchopper predict raw_chunk1.parquet --ouput-path predictions_chunk1 
-# deepchopper predict raw_chunk2.parquet --ouput-path predictions_chunk2 
+# if encoded by chunk
+# deepchopper predict raw_chunk1.parquet --ouput-path predictions_chunk1
+# deepchopper predict raw_chunk2.parquet --ouput-path predictions_chunk2
 ```
 
 This step will analyze the encoded data and produce a CSV file (`predictions.csv`) containing predictions for each read, indicating whether it's likely to be chimeric or not.
