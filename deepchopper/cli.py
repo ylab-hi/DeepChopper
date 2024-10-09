@@ -125,7 +125,7 @@ def predict(
             gpus = available_gpus
     else:
         accelerator = "cpu"
-        gpus = -1
+        gpus = "auto"
 
     trainer = lightning.pytorch.trainer.Trainer(
         accelerator=accelerator,
