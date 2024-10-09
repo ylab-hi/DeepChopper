@@ -1,4 +1,4 @@
-import pandas as pd 
+import pandas as pd
 import sys
 import logging
 from rich.logging import RichHandler
@@ -17,25 +17,25 @@ logger = logging.getLogger("__name__")
 
 
 @dataclass
-class Segment: 
-    chrom: str 
+class Segment:
+    chrom: str
     start: int
-    end: int 
+    end: int
 
     def overlap(self, other):
         return self.chrom == other.chrom and self.start <= other.end and self.end >= other.start
-    
+
 
 def load_read_data(filter_full_df):
     from collections import defaultdict
     data = defaultdict(list)
 
     for r, a in zip(filter_full_df.read_name, filter_full_df.alignments):
-        a1, a2 = a.split(",") 
+        a1, a2 = a.split(",")
         a1_chrom, a1_start, a1_end,_ = a1.split(":")
         a2_chrom, a2_start, a2_end,_ = a2.split(":")
 
-        a1_seg = Segment(a1_chrom, int(a1_start), int(a1_end)) 
+        a1_seg = Segment(a1_chrom, int(a1_start), int(a1_end))
         a2_seg = Segment(a2_chrom, int(a2_start), int(a2_end))
 
         if a1_seg.chrom > a2_seg.chrom:
@@ -48,13 +48,13 @@ def load_read_data(filter_full_df):
 def get_similarity(r1, r2, data):
     if r1 == r2:
         return True
-        
-    r1_s1, r1_s2 = data[r1]
-    r2_s1, r2_s2 = data[r2] 
 
-    flag1 = r1_s1.overlap(r2_s1) 
+    r1_s1, r1_s2 = data[r1]
+    r2_s1, r2_s2 = data[r2]
+
+    flag1 = r1_s1.overlap(r2_s1)
     flag2 = r1_s2.overlap(r2_s2)
-    
+
     return flag1 and flag2
 
 
@@ -106,6 +106,6 @@ def main(full_df_path: Path, sp_df_path: Path, export_with_sp: bool = False):
     logger.info(f"Distance matrix shape: {distance_matrix.shape}")
 
     np.savez(f"{full_df_path}_distance.npz", distance_matrix=distance_matrix, id_to_read=id_to_read, read_to_id=read_to_id)
-    
+
 if __name__ == "__main__":
     fire.Fire(main)

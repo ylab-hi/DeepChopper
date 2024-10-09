@@ -1,31 +1,26 @@
 import logging
-import multiprocessing
-from functools import partial
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
+import lightning
+import torch
 import typer
-from datasets import load_dataset
 from rich import print
 from rich.logging import RichHandler
-from transformers import AutoTokenizer, Trainer, TrainingArguments
+
+import deepchopper
 
 from .deepchopper import (
-    convert_multiple_fqs_to_one_fq,
     default,
     encode_fq_path_to_parquet,
     encode_fq_path_to_parquet_chunk,
 )
-from .models.llm import (
-    DataCollatorForTokenClassificationWithQual,
-    TokenClassification,
-    compute_metrics,
-    tokenize_and_align_labels_and_quals,
-)
 from .utils import (
     highlight_target,
-    summary_predict,
 )
+
+if TYPE_CHECKING:
+    from lightning.pytorch import LightningDataModule
 
 FORMAT = "%(message)s"
 logging.basicConfig(
@@ -34,15 +29,13 @@ logging.basicConfig(
     handlers=[RichHandler()],
 )
 
-TMPOUTPUT = Path.cwd() / "deepchopper_predict"
-
 
 def random_show_seq(dataset, sample: int = 3):
     """Randomly selects 'sample' number of sequences from the given dataset and prints their IDs and targets.
 
     Parameters:
-    dataset : A list of dictionaries where each dictionary represents a sequence with keys 'id', 'seq', and 'target'.
-    sample (int): The number of sequences to randomly select from the dataset. Default is 3.
+        dataset : A list of dictionaries where each dictionary represents a sequence with keys 'id', 'seq', and 'target'.
+        sample (int): The number of sequences to randomly select from the dataset. Default is 3.
     """
     total = len(dataset)
     import secrets
@@ -53,172 +46,9 @@ def random_show_seq(dataset, sample: int = 3):
         highlight_target(dataset[highlight_id]["seq"], *dataset[highlight_id]["target"])
 
 
-def load_model_from_checkpoint(check_point: Path):
-    """Load the model from the given path."""
-    if isinstance(check_point, str):
-        check_point = Path(check_point)
-    resume_tokenizer = AutoTokenizer.from_pretrained(check_point, trust_remote_code=True)
-    resume_model = TokenClassification.from_pretrained(check_point)
-    return resume_tokenizer, resume_model
-
-
-def load_dataset_from_checkpont(check_point: Path, data_path: Path, resume_tokenizer, max_sample: int | None = None):
-    """Load the dataset and model from the given paths."""
-    if isinstance(check_point, str):
-        check_point = Path(check_point)
-
-    if isinstance(data_path, str):
-        data_path = Path(data_path)
-
-    if data_path.suffix in (".fq", ".fastq"):
-        msg = f"Please Encoded {data_path.with_suffix('.fq')} first using `deepchopper encode`"
-        raise ValueError(msg)
-
-    if data_path.suffix != ".parquet":
-        msg = f"Unsupported file format: {data_path.suffix}"
-        raise ValueError(msg)
-
-    if max_sample is None:
-        max_sample: str = "100%"
-
-    eval_dataset = load_dataset(
-        "parquet",
-        data_files={"predict": data_path.as_posix()},
-        num_proc=multiprocessing.cpu_count(),
-        split=f"predict[:{max_sample}]",
-    ).with_format("torch")
-
-    tokenized_eval_dataset = eval_dataset.map(
-        partial(
-            tokenize_and_align_labels_and_quals,
-            tokenizer=resume_tokenizer,
-            max_length=resume_tokenizer.max_len_single_sentence,
-        ),
-        num_proc=multiprocessing.cpu_count(),  # type: ignore
-    ).remove_columns(["id", "seq", "qual", "target"])
-
-    return eval_dataset, tokenized_eval_dataset
-
-
-def load_trainer(
-    resume_tokenizer,
-    resume_model,
-    batch_size: int = 24,
-    *,
-    show_metrics: bool = False,
-    use_cpu=False,
-):
-    """Load the trainer with the given model and tokenizer."""
-    data_collator = DataCollatorForTokenClassificationWithQual(resume_tokenizer)
-    training_args = TrainingArguments(
-        output_dir=TMPOUTPUT.as_posix(),
-        learning_rate=2e-5,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
-        num_train_epochs=1,
-        weight_decay=0.01,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        load_best_model_at_end=True,
-        push_to_hub=False,
-        torch_compile=False,
-        report_to="wandb",  # type: ignore
-        run_name="eval",
-        use_cpu=use_cpu,
-    )
-
-    compute_metrics_func = compute_metrics if show_metrics else None
-
-    # Initialize our Trainer
-    return Trainer(
-        model=resume_model,
-        args=training_args,
-        tokenizer=resume_tokenizer,
-        data_collator=data_collator,
-        compute_metrics=compute_metrics_func,
-    )
-
-
 app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
-
-
-@app.command(
-    help="DeepChopper is All You Need",
-)
-def predict(
-    check_point: Path,
-    data_path: Path,
-    output_path: Path | None = None,
-    batch_size: int = 12,
-    max_sample: int | None = None,
-    min_region_length_for_smooth: int = 1,
-    max_distance_for_smooth: Annotated[int, typer.Option()] = 1,
-    *,
-    show_metrics: Annotated[bool, typer.Option(help="if show metrics")] = False,
-    show_sample: Annotated[bool, typer.Option(help="if show sample")] = False,
-    save_predict: Annotated[bool, typer.Option(help="if save predict")] = False,
-):
-    """Predict the given dataset using the given model and tokenizer."""
-    resume_tokenizer, resume_model = load_model_from_checkpoint(check_point)
-    (
-        eval_dataset,
-        tokenized_eval_dataset,
-    ) = load_dataset_from_checkpont(check_point, data_path, resume_tokenizer, max_sample)
-
-    if show_sample:
-        random_show_seq(eval_dataset, sample=3)
-
-    trainer = load_trainer(resume_tokenizer, resume_model, batch_size=batch_size, show_metrics=show_metrics)
-    predicts = trainer.predict(tokenized_eval_dataset)  # type: ignore
-
-    true_prediction, true_label = summary_predict(predictions=predicts[0], labels=predicts[1])
-
-    # if show_sample:
-    #     alignment_predict(true_prediction[0], true_label[0])
-    #     for idx, preds in enumerate(true_prediction):
-    #         record_id = eval_dataset[idx]["id"]
-    #         seq = eval_dataset[idx]["seq"]
-    #         smooth_predict_targets = smooth_label_region(
-    #             preds,
-    #             min_region_length_for_smooth,
-    #             max_distance_for_smooth,
-    #             min_interval_length_for_discard=0,
-    #         )
-
-    #         targets = eval_dataset[idx]["target"]
-
-    #         if isinstance(targets, Tensor):
-    #             targets = targets.tolist()
-    #         # zip two consecutive elements
-    #         targets = [(targets[i], targets[i + 1]) for i in range(0, len(targets), 2)]
-    #         print(f"{record_id=}")
-    #         hightlight_predicts(seq, targets, smooth_predict_targets)
-
-    #         _selected_seqs, _selected_intervals = remove_intervals_and_keep_left(seq, smooth_predict_targets)
-
-    #     print(predicts[2])
-    # elif save_predict:
-    #     del eval_dataset
-    #     del tokenized_eval_dataset
-    #     if output_path is None:
-    #         outout_path = data_path.with_suffix(".chopped.fq.gz")
-    #     else:
-    #         if not output_path.exists():
-    #             output_path.mkdir(parents=True, exist_ok=True)
-    #         outout_path = output_path / data_path.with_suffix(".chopped.fq.gz").name
-
-    #     write_predicts(
-    #         data_path,
-    #         outout_path,
-    #         true_prediction,
-    #         min_region_length_for_smooth,
-    #         max_distance_for_smooth,
-    #     )
-
-    # if TMPOUTPUT.exists():
-    #     TMPOUTPUT.rmdir()
 
 
 @app.command(
@@ -256,23 +86,79 @@ def encode(data_folder: Path, *, chunk: bool = False, chunk_size: int = 1000000,
 
 
 @app.command(
-    help="DeepChopper is All You Need: collect the given fastq",
+    help="DeepChopper is All You Need",
 )
-def collect(data_folder: Path, output: Path):
-    """Collect multiple fastq files to one fastq file."""
-    if not data_folder.exists():
-        msg = f"Folder {data_folder} does not exist."
-        raise ValueError(msg)
+def predict(
+    # check_point: Path,
+    data_path: Path,
+    output_path: Path | None = None,
+    batch_size: int = 12,
+    num_workers: int = 0,
+    max_sample: int | None = None,
+    *,
+    limit_predict_batches: int | None = None,
+):
+    """Predict the given dataset using the given model and tokenizer."""
+    tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
 
-    fq_files = (
-        [data_folder]
-        if data_folder.is_file()
-        else list(data_folder.glob("*.fq"))
-        + list(data_folder.glob("*.fastq"))
-        + list(data_folder.glob("*.fq.gz"))
-        + list(data_folder.glob("*.fastq.gz"))
+    datamodule: LightningDataModule = deepchopper.data.fq_datamodule.FqDataModule(
+        train_data_path="dummy.parquet",
+        tokenizer=tokenizer,
+        predict_data_path=data_path,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        max_predict_samples=max_sample,
     )
-    convert_multiple_fqs_to_one_fq(fq_files, output)
+
+    model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
+
+    output_path = Path(output_path or "predictions")
+
+    callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir=output_path, write_interval="batch")]
+
+    accelerator = "cpu" if torch.cuda.is_available() else "gpu"
+    trainer = lightning.pytorch.trainer.Trainer(
+        accelerator=accelerator,
+        devices=-1,
+        callbacks=callbacks,
+        deterministic=False,
+        logger=False,
+        limit_predict_batches=limit_predict_batches,
+    )
+
+    trainer.predict(model=model, dataloaders=datamodule, return_predictions=False)
+
+
+@app.command(
+    help="DeepChopper is All You Need: chop your reads!",
+)
+def chop(
+    predicts: list[Path],
+    fq: Path,
+    smooth_window_size: int = 21,
+    min_interval_size: int = 13,
+    approved_interval_number: int = 20,
+    max_process_intervals: int = 4,
+    min_read_length_after_chop: int = 20,
+    output_chopped_seqs: Annotated[bool, typer.Option(help="if outupt chopped seqs")] = False,
+    chop_type: str = "all",
+    threads: int = 2,
+    output_prefix: str | None = None,
+    max_batch_size: int | None = None,
+):
+    from shutil import which
+
+    if which("deepchopper-chop") is None:
+        print("deepchopper-chop is not installed. Please use `cargo install deepchopper-chop` to install it.")
+        raise SystemExit
+
+
+@app.command(
+    help="DeepChopper is All You Need: ui!",
+)
+def web():
+    """Run the web interface."""
+    deepchopper.ui.main()
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ default_language_version:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-yaml
         stages: [commit]
@@ -29,7 +29,7 @@ repos:
       - id: cargo-check
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.4.2"
+    rev: "v0.6.9"
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --unsafe-fixes]
@@ -81,7 +81,7 @@ repos:
 
   # jupyter notebook linting
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.8.5
+    rev: 1.8.7
     hooks:
       - id: nbqa-black
         args: ["--line-length=99"]

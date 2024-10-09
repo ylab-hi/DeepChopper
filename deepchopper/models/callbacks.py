@@ -25,6 +25,7 @@ class CustomWriter(BasePredictionWriter):
         torch.save(save_prediction, folder / f"{trainer.global_rank}_{batch_idx}.pt")
 
     def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):
+        # WARN: This is a simple implementation that saves all predictions in a single file
         if not self.output_dir.exists():
             self.output_dir.mkdir(parents=False, exist_ok=True)
 

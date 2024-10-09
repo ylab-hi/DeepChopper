@@ -1,6 +1,7 @@
 import typing
 
 import numpy as np
+import torch
 from rich.console import Console
 from rich.highlighter import RegexHighlighter
 from rich.text import Text
@@ -14,8 +15,8 @@ def hightlight_predicts(
     seq: str,
     targets: list[tuple[int, int]],
     predicts: list[tuple[int, int]],
-    style="bold magenta",
-    width=80,
+    style: str = "bold magenta",
+    width: int = 80,
 ):
     """Highlight the predicted and labeled sequences."""
     target_seq = Text(seq)
@@ -67,6 +68,13 @@ def summary_predict(predictions, labels):
     """Summarize the predictions and labels."""
     predictions = np.argmax(predictions, axis=2)
     # Initialize lists to hold the filtered predictions and labels
+
+    if isinstance(predictions, torch.Tensor):
+        predictions = predictions.cpu().numpy()
+
+    if isinstance(labels, torch.Tensor):
+        labels = labels.cpu().numpy()
+
     true_predictions, true_labels = rust_summary_predict(predictions, labels, IGNORE_INDEX)
     return true_predictions, true_labels
 

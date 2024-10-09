@@ -10,10 +10,6 @@ from datasets import load_dataset
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
-from deepchopper.deepchopper import (
-    default,
-    encode_fq_path_to_parquet,
-)
 from deepchopper.models.llm import (
     DataCollatorForTokenClassificationWithQual,
     tokenize_and_align_labels_and_quals,
@@ -127,15 +123,15 @@ class FqDataModule(LightningDataModule):
             data_paths.append(self.hparams.predict_data_path)
 
         for data_path in data_paths:
-            if data_path in (".fq", ".fastq"):
-                encode_fq_path_to_parquet(
-                    data_path,
-                    default.KMER_SIZE,
-                    bases=default.BASES,
-                    qual_offset=default.QUAL_OFFSET,
-                    vectorized_target=default.VECTORIZED_TARGET,
-                )
-            elif Path(data_path).suffix == ".parquet":
+            # # if data_path in (".fq", ".fastq"):
+            #     encode_fq_path_to_parquet(
+            #         data_path,
+            #         default.KMER_SIZE,
+            #         bases=default.BASES,
+            #         qual_offset=default.QUAL_OFFSET,
+            #         vectorized_target=default.VECTORIZED_TARGET,
+            #     )
+            if Path(data_path).suffix == ".parquet":
                 pass
             else:
                 msg = f"Data file {data_path} is not in FastQ or Parquet format."
