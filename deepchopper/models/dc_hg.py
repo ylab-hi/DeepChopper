@@ -8,10 +8,10 @@ from .basic_module import TokenClassificationLit
 
 class DeepChopper:
     @classmethod
-    def from_pretrained(cls, model_name: str, **kwargs) -> "DeepChopper":
+    def from_pretrained(cls, **kwargs) -> "DeepChopper":
         """Load a pretrained model."""
         return TokenClassificationLit.from_pretrained(
-            "yangliz5/deepchopper",
+            model_name,
             net=llm.hyena.TokenClassificationModule(
                 number_of_classes=2,
                 backbone_name="hyenadna-small-32k-seqlen",
