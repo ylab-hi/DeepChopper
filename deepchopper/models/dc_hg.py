@@ -8,7 +8,7 @@ from .basic_module import TokenClassificationLit
 
 class DeepChopper:
     @classmethod
-    def from_pretrained(cls, **kwargs) -> "DeepChopper":
+    def from_pretrained(cls, model_name: str, **kwargs) -> "DeepChopper":
         """Load a pretrained model."""
         return TokenClassificationLit.from_pretrained(
             model_name,
