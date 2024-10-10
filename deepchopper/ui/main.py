@@ -60,7 +60,7 @@ def predict(
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
     dataset, tokenized_dataset = load_dataset(text, tokenizer)
 
-    dataloader = DataLoader(tokenized_dataset, batch_size=batch_size, num_workers=num_workers)
+    dataloader = DataLoader(tokenized_dataset, batch_size=batch_size, num_workers=num_workers, persistent_workers=True)
     model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 
     accelerator = "cpu" if torch.cuda.is_available() else "gpu"

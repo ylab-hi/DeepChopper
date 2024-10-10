@@ -22,7 +22,7 @@ First, you need to obtain your Nanopore direct-RNA sequencing data. This data is
 wget https://raw.githubusercontent.com/ylab-hi/DeepChopper/refs/heads/main/tests/data/250_internal.fq
 ```
 
-Ensure you have sufficient storage space, as Nanopore data can be quite
+Ensure you have sufficient storage space, as Nanopore data can be quite large.
 
 ## 2. Basecall Using Dorado
 
