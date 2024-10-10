@@ -592,4 +592,3 @@ scripts/*.json
 *overlap_results*.json
 *stats_*.json
 !build.rs
-!tests/data/*txt
