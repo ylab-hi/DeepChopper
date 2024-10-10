@@ -201,7 +201,7 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(
         .par_bridge()
         .map(|result| {
             let record = result?;
-            let qname = String::from_utf8(record.name().unwrap().as_bytes().to_vec())?;
+            let qname = String::from_utf8(record.name().unwrap().to_vec())?;
             let mapping_quality = record.mapping_quality().unwrap().get() as usize;
 
             let ops: Vec<Op> = record.cigar().iter().collect::<Result<Vec<_>, _>>()?;
@@ -258,7 +258,7 @@ pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRe
         .par_bridge()
         .map(|result| {
             let record = result?;
-            let qname = String::from_utf8(record.name().unwrap().as_bytes().to_vec())?;
+            let qname = String::from_utf8(record.name().unwrap().to_vec())?;
             let mapping_quality = record.mapping_quality().unwrap().get() as usize;
 
             let ops: Vec<Op> = record.cigar().iter().collect::<Result<Vec<_>, _>>()?;
