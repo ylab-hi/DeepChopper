@@ -36,7 +36,7 @@ pyo3 = { version = "0.21.0", features = [
 ctrlc = "3.4"
 log = "0.4"
 pyo3-log = "0.10"
-noodles = { version = "0.78.0", features = [
+noodles = { version = "0.83.0", features = [
     "bgzf",
     "core",
     "csi",
@@ -62,13 +62,13 @@ rand_distr = "0.4"
 bitvec = "1.0"
 itertools = "0.13.0"
 derive_builder = "0.20"
-lexical = "6.1"
+lexical = "7.0"
 bstr = "1.9.1"
 lazy_static = "1.4.0"
 tempfile = "3.10"
 parquet = "52.0.0"
 arrow = "52.0"
-candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.6.0" }
+candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.7.2" }
 colored = "2"
 textwrap = "0.16"
 flate2 = { version = "1.0.30", features = [
