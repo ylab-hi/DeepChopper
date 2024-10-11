@@ -8,7 +8,8 @@ version = "0.1.0"
 description = "CLI for DeepChopper: A Genomic Language Model for Chimera Artifact Detection"
 authors = [{ name = "Yangyang Li", email = "yangyang.li@northwestern.edu" }]
 requires-python = ">=3.10,<3.12"
-license = { file = "../LICENSE" }
+license = { file = "LICENSE" }
+readme = "README.md"
 keywords = ["deep learning", "bioinformatics", "rust"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
