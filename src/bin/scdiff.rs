@@ -99,7 +99,7 @@ fn compare_right_softclip_for_terminal_chop<P: AsRef<Path>>(
         .par_bridge()
         .filter_map(|result| {
             let record = result.unwrap();
-            let qname = BString::new(record.name().unwrap().as_bytes().to_vec());
+            let qname = BString::new(record.name().unwrap().to_vec());
 
             let is_mapped = !record.flags().is_unmapped();
             let is_not_secondary = !record.flags().is_secondary();
@@ -127,7 +127,7 @@ fn compare_right_softclip_for_terminal_chop<P: AsRef<Path>>(
             let is_not_secondary = !record.flags().is_secondary();
             let is_primary = !record.flags().is_supplementary();
 
-            let qname = BString::new(record.name().unwrap().as_bytes().to_vec());
+            let qname = BString::new(record.name().unwrap().to_vec());
             let qname_without_anno = if qname.contains(&b'|') {
                 let mut splits = qname.split(|item| *item == b'|');
                 let name = BString::new(splits.next().unwrap().to_vec());

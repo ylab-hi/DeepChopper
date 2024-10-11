@@ -31,7 +31,8 @@ fn covert<P: AsRef<Path>>(fq: P) -> Result<()> {
     let fa_records: Vec<fasta::Record> = fq_records
         .par_iter()
         .map(|fq_record| {
-            let definition = fasta::record::Definition::new(fq_record.definition().name(), None);
+            let definition =
+                fasta::record::Definition::new(fq_record.definition().name().to_vec(), None);
             let seq = fasta::record::Sequence::from(fq_record.sequence().to_vec());
             fasta::Record::new(definition, seq)
         })

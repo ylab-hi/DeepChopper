@@ -72,7 +72,7 @@ fn summary_sa_info<P: AsRef<Path>>(
             let is_primary = !record.flags().is_supplementary();
 
             if is_primary && is_mapped && is_not_secondary {
-                let name = String::from_utf8(record.name().unwrap().as_bytes().to_vec()).unwrap();
+                let name = String::from_utf8(record.name().unwrap().to_vec()).unwrap();
 
                 if let Some(names_v) = &names {
                     if name.contains('|') {
