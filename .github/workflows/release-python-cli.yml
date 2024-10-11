@@ -13,6 +13,9 @@ on:
     tags:
       - "*"
   pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 # Add this concurrency configuration
@@ -82,7 +85,6 @@ jobs:
         run: |
           echo "Build failed. Debugging information:"
           ls -R
-          cat Cargo.toml
           cat pyproject.toml
 
   musllinux:

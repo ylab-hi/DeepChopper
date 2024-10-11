@@ -13,10 +13,10 @@ on:
     tags:
       - "*"
   pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
-
-env:
-  PythonVersion: "3.10"
 
 # Add this concurrency configuration
 concurrency:
@@ -34,22 +34,23 @@ jobs:
         platform:
           - runner: ubuntu-latest
             target: x86_64
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PythonVersion }}
+          python-version: ${{ matrix.python-version }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i "python3.10"
+          args: --release --out dist -i python${{ matrix.python-version }}
           sccache: "true"
           manylinux: auto
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux-${{ matrix.platform.target }}
+          name: wheels-linux-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: dist
       - name: pytest
         if: ${{ startsWith(matrix.platform.target, 'x86_64') }}
@@ -83,22 +84,23 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PythonVersion }}
+          python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.platform.target }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist
+          args: --release --out dist -i python${{ matrix.python-version }}
           sccache: "true"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-windows-${{ matrix.platform.target }}
+          name: wheels-windows-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: dist
       - name: pytest
         if: ${{ !startsWith(matrix.platform.target, 'aarch64') }}
@@ -120,21 +122,22 @@ jobs:
             target: x86_64
           - runner: macos-14
             target: aarch64
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PythonVersion }}
+          python-version: ${{ matrix.python-version }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist
+          args: --release --out dist  -i python${{ matrix.python-version }}
           sccache: "true"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-macos-${{ matrix.platform.target }}
+          name: wheels-macos-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: dist
       - name: pytest
         run: |
@@ -143,7 +146,6 @@ jobs:
           source .venv/bin/activate
           pip install deepchopper --find-links dist --force-reinstall
           pip install pytest
-          # python -c "import deepchopper"
           deepchopper -h
   sdist:
     runs-on: ubuntu-latest
