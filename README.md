@@ -48,12 +48,6 @@ DeepChopper can be installed using pip, the Python package installer. Follow the
 cargo install deepchopper-chop
 ```
 
-For GPU support, ensure you have CUDA installed on your system, then install the GPU version:
-
-```bash
-pip install deepchopper[gpu]
-```
-
 Note: If you encounter any issues, please check our GitHub repository for troubleshooting guides or to report a problem.
 
 ## Usage

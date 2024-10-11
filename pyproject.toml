@@ -150,6 +150,7 @@ nvidia-nvtx-cu11 = { version = "^11.8.86", markers = "sys_platform == 'linux'" }
 nvidia-cublas-cu11 = { version = "^11.11.3.6", markers = "sys_platform == 'linux'" }
 mamba-ssm = { version = "^1.2.0.post1", markers = "sys_platform == 'linux'" }
 causal-conv1d = { version = "^1.2.0.post2", markers = "sys_platform == 'linux'" }
+bump-my-version = "^0.27.0"
 
 [tool.ruff]
 target-version = "py310"
