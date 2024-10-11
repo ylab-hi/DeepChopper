@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 env:
-  PythonVersion: 3.10
+  PythonVersion: "3.10"
 
 # Add this concurrency configuration
 concurrency:
