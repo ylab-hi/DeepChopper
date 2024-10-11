@@ -69,12 +69,6 @@ DeepChopper can be installed using pip, the Python package installer. Follow the
    deepchopper --help
    ```
 
-5. DeepChopper include a Rust command line tool for faster performance.
-
-```bash
-cargo install deepchopper-chop
-```
-
 Note: If you encounter any issues, please check our GitHub repository for troubleshooting guides or to report a problem.
 
 ## Usage
