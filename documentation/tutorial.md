@@ -15,11 +15,12 @@ This tutorial will guide you through the process of using DeepChopper to identif
 
 ## 1. Get the Data
 
-First, you need to obtain your Nanopore direct-RNA sequencing data. This data is typically in the form of FAST5 files.
+First, you need to obtain your Nanopore direct-RNA sequencing data.
+This data is typically in the form of POD5 files.
 
 ```bash
 # Example: Download sample data (replace with your actual data source)
-wget https://raw.githubusercontent.com/ylab-hi/DeepChopper/refs/heads/main/tests/data/250_internal.fq
+wget https://raw.githubusercontent.com/ylab-hi/DeepChopper/refs/heads/main/tests/data/200cases.pod5
 ```
 
 Ensure you have sufficient storage space, as Nanopore data can be quite large.
@@ -36,11 +37,11 @@ dorado basecaller \
     --model dna_r10.4.1_e8.2_400bps_sup@v4.2.0 \
     --device cuda:all \
     --not_trim \
-    path/to/your/fast5/files/ \
+    path/to/your/pod5/files/ \
     > raw.fastq
 ```
 
-Replace `path/to/your/fast5/files/` with the directory containing your FAST5 files.
+Replace `path/to/your/pod5/files/` with the directory containing your POD5 files.
 The output will be a FASTQ file containing the basecalled sequences.
 
 ## 3. DeepChopper Encode

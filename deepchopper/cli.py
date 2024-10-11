@@ -1,12 +1,14 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING
 
 import lightning
 import torch
 import typer
+from click import Context
 from rich import print
 from rich.logging import RichHandler
+from typer.core import TyperGroup
 
 import deepchopper
 
@@ -22,12 +24,19 @@ from .utils import (
 if TYPE_CHECKING:
     from lightning.pytorch import LightningDataModule
 
-FORMAT = "%(message)s"
-logging.basicConfig(
-    level=logging.INFO,
-    format=FORMAT,
-    handlers=[RichHandler()],
-)
+
+def set_logging_level(level: int = logging.INFO):
+    """Set the logging level.
+
+    Parameters:
+        level (int): The logging level to set.
+    """
+    FORMAT = "%(message)s"
+    logging.basicConfig(
+        level=level,
+        format=FORMAT,
+        handlers=[RichHandler()],
+    )
 
 
 def random_show_seq(dataset, sample: int = 3):
@@ -46,22 +55,23 @@ def random_show_seq(dataset, sample: int = 3):
         highlight_target(dataset[highlight_id]["seq"], *dataset[highlight_id]["target"])
 
 
-app = typer.Typer(
-    context_settings={"help_option_names": ["-h", "--help"]},
-)
-
-
-@app.command(
-    help="DeepChopper is All You Need: encode the given fastq",
-)
-def encode(data_folder: Path, *, chunk: bool = False, chunk_size: int = 1000000, parallel: bool = False):
+def encode(
+    fastq_path: Path = typer.Argument(..., help="Path to the fastq file"),
+    chunk: bool = typer.Option(False, "--chunk", "-c", help="Enable chunking"),
+    chunk_size: int = typer.Option(1000000, "--chunk-size", "-s", help="Chunk size"),
+    parallel: bool = typer.Option(False, "--parallel", "-p", help="Enable parallel processing"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
+):
     """Encode the given fastq files to parquet format."""
-    if not data_folder.exists():
-        msg = f"Folder {data_folder} does not exist."
+    if verbose:
+        set_logging_level(logging.INFO)
+
+    if not fastq_path.exists():
+        msg = f"Folder {fastq_path} does not exist."
         logging.error(msg)
 
     fq_files = (
-        [data_folder] if data_folder.is_file() else list(data_folder.glob("*.fq")) + list(data_folder.glob("*.fastq"))
+        [fastq_path] if fastq_path.is_file() else list(fastq_path.glob("*.fq")) + list(fastq_path.glob("*.fastq"))
     )
 
     for fq_file in fq_files:
@@ -85,22 +95,21 @@ def encode(data_folder: Path, *, chunk: bool = False, chunk_size: int = 1000000,
             )
 
 
-@app.command(
-    help="DeepChopper is All You Need",
-)
 def predict(
-    data_path: Path,
-    gpus: int = 0,
-    output_path: Path | None = None,
-    batch_size: int = 12,
-    num_workers: int = 0,
-    max_sample: int | None = None,
-    *,
-    limit_predict_batches: int | None = None,
+    data_path: Path = typer.Argument(..., help="Path to the dataset"),
+    gpus: int = typer.Option(0, "--gpus", "-g", help="Number of GPUs to use"),
+    output_path: Path | None = typer.Option(None, "--output", "-o", help="Output path for predictions"),
+    batch_size: int = typer.Option(12, "--batch-size", "-b", help="Batch size"),
+    num_workers: int = typer.Option(0, "--workers", "-w", help="Number of workers"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
+    max_sample: int | None = typer.Option(None, "--max-sample", "-m", help="Maximum number of samples to process"),
+    limit_predict_batches: int | None = typer.Option(None, "--limit-batches", "-l", help="Limit prediction batches"),
 ):
-    """Predict the given dataset using the given model and tokenizer."""
-    tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
+    """Predict the given dataset using DeepChopper."""
+    if verbose:
+        set_logging_level(logging.INFO)
 
+    tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
     datamodule: LightningDataModule = deepchopper.data.fq_datamodule.FqDataModule(
         train_data_path="dummy.parquet",
         tokenizer=tokenizer,
@@ -111,23 +120,12 @@ def predict(
     )
 
     model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
-
     output_path = Path(output_path or "predictions")
-
     callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir=output_path, write_interval="batch")]
 
-    available_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
-
-    if gpus > 0 and available_gpus > 0:
-        accelerator = "gpu"
-        if gpus > available_gpus:
-            logging.warning(f"Number of GPUs requested: {gpus} is greater than available GPUs: {available_gpus}")
-            gpus = available_gpus
-        elif gpus < available_gpus:
-            logging.info(f"Using {gpus} out of {available_gpus} GPUs for prediction.")
-    else:
-        accelerator = "cpu"
-        gpus = "auto"
+    accelerator, devices = (
+        ("gpu", min(gpus, torch.cuda.device_count())) if gpus > 0 and torch.cuda.is_available() else ("cpu", "auto")
+    )
 
     trainer = lightning.pytorch.trainer.Trainer(
         accelerator=accelerator,
@@ -137,34 +135,36 @@ def predict(
         logger=False,
         limit_predict_batches=limit_predict_batches,
     )
-
     trainer.predict(model=model, dataloaders=datamodule, return_predictions=False)
 
 
-@app.command(
-    help="DeepChopper is All You Need: chop your reads!",
-)
 def chop(
-    predicts: list[Path],
-    fq: Path,
-    smooth_window_size: int = 21,
-    min_interval_size: int = 13,
-    approved_interval_number: int = 20,
-    max_process_intervals: int = 4,
-    min_read_length_after_chop: int = 20,
-    output_chopped_seqs: Annotated[bool, typer.Option(help="if outupt chopped seqs")] = False,
-    chop_type: str = "all",
-    threads: int = 2,
-    output_prefix: str | None = None,
-    max_batch_size: int | None = None,
+    predicts: list[Path] = typer.Argument(..., help="Paths to prediction files"),
+    fq: Path = typer.Argument(..., help="Path to FASTQ file"),
+    smooth_window_size: int = typer.Option(21, "--smooth-window", "-s", help="Smooth window size"),
+    min_interval_size: int = typer.Option(13, "--min-interval", "-i", help="Minimum interval size"),
+    approved_interval_number: int = typer.Option(20, "--approved-intervals", "-a", help="Number of approved intervals"),
+    max_process_intervals: int = typer.Option(4, "--max-process", "-p", help="Maximum process intervals"),
+    min_read_length_after_chop: int = typer.Option(
+        20, "--min-read-length", "-l", help="Minimum read length after chop"
+    ),
+    output_chopped_seqs: bool = typer.Option(False, "--output-chopped", "-o", help="Output chopped sequences"),
+    chop_type: str = typer.Option("all", "--chop-type", "-t", help="Chop type"),
+    threads: int = typer.Option(2, "--threads", "-n", help="Number of threads"),
+    output_prefix: str | None = typer.Option(None, "--prefix", "-x", help="Output prefix"),
+    max_batch_size: int | None = typer.Option(None, "--max-batch", "-b", help="Maximum batch size"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
 ):
+    """Chop sequences based on predictions."""
+    if verbose:
+        set_logging_level(logging.INFO)
+
+    import subprocess
     from shutil import which
 
     if which("deepchopper-chop") is None:
         print("deepchopper-chop is not installed. Please use `cargo install deepchopper-chop` to install it.")
         raise SystemExit
-
-    import subprocess
 
     predict_files = " ".join([f"--pdt {predict}" for predict in predicts])
 
@@ -196,15 +196,52 @@ def chop(
             max_batch_size,
         ],
     ]
-    subprocess.run(commands, check=True)
+
+    try:
+        subprocess.run(commands, check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error: Chopping failed with exit code {e.returncode}")
+        raise e
 
 
-@app.command(
-    help="DeepChopper is All You Need: ui!",
-)
 def web():
     """Run the web interface."""
     deepchopper.ui.main()
+
+
+class OrderCommands(TyperGroup):
+    """Order commands in the order appear."""
+
+    def list_commands(self, ctx: Context):
+        """Return list of commands in the order appear."""
+        return list(self.commands)  # get commands using self.commands
+
+
+app = typer.Typer(
+    cls=OrderCommands,
+    context_settings={"help_option_names": ["-h", "--help"]},
+    help="DeepChopper: A genomic lanuage model to identify artificial sequenes.",
+)
+
+app.command(
+    help="DeepChopper is All You Need: encode the given fastq",
+    epilog="Example: deepchopper encode fastq_path --verbose",
+)(encode)
+
+app.command(
+    help="DeepChopper is All You Need: predict the given dataset",
+    epilog="Example: deepchopper predict parquet_path --gpus 1 --output output_path",
+)(predict)
+
+app.command(
+    help="DeepChopper is All You Need: chop the given predictions!",
+    epilog="Example: deepchopper chop predict.parquet --fq fastq_path",
+)(chop)
+
+app.command(
+    help="DeepChopper is All You Need: a web ui!",
+    epilog="Example: deepchopper web",
+)(web)
 
 
 if __name__ == "__main__":
