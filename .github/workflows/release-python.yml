@@ -66,65 +66,8 @@ jobs:
           run: |
             set -e
             pip3 install deepchopper --find-links dist --force-reinstall
-            # python -c "import deepchopper"
             deepchopper -h
 
-  musllinux:
-    runs-on: ${{ matrix.platform.runner }}
-    strategy:
-      matrix:
-        platform:
-          - runner: ubuntu-latest
-            target: x86_64
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.x
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{ matrix.platform.target }}
-          args: --release --out dist
-          sccache: "true"
-          manylinux: musllinux_1_2
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-musllinux-${{ matrix.platform.target }}
-          path: dist
-      - name: pytest
-        if: ${{ startsWith(matrix.platform.target, 'x86_64') }}
-        uses: addnab/docker-run-action@v3
-        with:
-          image: alpine:latest
-          options: -v ${{ github.workspace }}:/io -w /io
-          run: |
-            set -e
-            apk add py3-pip py3-virtualenv
-            python3 -m virtualenv .venv
-            source .venv/bin/activate
-            pip install deepchopper --no-index --find-links dist --force-reinstall
-            pip install pytest
-            # python -c "import deepchopper"
-            deepchopper -h
-      - name: pytest
-        if: ${{ !startsWith(matrix.platform.target, 'x86') }}
-        uses: uraimo/run-on-arch-action@v2
-        with:
-          arch: ${{ matrix.platform.target }}
-          distro: alpine_latest
-          githubToken: ${{ github.token }}
-          install: |
-            apk add py3-virtualenv
-          run: |
-            set -e
-            python3 -m virtualenv .venv
-            source .venv/bin/activate
-            pip install pytest
-            pip install deepchopper --find-links dist --force-reinstall
-            # python -c "import deepchopper"
-            deepchopper -h
   windows:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
@@ -160,6 +103,7 @@ jobs:
           pip install pytest
           # python -c "import deepchopper"
           deepchopper -h
+
   macos:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
