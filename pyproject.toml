@@ -136,6 +136,7 @@ hydra-optuna-sweeper = "^1.2.0"
 omegaconf = "^2.3.0"
 accelerate = "^0.27.2"
 deepspeed = "^0.13.4"
+deptry = "^0.20.0"
 nvidia-cuda-cupti-cu11 = { version = "^11.8.87", markers = "sys_platform == 'linux'" }
 nvidia-cuda-nvrtc-cu11 = { version = "^11.8.89", markers = "sys_platform == 'linux'" }
 nvidia-cuda-runtime-cu11 = { version = "^11.8.89", markers = "sys_platform == 'linux'" }
@@ -149,7 +150,6 @@ nvidia-nvtx-cu11 = { version = "^11.8.86", markers = "sys_platform == 'linux'" }
 nvidia-cublas-cu11 = { version = "^11.11.3.6", markers = "sys_platform == 'linux'" }
 mamba-ssm = { version = "^1.2.0.post1", markers = "sys_platform == 'linux'" }
 causal-conv1d = { version = "^1.2.0.post2", markers = "sys_platform == 'linux'" }
-deptry = "^0.20.0"
 
 [tool.ruff]
 target-version = "py310"
