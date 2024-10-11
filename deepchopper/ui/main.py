@@ -63,7 +63,7 @@ def predict(
     dataloader = DataLoader(tokenized_dataset, batch_size=batch_size, num_workers=num_workers, persistent_workers=True)
     model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 
-    accelerator = "cpu" if torch.cuda.is_available() else "gpu"
+    accelerator = "gpu" if torch.cuda.is_available() else "cpu"
     trainer = lightning.pytorch.trainer.Trainer(
         accelerator=accelerator,
         devices=-1,
