@@ -54,7 +54,7 @@ fn load_internal_read<P: AsRef<Path>>(
         .par_bridge()
         .filter_map(|result| {
             let record = result.unwrap();
-            let name = record.name().unwrap().as_bytes().to_vec();
+            let name = record.name().unwrap().to_vec();
 
             if name.contains(&b'I') {
                 Some((name.into(), record))
@@ -97,7 +97,7 @@ fn replace_internal<P: AsRef<Path>>(dc_path: P, do_path: P, threads: Option<usiz
         .par_bridge()
         .filter_map(|result| {
             let record = result.unwrap();
-            let name: BString = record.name().unwrap().as_bytes().to_vec().into();
+            let name: BString = record.name().unwrap().to_vec().into();
 
             if !internal_records_names.contains(&name) {
                 Some(record)

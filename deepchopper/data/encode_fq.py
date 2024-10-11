@@ -3,7 +3,7 @@ from pathlib import Path
 
 from rich.logging import RichHandler
 
-from ..deepchopper import encode_fq_path_to_parquet  # noqa: TID252
+from deepchopper.deepchopper import encode_fq_path_to_parquet
 
 
 def encode_one_fq_file(

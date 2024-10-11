@@ -38,7 +38,7 @@ fn compare_length<P: AsRef<Path>>(fq: P, chop_fq: P) -> Result<HashMap<String, u
         .par_bridge()
         .map(|record| {
             let record = record?;
-            let name = String::from_utf8(record.definition().name().to_owned())?;
+            let name = String::from_utf8(record.definition().name().to_vec())?;
             Ok((name, record))
         })
         .collect();
@@ -52,7 +52,7 @@ fn compare_length<P: AsRef<Path>>(fq: P, chop_fq: P) -> Result<HashMap<String, u
         .par_bridge()
         .map(|record| {
             let record = record?;
-            let name = String::from_utf8(record.definition().name().to_owned())?;
+            let name = String::from_utf8(record.definition().name().to_vec())?;
             Ok((name, record))
         })
         .collect();

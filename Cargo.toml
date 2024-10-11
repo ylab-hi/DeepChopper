@@ -16,8 +16,84 @@ name = "deepchopper"
 crate-type = ["cdylib", "rlib"]
 
 [[bin]]
-path = "src/bin/predict.rs"
 name = "deepchopper-chop"
+path = "src/bin/predict.rs"
+
+# Other binaries (not published)
+[[bin]]
+name = "blat"
+path = "src/bin/blat.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "chemericstat"
+path = "src/bin/chemericstat.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "diff"
+path = "src/bin/diff.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "encode"
+path = "src/bin/encode.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "eval"
+path = "src/bin/eval.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "fq2fa"
+path = "src/bin/fq2fa.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "fqsearch"
+path = "src/bin/fqsearch.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "read"
+path = "src/bin/read.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "replacebam"
+path = "src/bin/replacebam.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "replacefq"
+path = "src/bin/replacefq.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "sa"
+path = "src/bin/sa.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "scdiff"
+path = "src/bin/scdiff.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "select"
+path = "src/bin/select.rs"
+required-features = ["dev"]
+
+[[bin]]
+name = "tmp"
+path = "src/bin/tmp.rs"
+required-features = ["dev"]
+
+
+[features]
+default = []
+dev = []
 
 [profile.dev]
 debug = 1
