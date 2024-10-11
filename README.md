@@ -5,6 +5,8 @@
 [![pypi version](https://img.shields.io/pypi/pyversions/deepchopper.svg)](https://pypi.python.org/pypi/deepbiop)
 [![Actions status](https://github.com/ylab-hi/DeepChopper/actions/workflows/release-python.yml/badge.svg)](https://github.com/ylab-hi/DeepChopper/actions)
 [![platform](https://img.shields.io/badge/platform-linux%20%7C%20osx%20%7C%20win-blue)](https://pypi.org/project/deepchopper/#files)
+[![Hugging Face](https://img.shields.io/badge/Model%20Hub-Hugging%20Face-blue)](https://huggingface.co/yangliz5/deepchopper)
+[![Space](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)]()
 
 <!--toc:start-->
 

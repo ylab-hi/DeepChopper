@@ -592,3 +592,5 @@ scripts/*.json
 *overlap_results*.json
 *stats_*.json
 !build.rs
+.ruff_cache
+hg_deepchopper
