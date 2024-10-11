@@ -1,0 +1,14 @@
+[slow5_idx_get::ERROR] Read ID '088d05af-bca5-4640-a95a-54e258a7e86a' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID 'd929b17f-c9ce-430c-ad92-9552bd675460' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID '25a81fd0-ff6e-440a-88a4-f025a5cc71d6' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID '91a63d3a-b106-463a-a667-86cb0954103e' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID '0ad2e3c9-bbae-40e2-a242-82878b7481e8' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID '5e2fc1ec-c9d9-4e28-abfa-11c32fd857a8' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID '41db3c61-72b0-49fa-8846-bc5cd0c83e1f' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID '4afe19a2-11cb-499d-855d-e5172f573a42' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID 'd873617e-2711-4078-bbc0-bc25cc67f99f' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID '52514859-8112-448e-91ae-1a6e030fd363' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID '709f5d96-053d-4dd9-9812-61afc608c818' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID 'c0b186b7-8d02-4daa-b912-5ea0189afe63' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID '82423b6c-9a03-4bdf-9c1b-38c38b8515b5' was not found. At src/slow5_idx.c:522
+[slow5_idx_get::ERROR] Read ID 'bdb21c68-c08a-4f85-9b1e-7ff87920a09d' was not found. At src/slow5_idx.c:522
