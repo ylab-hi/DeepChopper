@@ -5,12 +5,12 @@
 [![pypi version](https://img.shields.io/pypi/pyversions/deepchopper.svg)](https://pypi.python.org/pypi/deepbiop)
 [![Actions status](https://github.com/ylab-hi/DeepChopper/actions/workflows/release-python.yml/badge.svg)](https://github.com/ylab-hi/DeepChopper/actions)
 [![platform](https://img.shields.io/badge/platform-linux%20%7C%20osx%20%7C%20win-blue)](https://pypi.org/project/deepchopper/#files)
-[![Hugging Face](https://img.shields.io/badge/Model%20Hub-Hugging%20Face-blue)](https://huggingface.co/yangliz5/deepchopper)
-[![Space](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)]()
+[![Space](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)](https://huggingface.co/spaces/yangliz5/deepchopper)
 
 <!--toc:start-->
 
 - [ **DeepChopper** ](#-deepchopper-)
+  - [Quick Start: Try DeepChopper Online](#quick-start-try-deepchopper-online)
   - [Install](#install)
   - [Usage](#usage)
     - [Command-Line Interface](#command-line-interface)
@@ -24,6 +24,25 @@
 
 DeepChopper leverages language model to accurately detect and chop artificial sequences which may cause chimeric reads, ensuring higher quality and more reliable sequencing results.
 By integrating seamlessly with existing workflows, DeepChopper provides a robust solution for researchers and bioinformatics working with NanoPore direct-RNA sequencing data.
+
+## Quick Start: Try DeepChopper Online
+
+Experience DeepChopper instantly through our user-friendly web interface. No installation required!
+
+Simply click the button below to launch the web application and start exploring DeepChopper's capabilities:
+
+[![Open in Hugging Face Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)](https://huggingface.co/spaces/yangliz5/deepchopper)
+
+This online version provides a convenient way to:
+
+- Upload your sequencing data
+- Run DeepChopper's analysis
+- Visualize results
+- Experiment with different parameters
+
+It's perfect for quick tests or when you want to showcase DeepChopper's functionality without local setup.
+However, for more extensive analyses or custom workflows, we recommend installing DeepChopper on your machine.
+Because the online version is limited to one FASTQ record at a time, it may not be suitable for large-scale projects.
 
 ## Install
 
@@ -108,6 +127,12 @@ model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 ```
 
 ## Cite
+
+If you use DeepChopper in your research, please cite the following paper:
+
+```bibtex
+
+```
 
 ## 🤜 Contribution
 
