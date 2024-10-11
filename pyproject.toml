@@ -6,7 +6,7 @@ build-backend = "maturin"
 authors = ["Yangyang Li <yangyang.li@northwestern.edu>"]
 license = "Apache-2.0"
 name = "deepchopper"
-version = "0.1.0"
+version = "1.0.0"
 description = "A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing"
 readme = "README.md"
 
