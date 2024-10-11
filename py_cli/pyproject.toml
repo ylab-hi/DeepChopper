@@ -31,6 +31,3 @@ homepage = "https://github.com/ylab-hi/DeepChopper"
 documentation = "https://github.com/ylab-hi/DeepChopper"
 repository = "https://github.com/ylab-hi/DeepChopper"
 changelog = "https://github.com/ylab-hi/DeepChopper/README.md"
-
-[tool.maturin]
-manifest-path = "../Cargo.toml"
