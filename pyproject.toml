@@ -4,16 +4,16 @@ build-backend = "maturin"
 
 [tool.poetry]
 authors = ["Yangyang Li <yangyang.li@northwestern.edu>"]
-license = "GNUv3"
+license = "Apache-2.0"
 name = "deepchopper"
 version = "0.1.0"
-description = "deep learning adapter chopper for ont direct-rna data"
+description = "A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing"
 readme = "README.md"
 
 
 [project]
 name = "deepchopper"
-description = "deep learning adapter chopper for ont direct-rna data"
+description = "A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing"
 authors = [{ name = "Yangyang Li", email = "<yangyang.li@northwestern.edu>" }]
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,7 +23,7 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNUv3 License",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
@@ -34,11 +34,17 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 
+[project.urls]
+homepage = "https://github.com/ylab-hi/DeepChopper"
+documentation = "https://github.com/ylab-hi/DeepChopper"
+repository = "https://github.com/ylab-hi/DeepChopper"
+changelog = "https://github.com/ylab-hi/DeepChopper/README.md"
+
+
 [tool.poetry.scripts]
 dc-train = "deepchopper.train:main"
 dc-eval = "deepchopper.eval:main"
 deepchopper = "deepchopper.cli:app"
-deepchopper-webui = "deepchopper.ui.main:main"
 
 [tool.poe.tasks.train]
 cmd = "dc-train"
@@ -127,13 +133,6 @@ nvidia-nvtx-cu11 = { version = "^11.8.86", markers = "sys_platform == 'linux'" }
 nvidia-cublas-cu11 = { version = "^11.11.3.6", markers = "sys_platform == 'linux'" }
 mamba-ssm = { version = "^1.2.0.post1", markers = "sys_platform == 'linux'" }
 causal-conv1d = { version = "^1.2.0.post2", markers = "sys_platform == 'linux'" }
-
-
-[project.urls]
-homepage = "https://github.com/ylab-hi/DeepChopper"
-documentation = "https://github.com/ylab-hi/DeepChopper"
-repository = "https://github.com/ylab-hi/DeepChopper"
-changelog = "https://github.com/ylab-hi/DeepChopper/README.md"
 
 [tool.ruff]
 target-version = "py310"
