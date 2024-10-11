@@ -10,7 +10,6 @@ version = "0.1.0"
 description = "A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing"
 readme = "README.md"
 
-
 [project]
 name = "deepchopper"
 description = "A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing"
@@ -40,6 +39,9 @@ documentation = "https://github.com/ylab-hi/DeepChopper"
 repository = "https://github.com/ylab-hi/DeepChopper"
 changelog = "https://github.com/ylab-hi/DeepChopper/README.md"
 
+
+[project.scripts]
+deepchopper = "deepchopper.cli:app"
 
 [tool.poetry.scripts]
 dc-train = "deepchopper.train:main"
@@ -74,8 +76,8 @@ einops = "^0.7.0"
 tokenizers = "^0.15.2"
 torchinfo = "^1.8.0"
 evaluate = "^0.4.1"
-typer = "^0.9.0"
-gradio = "^5.0.1"
+typer = "^0.12.0"
+gradio = "5.0.1"
 fastapi = "0.112.2"
 
 [[tool.poetry.source]]
@@ -133,6 +135,7 @@ nvidia-nvtx-cu11 = { version = "^11.8.86", markers = "sys_platform == 'linux'" }
 nvidia-cublas-cu11 = { version = "^11.11.3.6", markers = "sys_platform == 'linux'" }
 mamba-ssm = { version = "^1.2.0.post1", markers = "sys_platform == 'linux'" }
 causal-conv1d = { version = "^1.2.0.post2", markers = "sys_platform == 'linux'" }
+deptry = "^0.20.0"
 
 [tool.ruff]
 target-version = "py310"
