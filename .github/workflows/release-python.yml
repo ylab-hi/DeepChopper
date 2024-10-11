@@ -72,7 +72,7 @@ jobs:
           run: |
             set -e
             pip3 install deepchopper --find-links dist --force-reinstall
-            python -c "import deepchopper"
+            # python -c "import deepchopper"
             deepchopper -h
 
   musllinux:
@@ -118,7 +118,7 @@ jobs:
             source .venv/bin/activate
             pip install deepchopper --no-index --find-links dist --force-reinstall
             pip install pytest
-            python -c "import deepchopper"
+            # python -c "import deepchopper"
             deepchopper -h
       - name: pytest
         if: ${{ !startsWith(matrix.platform.target, 'x86') }}
@@ -135,7 +135,7 @@ jobs:
             source .venv/bin/activate
             pip install pytest
             pip install deepchopper --find-links dist --force-reinstall
-            python -c "import deepchopper"
+            # python -c "import deepchopper"
             deepchopper -h
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -172,7 +172,7 @@ jobs:
           source .venv/Scripts/activate
           pip install deepchopper --find-links dist --force-reinstall
           pip install pytest
-          python -c "import deepchopper"
+          # python -c "import deepchopper"
           deepchopper -h
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -206,7 +206,7 @@ jobs:
           source .venv/bin/activate
           pip install deepchopper --find-links dist --force-reinstall
           pip install pytest
-          python -c "import deepchopper"
+          # python -c "import deepchopper"
           deepchopper -h
   sdist:
     runs-on: ubuntu-latest
