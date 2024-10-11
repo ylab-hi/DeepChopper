@@ -62,7 +62,7 @@ deepchopper = "deepchopper.cli:app"
 [tool.poetry.scripts]
 dc-train = "deepchopper.train:main"
 dc-eval = "deepchopper.eval:main"
-deepchopper = "deepchopper.cli:app"
+deepchopper = "deepchopper:app"
 
 [tool.poe.tasks.train]
 cmd = "dc-train"
