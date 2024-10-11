@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci github --pytest
 #
-name: Releas-Python-Library
+name: Releas-Python-CLI
 
 on:
   push:
@@ -26,6 +26,8 @@ jobs:
         platform:
           - runner: ubuntu-latest
             target: x86_64
+          - runner: ubuntu-latest
+            target: aarch64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -38,20 +40,21 @@ jobs:
           args: --release --out dist
           sccache: "true"
           manylinux: auto
+          working-directory: ./py_cli
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.platform.target }}
-          path: dist
+          path: ./py_cli/dist
       - name: pytest
         if: ${{ startsWith(matrix.platform.target, 'x86_64') }}
         shell: bash
+        working-directory: ./py_cli
         run: |
           set -e
           python3 -m venv .venv
           source .venv/bin/activate
-          pip install deepchopper --find-links dist --force-reinstall
-          deepchopper -h
+          pip install deepchopper-cli --find-links dist --force-reinstall
       - name: pytest
         if: ${{ !startsWith(matrix.platform.target, 'x86') && matrix.platform.target != 'ppc64' }}
         uses: uraimo/run-on-arch-action@v2
@@ -65,8 +68,77 @@ jobs:
             pip3 install -U pip pytest
           run: |
             set -e
-            pip3 install deepchopper --find-links dist --force-reinstall
-            deepchopper -h
+            cd py_cli
+            pip3 install deepchopper-cli --find-links dist --force-reinstall
+            deepchopper-chop --help
+
+      - name: Debug output
+        if: failure()
+        working-directory: ./py_cli
+        run: |
+          echo "Build failed. Debugging information:"
+          ls -R
+          cat Cargo.toml
+          cat pyproject.toml
+
+  musllinux:
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        platform:
+          - runner: ubuntu-latest
+            target: x86_64
+          - runner: ubuntu-latest
+            target: aarch64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist
+          sccache: "true"
+          manylinux: musllinux_1_2
+          working-directory: ./py_cli
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-musllinux-${{ matrix.platform.target }}
+          path: ./py_cli/dist
+      - name: pytest
+        if: ${{ startsWith(matrix.platform.target, 'x86_64') }}
+        uses: addnab/docker-run-action@v3
+        with:
+          image: alpine:latest
+          options: -v ${{ github.workspace }}:/io -w /io
+          run: |
+            set -e
+            apk add py3-pip py3-virtualenv
+            python3 -m virtualenv .venv
+            source .venv/bin/activate
+            cd py_cli
+            pip install deepchopper-cli --no-index --find-links dist --force-reinstall
+            deepchopper-chop --help
+      - name: pytest
+        if: ${{ !startsWith(matrix.platform.target, 'x86') }}
+        uses: uraimo/run-on-arch-action@v2
+        with:
+          arch: ${{ matrix.platform.target }}
+          distro: alpine_latest
+          githubToken: ${{ github.token }}
+          install: |
+            apk add py3-virtualenv
+          run: |
+            set -e
+            python3 -m virtualenv .venv
+            source .venv/bin/activate
+            pip install pytest
+            cd py_cli
+            pip install deepchopper-cli --find-links dist --force-reinstall
+            deepchopper-chop --help
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -75,6 +147,8 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
+          - runner: windows-latest
+            target: x86
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -87,11 +161,12 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
           sccache: "true"
+          working-directory: ./py_cli
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-windows-${{ matrix.platform.target }}
-          path: dist
+          path: ./py_cli/dist
       - name: pytest
         if: ${{ !startsWith(matrix.platform.target, 'aarch64') }}
         shell: bash
@@ -99,10 +174,9 @@ jobs:
           set -e
           python3 -m venv .venv
           source .venv/Scripts/activate
-          pip install deepchopper --find-links dist --force-reinstall
-          pip install pytest
-          # python -c "import deepchopper"
-          deepchopper -h
+          cd py_cli
+          pip install deepchopper-cli --find-links dist --force-reinstall
+          deepchopper-chop --help
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -124,20 +198,21 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
           sccache: "true"
+          working-directory: ./py_cli
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-macos-${{ matrix.platform.target }}
-          path: dist
+          path: ./py_cli/dist
       - name: pytest
         run: |
           set -e
           python3 -m venv .venv
           source .venv/bin/activate
-          pip install deepchopper --find-links dist --force-reinstall
-          pip install pytest
-          # python -c "import deepchopper"
-          deepchopper -h
+          cd py_cli
+          pip install deepchopper-cli --find-links dist --force-reinstall
+          deepchopper-chop --help
+
   sdist:
     runs-on: ubuntu-latest
     steps:
@@ -147,17 +222,18 @@ jobs:
         with:
           command: sdist
           args: --out dist
+          working-directory: ./py_cli
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
           name: wheels-sdist
-          path: dist
+          path: ./py_cli/dist
 
   release:
     name: Release
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
-    needs: [linux, windows, macos, sdist]
+    needs: [linux, musllinux, windows, macos, sdist]
     permissions:
       # Use to sign the release artifacts
       id-token: write
