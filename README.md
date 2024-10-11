@@ -10,47 +10,48 @@
 <!--toc:start-->
 
 - [ **DeepChopper** ](#-deepchopper-)
-  - [Quick Start: Try DeepChopper Online](#quick-start-try-deepchopper-online)
-  - [Install](#install)
-  - [Usage](#usage)
+  - [🚀 Quick Start: Try DeepChopper Online](#-quick-start-try-deepchopper-online)
+  - [📦 Installation](#-installation)
+  - [🛠️ Usage](#️-usage)
     - [Command-Line Interface](#command-line-interface)
-    - [Library](#library)
-  - [Cite](#cite)
-  - [🤜 Contribution](#-contribution)
+    - [Python Library](#python-library)
+  - [📚 Cite](#-cite)
+  - [🤝 Contribution](#-contribution)
     - [Build Environment](#build-environment)
     - [Install Dependencies](#install-dependencies)
+  - [📬 Support](#-support)
 
 <!--toc:end-->
 
-DeepChopper leverages language model to accurately detect and chop artificial sequences which may cause chimeric reads, ensuring higher quality and more reliable sequencing results.
+🧬 DeepChopper leverages language model to accurately detect and chop artificial sequences which may cause chimeric reads, ensuring higher quality and more reliable sequencing results.
 By integrating seamlessly with existing workflows, DeepChopper provides a robust solution for researchers and bioinformatics working with NanoPore direct-RNA sequencing data.
 
-## Quick Start: Try DeepChopper Online
+## 🚀 Quick Start: Try DeepChopper Online
 
 Experience DeepChopper instantly through our user-friendly web interface. No installation required!
-
 Simply click the button below to launch the web application and start exploring DeepChopper's capabilities:
 
 [![Open in Hugging Face Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)](https://huggingface.co/spaces/yangliz5/deepchopper)
 
-This online version provides a convenient way to:
+**What you can do online:**
 
-- Upload your sequencing data
-- Run DeepChopper's analysis
-- Visualize results
-- Experiment with different parameters
+- 📤 Upload your sequencing data
+- 🔬 Run DeepChopper's analysis
+- 📊 Visualize results
+- 🎛️ Experiment with different parameters
 
-It's perfect for quick tests or when you want to showcase DeepChopper's functionality without local setup.
-However, for more extensive analyses or custom workflows, we recommend installing DeepChopper on your machine.
-Because the online version is limited to one FASTQ record at a time, it may not be suitable for large-scale projects.
+Perfect for quick tests or demonstrations! However, for extensive analyses or custom workflows, we recommend installing DeepChopper locally.
 
-## Install
+> ⚠️ Note: The online version is limited to one FASTQ record at a time and may not be suitable for large-scale projects.
 
-DeepChopper can be installed using pip, the Python package installer. Follow these steps to install:
+## 📦 Installation
+
+DeepChopper can be installed using pip, the Python package installer.
+Follow these steps to install:
 
 1. Ensure you have Python 3.10 or later installed on your system.
 
-2. It's recommended to create a virtual environment:
+2. Create a virtual environment (recommended):
 
    ```bash
    python -m venv deepchopper_env
@@ -69,66 +70,69 @@ DeepChopper can be installed using pip, the Python package installer. Follow the
    deepchopper --help
    ```
 
-Note: If you encounter any issues, please check our GitHub repository for troubleshooting guides or to report a problem.
+🆘 Trouble installing? Check our [Troubleshooting Guide](./docs/troubleshooting.md) or [open an issue](https://github.com/ylab-hi/DeepChopper/issues).
 
-## Usage
+## 🛠️ Usage
 
-We provide a [complete guide](./documentation/tutorial.md) on how to use DeepChopper for NanoPore direct-RNA sequencing data.
-Below is a brief overview of the command-line interface and library usage.
+For a comprehensive guide, check out our [full tutorial](./documentation/tutorial.md).
+Here's a quick overview:
 
 ### Command-Line Interface
 
-DeepChopper provides a command-line interface (CLI) for easy access to its features. In total, there are three commands: `encode`, `predict`, and `chop`.
-DeepChopper can be used to encode, predict, and chop chimeric reads in direct-RNA sequencing data.
+DeepChopper offers three main commands: `encode`, `predict`, and `chop`.
 
-Firstly, we need to encode the input data using the `encode` command, which will generate a `.parquet` file.
+1. **Encode** your input data:
 
-```bash
-deepchopper endcode <input.fq>
-```
+   ```bash
+   deepchopper encode <input.fq>
+   ```
 
-Next, we can use the `predict` command to predict chimeric reads in the encoded data.
+2. **Predict** chimeric reads:
 
-```bash
-deepchopper predict <input.parquet> --ouput-path predictions
-```
+   ```bash
+   deepchopper predict <input.parquet> --output-path predictions
+   ```
 
-If you have GPUs, you can use the `--gpus` flag to specify the GPU device.
+   Using GPUs? Add the `--gpus` flag:
 
-```bash
-deepchopper predict <input.parquet> --ouput-path predictions --gpus 2
-```
+   ```bash
+   deepchopper predict <input.parquet> --output-path predictions --gpus 2
+   ```
 
-Finally, we can use the `chop` command to chop the chimeric reads in the input data.
+3. **Chop** the chimeric reads:
 
-```bash
-deepchopper chop <predictions> raw.fq
-```
+   ```bash
+   deepchopper chop <predictions> raw.fq
+   ```
 
-Besides, DeepChopper provides a web-based user interface for users to interact with the tool.
-However, the web-based application can only take one FASTQ record at a time.
+Want a GUI? Launch the web interface (note: limited to one FASTQ record at a time):
 
 ```bash
 deepchopper web
 ```
 
-### Library
+### Python Library
+
+Integrate DeepChopper into your Python scripts:
 
 ```python
 import deepchopper
 
 model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
+# Your analysis code here
 ```
 
-## Cite
+## 📚 Cite
 
-If you use DeepChopper in your research, please cite the following paper:
+If DeepChopper aids your research, please cite our paper:
 
 ```bibtex
 
 ```
 
-## 🤜 Contribution
+## 🤝 Contribution
+
+We welcome contributions! Here's how to set up your development environment:
 
 ### Build Environment
 
@@ -146,3 +150,18 @@ pip install pipx
 pipx install --suffix @master git+https://github.com/python-poetry/poetry.git@master
 poetry@master install
 ```
+
+🎉 Ready to contribute? Check out our [Contribution Guidelines](./CONTRIBUTING.md) to get started!
+
+## 📬 Support
+
+Need help? Have questions?
+
+- 📖 Check our [Documentation](./docs)
+- 💬 Join our [Community Forum](https://github.com/ylab-hi/DeepChopper/discussions)
+- 🐛 [Report issues](https://github.com/ylab-hi/DeepChopper/issues)
+
+---
+
+DeepChopper is developed with ❤️ by the YLab team.
+Happy sequencing! 🧬🔬
