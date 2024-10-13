@@ -66,9 +66,6 @@ def encode(
     if verbose:
         set_logging_level(logging.INFO)
 
-    if isinstance(fastq_path, str):
-        fastq_path = Path(fastq_path)
-
     if not fastq_path.exists():
         msg = f"Folder {fastq_path} does not exist."
         logging.error(msg)
@@ -112,9 +109,6 @@ def predict(
     if verbose:
         set_logging_level(logging.INFO)
 
-    if isinstance(data_path, str):
-        data_path = Path(data_path)
-
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
     datamodule: LightningDataModule = deepchopper.data.fq_datamodule.FqDataModule(
         train_data_path="dummy.parquet",
@@ -135,7 +129,7 @@ def predict(
 
     trainer = lightning.pytorch.trainer.Trainer(
         accelerator=accelerator,
-        devices=devices,
+        devices=gpus,
         callbacks=callbacks,
         deterministic=False,
         logger=False,
@@ -147,17 +141,19 @@ def predict(
 def chop(
     predicts: list[Path] = typer.Argument(..., help="Paths to prediction files"),
     fq: Path = typer.Argument(..., help="Path to FASTQ file"),
-    smooth_window_size: int = typer.Option(21, "--smooth-window", help="Smooth window size"),
-    min_interval_size: int = typer.Option(13, "--min-interval-size", help="Minimum interval size"),
-    approved_interval_number: int = typer.Option(20, "--approved-intervals", help="Number of approved intervals"),
-    max_process_intervals: int = typer.Option(4, "--max-process-intervals", help="Maximum process intervals"),
-    min_read_length_after_chop: int = typer.Option(20, "--min-read-length", help="Minimum read length after chop"),
-    output_chopped_seqs: bool = typer.Option(False, "--output-chopped", help="Output chopped sequences"),
-    chop_type: str = typer.Option("all", "--chop-type", help="Chop type"),
-    threads: int = typer.Option(2, "--threads", help="Number of threads"),
+    smooth_window_size: int = typer.Option(21, "--smooth-window", "-s", help="Smooth window size"),
+    min_interval_size: int = typer.Option(13, "--min-interval", "-i", help="Minimum interval size"),
+    approved_interval_number: int = typer.Option(20, "--approved-intervals", "-a", help="Number of approved intervals"),
+    max_process_intervals: int = typer.Option(4, "--max-process", "-p", help="Maximum process intervals"),
+    min_read_length_after_chop: int = typer.Option(
+        20, "--min-read-length", "-l", help="Minimum read length after chop"
+    ),
+    output_chopped_seqs: bool = typer.Option(False, "--output-chopped", "-o", help="Output chopped sequences"),
+    chop_type: str = typer.Option("all", "--chop-type", "-t", help="Chop type"),
+    threads: int = typer.Option(2, "--threads", "-n", help="Number of threads"),
+    output_prefix: str | None = typer.Option(None, "--prefix", "-x", help="Output prefix"),
+    max_batch_size: int | None = typer.Option(None, "--max-batch", "-b", help="Maximum batch size"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
-    output_prefix: str | None = typer.Option(None, "--prefix", "-o", help="Output prefix"),
-    max_batch_size: int | None = typer.Option(None, "--max-batch", help="Maximum batch size"),
 ):
     """Chop sequences based on predictions."""
     if verbose:
@@ -172,19 +168,37 @@ def chop(
 
     predict_files = " ".join([f"--pdt {predict}" for predict in predicts])
 
-    command = f"deepchopper-chop {predict_files} --fq {fq} -t {threads} -s {smooth_window_size} --mis {min_interval_size} -a {approved_interval_number} --mpi {max_process_intervals} --mcr {min_read_length_after_chop} --ct {chop_type} "
-
-    if output_chopped_seqs:
-        command += "--ocq "
-
-    if output_prefix is not None:
-        command += f"-o {output_prefix} "
-
-    if max_batch_size is not None:
-        command += f"-m {max_batch_size} "
+    commands = [
+        [
+            "deepchopper-chop",
+            predict_files,
+            "--fq",
+            fq,
+            "-t",
+            threads,
+            "-s",
+            smooth_window_size,
+            "--mis",
+            min_interval_size,
+            "-a",
+            approved_interval_number,
+            "--mpi",
+            max_process_intervals,
+            "--mcr",
+            min_read_length_after_chop,
+            "--ocq",
+            output_chopped_seqs,
+            "--ct",
+            chop_type,
+            "-o",
+            output_prefix,
+            "-m",
+            max_batch_size,
+        ],
+    ]
 
     try:
-        subprocess.run(command.split(), check=True)
+        subprocess.run(commands, check=True)
     except subprocess.CalledProcessError as e:
         logging.error(f"Error: Chopping failed with exit code {e.returncode}")
         raise e
