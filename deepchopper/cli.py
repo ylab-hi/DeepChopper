@@ -135,7 +135,7 @@ def predict(
 
     trainer = lightning.pytorch.trainer.Trainer(
         accelerator=accelerator,
-        devices=gpus,
+        devices=devices,
         callbacks=callbacks,
         deterministic=False,
         logger=False,
