@@ -158,8 +158,7 @@ poetry@master install
 
 Need help? Have questions?
 
-- 📖 Check our [Documentation](./docs)
-- 💬 Join our [Community Forum](https://github.com/ylab-hi/DeepChopper/discussions)
+- 📖 Check our [Documentation](./documentation/tutorial.md)
 - 🐛 [Report issues](https://github.com/ylab-hi/DeepChopper/issues)
 
 ---

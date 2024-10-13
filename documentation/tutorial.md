@@ -131,6 +131,9 @@ This command takes the original FASTQ file (`raw.fastq`) and the predictions (`p
 - **Issue**: Unexpected results
   **Solution**: Verify input data quality and check DeepChopper version
 
+- **Issue**: GPU driver compatibility error
+  **Solution**: Update your GPU driver or install a compatible PyTorch version e.g., `pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu118` to install a CUDA 11.8 compatible version.
+
 For more help, visit our [GitHub Issues](https://github.com/ylab-hi/DeepChopper/issues) page.
 
 Happy sequencing, and may your data be artifical-chimera-free! 🧬🔍
