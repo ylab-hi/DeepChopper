@@ -594,3 +594,4 @@ scripts/*.json
 !build.rs
 .ruff_cache
 hg_deepchopper
+analysis_data
