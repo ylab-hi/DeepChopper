@@ -91,13 +91,13 @@ DeepChopper offers three main commands: `encode`, `predict`, and `chop`.
 2. **Predict** chimeric reads:
 
    ```bash
-   deepchopper predict <input.parquet> --output-path predictions
+   deepchopper predict <input.parquet> --output predictions
    ```
 
    Using GPUs? Add the `--gpus` flag:
 
    ```bash
-   deepchopper predict <input.parquet> --output-path predictions --gpus 2
+   deepchopper predict <input.parquet> --output predictions --gpus 2
    ```
 
 3. **Chop** the chimeric reads:

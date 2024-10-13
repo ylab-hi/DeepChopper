@@ -78,17 +78,17 @@ Analyze the encoded data to identify potential chimeric reads:
 
 ```bash
 # Predict artifical sequences for reads
-deepchopper predict raw.parquet --ouput-path predictions
+deepchopper predict raw.parquet --ouput predictions
 
 # Predict artifical sequences for reads using GPU
-deepchopper predict raw.parquet --ouput-path predictions --gpus 2
+deepchopper predict raw.parquet --ouput predictions --gpus 2
 ```
 
 For chunked data:
 
 ```bash
-deepchopper predict raw_chunk1.parquet --output-path predictions_chunk1
-deepchopper predict raw_chunk2.parquet --output-path predictions_chunk2
+deepchopper predict raw_chunk1.parquet --output predictions_chunk1
+deepchopper predict raw_chunk2.parquet --output predictions_chunk2
 ```
 
 📊 **Results**: Check the `predictions` folder for output files.
