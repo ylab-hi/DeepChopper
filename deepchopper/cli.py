@@ -66,6 +66,9 @@ def encode(
     if verbose:
         set_logging_level(logging.INFO)
 
+    if isinstance(fastq_path, str):
+        fastq_path = Path(fastq_path)
+
     if not fastq_path.exists():
         msg = f"Folder {fastq_path} does not exist."
         logging.error(msg)
@@ -108,6 +111,9 @@ def predict(
     """Predict the given dataset using DeepChopper."""
     if verbose:
         set_logging_level(logging.INFO)
+
+    if isinstance(data_path, str):
+        data_path = Path(data_path)
 
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
     datamodule: LightningDataModule = deepchopper.data.fq_datamodule.FqDataModule(
