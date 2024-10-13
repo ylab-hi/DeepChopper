@@ -101,9 +101,9 @@ debug = 1
 [dependencies]
 thiserror = "1.0"
 anyhow = "1.0"
-walkdir = { version = "2.4" }
-rayon = { version = "1.8" }
-pyo3 = { version = "0.21.0", features = [
+walkdir = { version = "2.5" }
+rayon = { version = "1.10" }
+pyo3 = { version = "0.21.2", features = [
     "abi3-py310",
     "extension-module",
     "anyhow",
@@ -137,21 +137,21 @@ bitvec = "1.0"
 itertools = "0.13.0"
 derive_builder = "0.20"
 lexical = "7.0"
-bstr = "1.9.1"
-lazy_static = "1.4.0"
-tempfile = "3.10"
-parquet = "52.0.0"
-arrow = "52.0"
+bstr = "1.10.0"
+lazy_static = "1.5.0"
+tempfile = "3.13"
+parquet = "52.2.0"
+arrow = "52.2"
 candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.7.2" }
 colored = "2"
 textwrap = "0.16"
-flate2 = { version = "1.0.30", features = [
+flate2 = { version = "1.0.34", features = [
     "zlib-ng",
 ], default-features = false }
 
 
 # binaries
-clap = { version = "4.5.4", features = ["derive"] }
+clap = { version = "4.5.20", features = ["derive"] }
 env_logger = "0.11"
 human-panic = "2.0"
 
