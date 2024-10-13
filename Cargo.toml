@@ -124,8 +124,6 @@ noodles = { version = "0.83.0", features = [
 
 bio = "2.0"
 needletail = "0.5"
-
-
 ahash = "0.8.11"
 numpy = "0.21"
 ndarray = { version = "0.15", features = ["serde", "rayon"] }
@@ -155,7 +153,6 @@ flate2 = { version = "1.0.30", features = [
 # binaries
 clap = { version = "4.5.4", features = ["derive"] }
 env_logger = "0.11"
-stringzilla = ">=3"
 human-panic = "2.0"
 
 
