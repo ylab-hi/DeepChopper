@@ -4,9 +4,9 @@ version = "1.2.3"
 edition = "2021"
 authors = ["Yangyang Li <yangyang.li@northwestern.edu>"]
 description = "A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing"
-documentation = "https://docs.rs/bitflags"
+documentation = "https://github.com/ylab-hi/DeepChopper"
 homepage = "https://serde.rs"
-repository = "https://github.com/rust-lang/cargo"
+repository = "https://github.com/ylab-hi/DeepChopper"
 license = "Apache-2.0"
 readme = "README.md"
 
