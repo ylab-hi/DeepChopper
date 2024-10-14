@@ -11,7 +11,7 @@ Whether you're new to bioinformatics or an experienced researcher, this tutorial
   - [1. Data Acquisition](#1-data-acquisition)
   - [2. Basecall Using Dorado](#2-basecall-using-dorado)
   - [3. Encoding Data with DeepChopper](#3-encoding-data-with-deepchopper)
-  - [4. Predicting Chimeric Reads](#4-predicting-chimeric-reads)
+  - [4. Predicting Adapter to Detect Artificial Chimeric Reads](#4-predicting-adapter-to-detect-artificial-chimeric-reads)
   - [5. Chopping Artificial Sequences](#5-chopping-artificial-sequences)
   - [Next Steps](#next-steps)
   - [Troubleshooting](#troubleshooting)
@@ -77,7 +77,7 @@ deepchopper encode raw_no_trim.fastq --chunk --chunk-size  100000
 
 🔍 **Output**: Look for `raw_no_trim.parquet` or multiple `.parquet` files under `raw_no_trim.fq_chunks` if chunking.
 
-## 4. Predicting Chimeric Reads
+## 4. Predicting Adapter to Detect Artificial Chimeric Reads
 
 Analyze the encoded data to identify potential chimeric reads:
 
