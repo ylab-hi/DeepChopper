@@ -126,7 +126,7 @@ class FqDataModule(LightningDataModule):
             if Path(data_path).suffix == ".parquet":
                 pass
             else:
-                msg = f"Data file {data_path} is not in FastQ or Parquet format."
+                msg = f"Data file {data_path} is not in Parquet format."
                 raise ValueError(msg)
 
         self.hparams.train_data_path = Path(self.hparams.train_data_path).with_suffix(".parquet").as_posix()

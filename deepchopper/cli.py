@@ -129,9 +129,19 @@ def predict(
     output_path = Path(output_path or "predictions")
     callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir=output_path, write_interval="batch")]
 
-    accelerator, devices = (
-        ("gpu", min(gpus, torch.cuda.device_count())) if gpus > 0 and torch.cuda.is_available() else ("cpu", "auto")
-    )
+    if gpus > 0:
+        if torch.cuda.is_available():
+            accelerator = "gpu"
+            devices = min(gpus, torch.cuda.device_count())
+        elif torch.backends.mps.is_available():
+            accelerator = "mps"
+            devices = "auto"  # MPS currently supports only one device
+        else:
+            accelerator = "cpu"
+            devices = "auto"
+    else:
+        accelerator = "cpu"
+        devices = "auto"
 
     trainer = lightning.pytorch.trainer.Trainer(
         accelerator=accelerator,
