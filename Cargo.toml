@@ -98,6 +98,11 @@ dev = []
 [profile.dev]
 debug = 1
 
+[profile.release]
+lto = true
+codegen-units = 1
+# panic = "abort"
+
 [dependencies]
 thiserror = "1.0"
 anyhow = "1.0"
