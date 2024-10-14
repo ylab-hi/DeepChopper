@@ -46,7 +46,7 @@ Convert raw signal data to nucleotide sequences using Dorado.
 dorado basecaller --no-trim rna002_70bps_hac@v3 200cases.pod5 > raw_no_trim.bam
 
 # Convert BAM to FASTQ
-samtools view raw_no_trim.bam -d dx:0 | samtools fastq > raw_no_trim.fq
+samtools view raw_no_trim.bam -d dx:0 | samtools fastq > raw_no_trim.fastq
 ```
 
 ⚠️ **Important**: Use the `--not_trim` option to preserve potential chimeric sequences.
@@ -54,19 +54,25 @@ samtools view raw_no_trim.bam -d dx:0 | samtools fastq > raw_no_trim.fq
 Replace `200cases.pod5` with the directory containing your POD5 files.
 The output will be a FASTQ file containing the basecalled sequences.
 
+**Note**: For convenience, you can download a pre-prepared FASTQ file directly:
+
+```bash
+wget https://raw.githubusercontent.com/ylab-hi/DeepChopper/refs/heads/main/tests/data/raw_no_trim.fastq
+```
+
 ## 3. Encoding Data with DeepChopper
 
 Prepare your data for the prediction model:
 
 ```bash
 # Encode the FASTQ file
-deepchopper encode raw_no_trim.fq
+deepchopper encode raw_no_trim.fastq
 ```
 
 For large datasets, use chunking to avoid memory issues:
 
 ```bash
-deepchopper encode raw_no_trim.fq --chunk --chunk-size  100000
+deepchopper encode raw_no_trim.fastq --chunk --chunk-size  100000
 ```
 
 🔍 **Output**: Look for `raw_no_trim.parquet` or multiple `.parquet` files under `raw_no_trim.fq_chunks` if chunking.
@@ -100,18 +106,18 @@ Remove identified artificial sequences:
 
 ```bash
 # Chop artificial sequences
-deepchopper chop predictions/0 raw_no_trim.fq
+deepchopper chop predictions/0 raw_no_trim.fastq
 ```
 
 For chunked predictions:
 
 ```bash
-deepchopper chop predictions_chunk1/0 predictions_chunk2/0 raw_no_trim.fq
+deepchopper chop predictions_chunk1/0 predictions_chunk2/0 raw_no_trim.fastq
 ```
 
 🎉 **Success**: Look for the output file with the `.chop.fq.bgz` suffix.
 
-This command takes the original FASTQ file (`raw_no_trim.fq`) and the predictions (`predictions`), and produces a new FASTQ file (with suffix `.chop.fq.bgz`) with the chimeric reads chopped.
+This command takes the original FASTQ file (`raw_no_trim.fastq`) and the predictions (`predictions`), and produces a new FASTQ file (with suffix `.chop.fq.bgz`) with the chimeric reads chopped.
 
 ## Next Steps
 
