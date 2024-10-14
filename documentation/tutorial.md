@@ -51,7 +51,7 @@ samtools view raw_no_trim.bam -d dx:0 | samtools fastq > raw_no_trim.fq
 
 ⚠️ **Important**: Use the `--not_trim` option to preserve potential chimeric sequences.
 
-Replace `path/to/your/pod5/files/` with the directory containing your POD5 files.
+Replace `200cases.pod5` with the directory containing your POD5 files.
 The output will be a FASTQ file containing the basecalled sequences.
 
 ## 3. Encoding Data with DeepChopper
@@ -122,15 +122,19 @@ This command takes the original FASTQ file (`raw_no_trim.fq`) and the prediction
 ## Troubleshooting
 
 - **Issue**: Out of memory errors
+
   **Solution**: Try using the `--chunk` option in the encode step
 
 - **Issue**: Slow processing
+
   **Solution**: Ensure you're using GPU acceleration if available
 
 - **Issue**: Unexpected results
+
   **Solution**: Verify input data quality and check DeepChopper version
 
 - **Issue**: GPU driver compatibility error
+
   **Solution**: Update your GPU driver or install a compatible PyTorch version e.g., `pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu118` to install a CUDA 11.8 compatible version.
 
 For more help, visit our [GitHub Issues](https://github.com/ylab-hi/DeepChopper/issues) page.
