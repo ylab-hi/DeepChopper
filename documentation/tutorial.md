@@ -22,6 +22,7 @@ Before we begin, ensure you have the following installed:
 
 - DeepChopper (latest version)
 - Dorado (Oxford Nanopore's basecaller)
+- Samtools (for BAM to FASTQ conversion)
 - Sufficient storage space for Nanopore data
 
 ## 1. Data Acquisition
@@ -42,12 +43,10 @@ Convert raw signal data to nucleotide sequences using Dorado.
 ```bash
 # Install Dorado (if not already installed)
 # Run Dorado without trimming
-dorado basecaller \
-    --model dna_r10.4.1_e8.2_400bps_sup@v4.2.0 \
-    --device cuda:all \
-    --not_trim \
-    path/to/your/pod5/files/ \
-    > raw.fastq
+dorado basecaller --no-trim rna002_70bps_hac@v3 200cases.pod5 > raw_no_trim.bam
+
+# Convert BAM to FASTQ
+samtools view raw_no_trim.bam -d dx:0 | samtools fastq > raw_no_trim.fq
 ```
 
 ⚠️ **Important**: Use the `--not_trim` option to preserve potential chimeric sequences.
@@ -61,16 +60,16 @@ Prepare your data for the prediction model:
 
 ```bash
 # Encode the FASTQ file
-deepchopper encode raw.fastq
+deepchopper encode raw_no_trim.fq
 ```
 
 For large datasets, use chunking to avoid memory issues:
 
 ```bash
-deepchopper encode raw.fastq --chunk --chunk-size  100000
+deepchopper encode raw_no_trim.fq --chunk --chunk-size  100000
 ```
 
-🔍 **Output**: Look for `encoded_data.parquet` or multiple `.parquet` files if chunking.
+🔍 **Output**: Look for `raw_no_trim.parquet` or multiple `.parquet` files under `raw_no_trim.fq_chunks` if chunking.
 
 ## 4. Predicting Chimeric Reads
 
@@ -78,17 +77,17 @@ Analyze the encoded data to identify potential chimeric reads:
 
 ```bash
 # Predict artifical sequences for reads
-deepchopper predict raw.parquet --ouput predictions
+deepchopper predict raw_no_trim.parquet --ouput predictions
 
 # Predict artifical sequences for reads using GPU
-deepchopper predict raw.parquet --ouput predictions --gpus 2
+deepchopper predict raw_no_trim.parquet --ouput predictions --gpus 2
 ```
 
 For chunked data:
 
 ```bash
-deepchopper predict raw_chunk1.parquet --output predictions_chunk1
-deepchopper predict raw_chunk2.parquet --output predictions_chunk2
+deepchopper predict raw_no_trim.fq_chunks/raw_no_trim.fq_0.parquet --output predictions_chunk1
+deepchopper predict raw_no_trim.fq_chunks/raw_no_trim.fq_1.parquet --output predictions_chunk2
 ```
 
 📊 **Results**: Check the `predictions` folder for output files.
@@ -101,18 +100,18 @@ Remove identified artificial sequences:
 
 ```bash
 # Chop artificial sequences
-deepchopper chop predictions/0 raw.fastq
+deepchopper chop predictions/0 raw_no_trim.fq
 ```
 
 For chunked predictions:
 
 ```bash
-deepchopper chop predictions_chunk1/0 predictions_chunk2/0 raw.fastq
+deepchopper chop predictions_chunk1/0 predictions_chunk2/0 raw_no_trim.fq
 ```
 
 🎉 **Success**: Look for the output file with the `.chop.fq.bgz` suffix.
 
-This command takes the original FASTQ file (`raw.fastq`) and the predictions (`predictions`), and produces a new FASTQ file (with suffix `.chop.fq.bgz`) with the chimeric reads chopped.
+This command takes the original FASTQ file (`raw_no_trim.fq`) and the predictions (`predictions`), and produces a new FASTQ file (with suffix `.chop.fq.bgz`) with the chimeric reads chopped.
 
 ## Next Steps
 
