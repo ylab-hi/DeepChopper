@@ -86,7 +86,7 @@ DeepChopper is designed to work across various platforms and Python versions. Be
 |      3.11      |      ✅      |     ✅      |         ✅          |
 |      3.12      |      ✅      |     ✅      |         ✅          |
 
-#### PyPI Support
+#### [PyPI Support][pypi]
 
 | Python Version | Linux x86_64 | macOS Intel | macOS Apple Silicon | Windows x86_64 |
 | :------------: | :----------: | :---------: | :-----------------: | -------------- |
@@ -188,3 +188,5 @@ Need help? Have questions?
 
 DeepChopper is developed with ❤️ by the YLab team.
 Happy sequencing! 🧬🔬
+
+[pypi]: https://pypi.python.org/pypi/deepchopper
