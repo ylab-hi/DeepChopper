@@ -227,13 +227,10 @@ app = typer.Typer(
 )
 
 
-from typing import Optional
-
-
 # Add the version option to the main app
 @app.callback()
 def main(
-    version: Optional[bool] = typer.Option(
+    version: bool | None = typer.Option(
         None,
         "--version",
         "-V",
@@ -242,8 +239,7 @@ def main(
         is_eager=True,
     ),
 ):
-    """DeepChopper CLI"""
-    pass
+    """DeepChopper CLI."""
 
 
 app.command(
