@@ -30,3 +30,6 @@ filename = "pyproject.toml"
 
 [[tool.bumpversion.files]]
 filename = "./py_cli/pyproject.toml"
+
+[[tool.bumpversion.files]]
+filename = "./deepchopper/__init__.py"
