@@ -13,6 +13,9 @@
 - [ **DeepChopper** ](#-deepchopper-)
   - [🚀 Quick Start: Try DeepChopper Online](#-quick-start-try-deepchopper-online)
   - [📦 Installation](#-installation)
+    - [Compatibility and Support](#compatibility-and-support)
+      - [Conda Support](#conda-support)
+      - [PyPI Support](#pypi-support)
   - [🛠️ Usage](#️-usage)
     - [Command-Line Interface](#command-line-interface)
     - [Python Library](#python-library)
@@ -70,6 +73,26 @@ Follow these steps to install:
    ```bash
    deepchopper --help
    ```
+
+### Compatibility and Support
+
+DeepChopper is designed to work across various platforms and Python versions. Below are the compatibility matrices for both Conda and PyPI installations:
+
+#### Conda Support
+
+| Python Version | Linux x86_64 | macOS Intel | macOS Apple Silicon |
+| :------------: | :----------: | :---------: | :-----------------: |
+|      3.10      |      ✅      |     ✅      |         ✅          |
+|      3.11      |      ✅      |     ✅      |         ✅          |
+|      3.12      |      ✅      |     ✅      |         ✅          |
+
+#### PyPI Support
+
+| Python Version | Linux x86_64 | macOS Intel | macOS Apple Silicon | Windows x86_64 |
+| :------------: | :----------: | :---------: | :-----------------: | -------------- |
+|      3.10      |      ✅      |     ✅      |         ✅          | ✅             |
+|      3.11      |      ✅      |     ✅      |         ✅          | ✅             |
+|      3.12      |      ✅      |     ✅      |         ✅          | ✅             |
 
 🆘 Trouble installing? Check our [Troubleshooting Guide](./docs/troubleshooting.md) or [open an issue](https://github.com/ylab-hi/DeepChopper/issues).
 
