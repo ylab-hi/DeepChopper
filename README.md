@@ -76,7 +76,8 @@ Follow these steps to install:
 
 ### Compatibility and Support
 
-DeepChopper is designed to work across various platforms and Python versions. Below are the compatibility matrices for both Conda and PyPI installations:
+DeepChopper is designed to work across various platforms and Python versions.
+Below are the compatibility matrices for both Conda and PyPI installations:
 
 #### Conda Support
 
