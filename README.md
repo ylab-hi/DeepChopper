@@ -14,7 +14,6 @@
   - [🚀 Quick Start: Try DeepChopper Online](#-quick-start-try-deepchopper-online)
   - [📦 Installation](#-installation)
     - [Compatibility and Support](#compatibility-and-support)
-      - [Conda Support](#conda-support)
       - [PyPI Support](#pypi-support)
   - [🛠️ Usage](#️-usage)
     - [Command-Line Interface](#command-line-interface)
@@ -77,15 +76,7 @@ Follow these steps to install:
 ### Compatibility and Support
 
 DeepChopper is designed to work across various platforms and Python versions.
-Below are the compatibility matrices for both Conda and PyPI installations:
-
-#### Conda Support
-
-| Python Version | Linux x86_64 | macOS Intel | macOS Apple Silicon |
-| :------------: | :----------: | :---------: | :-----------------: |
-|      3.10      |      ✅      |     ✅      |         ✅          |
-|      3.11      |      ✅      |     ✅      |         ✅          |
-|      3.12      |      ✅      |     ✅      |         ✅          |
+Below are the compatibility matrices for PyPI installations:
 
 #### [PyPI Support][pypi]
 
