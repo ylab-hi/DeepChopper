@@ -213,11 +213,34 @@ class OrderCommands(TyperGroup):
         return list(self.commands)  # get commands using self.commands
 
 
+def version_callback(value: bool):
+    """Print the version and exit."""
+    if value:
+        print(f"DeepChopper Version: {deepchopper.__version__}")
+        raise typer.Exit()
+
+
 app = typer.Typer(
     cls=OrderCommands,
     context_settings={"help_option_names": ["-h", "--help"]},
     help="DeepChopper: A genomic lanuage model to identify artificial sequenes.",
 )
+
+
+# Add the version option to the main app
+@app.callback()
+def main(
+    version: bool | None = typer.Option(
+        None,
+        "--version",
+        "-V",
+        help="Show the application's version and exit.",
+        callback=version_callback,
+        is_eager=True,
+    ),
+):
+    """DeepChopper CLI."""
+
 
 app.command(
     help="DeepChopper is All You Need: encode the given fastq",

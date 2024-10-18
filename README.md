@@ -13,6 +13,8 @@
 - [ **DeepChopper** ](#-deepchopper-)
   - [🚀 Quick Start: Try DeepChopper Online](#-quick-start-try-deepchopper-online)
   - [📦 Installation](#-installation)
+    - [Compatibility and Support](#compatibility-and-support)
+      - [PyPI Support](#pypi-support)
   - [🛠️ Usage](#️-usage)
     - [Command-Line Interface](#command-line-interface)
     - [Python Library](#python-library)
@@ -70,6 +72,19 @@ Follow these steps to install:
    ```bash
    deepchopper --help
    ```
+
+### Compatibility and Support
+
+DeepChopper is designed to work across various platforms and Python versions.
+Below are the compatibility matrices for PyPI installations:
+
+#### [PyPI Support][pypi]
+
+| Python Version | Linux x86_64 | macOS Intel | macOS Apple Silicon | Windows x86_64 |
+| :------------: | :----------: | :---------: | :-----------------: | -------------- |
+|      3.10      |      ✅      |     ✅      |         ✅          | ✅             |
+|      3.11      |      ✅      |     ✅      |         ✅          | ✅             |
+|      3.12      |      ✅      |     ✅      |         ✅          | ✅             |
 
 🆘 Trouble installing? Check our [Troubleshooting Guide](./docs/troubleshooting.md) or [open an issue](https://github.com/ylab-hi/DeepChopper/issues).
 
@@ -165,3 +180,5 @@ Need help? Have questions?
 
 DeepChopper is developed with ❤️ by the YLab team.
 Happy sequencing! 🧬🔬
+
+[pypi]: https://pypi.python.org/pypi/deepchopper
