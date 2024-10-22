@@ -223,7 +223,7 @@ def version_callback(value: bool):
 app = typer.Typer(
     cls=OrderCommands,
     context_settings={"help_option_names": ["-h", "--help"]},
-    help="DeepChopper: A genomic lanuage model to identify artificial sequenes.",
+    help="DeepChopper: A genomic lanuage model to identify artificial sequences.",
 )
 
 

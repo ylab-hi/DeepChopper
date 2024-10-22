@@ -86,7 +86,7 @@ Below are the compatibility matrices for PyPI installations:
 |      3.11      |      ✅      |     ✅      |         ✅          | ✅             |
 |      3.12      |      ✅      |     ✅      |         ✅          | ✅             |
 
-🆘 Trouble installing? Check our [Troubleshooting Guide](./docs/troubleshooting.md) or [open an issue](https://github.com/ylab-hi/DeepChopper/issues).
+🆘 Trouble installing? Check our [Troubleshooting Guide](https://github.com/ylab-hi/DeepChopper/blob/main/documentation/tutorial.md#troubleshooting) or [open an issue](https://github.com/ylab-hi/DeepChopper/issues).
 
 ## 🛠️ Usage
 
@@ -103,7 +103,7 @@ DeepChopper offers three main commands: `encode`, `predict`, and `chop`.
    deepchopper encode <input.fq>
    ```
 
-2. **Predict** chimeric reads:
+2. **Predict** chimera artifacts:
 
    ```bash
    deepchopper predict <input.parquet> --output predictions
@@ -115,7 +115,7 @@ DeepChopper offers three main commands: `encode`, `predict`, and `chop`.
    deepchopper predict <input.parquet> --output predictions --gpus 2
    ```
 
-3. **Chop** the chimeric reads:
+3. **Chop** chimera artifacts:
 
    ```bash
    deepchopper chop <predictions> raw.fq
