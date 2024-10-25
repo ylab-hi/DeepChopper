@@ -81,10 +81,10 @@ Below are the compatibility matrices for PyPI installations:
 #### [PyPI Support][pypi]
 
 | Python Version | Linux x86_64 | macOS Intel | macOS Apple Silicon | Windows x86_64 |
-| :------------: | :----------: | :---------: | :-----------------: | -------------- |
-|      3.10      |      ✅      |     ✅      |         ✅          | ✅             |
-|      3.11      |      ✅      |     ✅      |         ✅          | ✅             |
-|      3.12      |      ✅      |     ✅      |         ✅          | ✅             |
+| :------------: | :----------: | :---------: | :-----------------: | :------------: |
+|      3.10      |      ✅      |     ✅      |         ✅          |       ✅       |
+|      3.11      |      ✅      |     ✅      |         ✅          |       ✅       |
+|      3.12      |      ✅      |     ✅      |         ✅          |       ✅       |
 
 🆘 Trouble installing? Check our [Troubleshooting Guide](https://github.com/ylab-hi/DeepChopper/blob/main/documentation/tutorial.md#troubleshooting) or [open an issue](https://github.com/ylab-hi/DeepChopper/issues).
 
