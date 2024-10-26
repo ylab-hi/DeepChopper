@@ -143,7 +143,18 @@ model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 If DeepChopper aids your research, please cite our paper:
 
 ```bibtex
-
+@article {Li2024.10.23.619929,
+        author = {Li, Yangyang and Wang, Ting-You and Guo, Qingxiang and Ren, Yanan and Lu, Xiaotong and Cao, Qi and Yang, Rendong},
+        title = {A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing},
+        elocation-id = {2024.10.23.619929},
+        year = {2024},
+        doi = {10.1101/2024.10.23.619929},
+        publisher = {Cold Spring Harbor Laboratory},
+        abstract = {Chimera artifacts in nanopore direct RNA sequencing (dRNA-seq) data can confound transcriptome analyses, yet no existing tools are capable of detecting and removing them due to limitations in basecalling models. We present DeepChopper, a genomic language model that accurately identifies and eliminates adapter sequences within base-called dRNA-seq reads, effectively removing chimeric read artifacts. DeepChopper significantly improves critical downstream analyses, including transcript annotation and gene fusion detection, enhancing the reliability and utility of nanopore dRNA-seq for transcriptomics research.Competing Interest StatementThe authors have declared no competing interest.},
+        URL = {https://www.biorxiv.org/content/early/2024/10/25/2024.10.23.619929},
+        eprint = {https://www.biorxiv.org/content/early/2024/10/25/2024.10.23.619929.full.pdf},
+        journal = {bioRxiv}
+}
 ```
 
 ## 🤝 Contribution
