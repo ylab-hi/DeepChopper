@@ -140,7 +140,7 @@ model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 
 ## 📚 Cite
 
-If DeepChopper aids your research, please cite our paper:
+If DeepChopper aids your research, please cite [our paper](https://www.biorxiv.org/content/10.1101/2024.10.23.619929v2):
 
 ```bibtex
 @article {Li2024.10.23.619929,
