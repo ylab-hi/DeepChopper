@@ -83,10 +83,10 @@ Analyze the encoded data to identify potential chimeric reads:
 
 ```bash
 # Predict artifical sequences for reads
-deepchopper predict raw_no_trim.parquet --ouput predictions
+deepchopper predict raw_no_trim.parquet --output predictions
 
 # Predict artifical sequences for reads using GPU
-deepchopper predict raw_no_trim.parquet --ouput predictions --gpus 2
+deepchopper predict raw_no_trim.parquet --output predictions --gpus 2
 ```
 
 For chunked data:
