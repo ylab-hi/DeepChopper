@@ -495,7 +495,7 @@ fn collect_and_split_dataset(
     train_ratio: f32, // 0.8
     val_ratio: f32,   // 0.1
     test_ratio: f32,  // 0.1
-    iternal_adapter_ratio: f32,
+    internal_adapter_ratio: f32,
     positive_ratio: f32,
     prefix: Option<&str>,
 ) -> Result<()> {
@@ -507,7 +507,7 @@ fn collect_and_split_dataset(
         train_ratio,
         val_ratio,
         test_ratio,
-        iternal_adapter_ratio,
+        internal_adapter_ratio,
         positive_ratio,
         prefix,
     )
@@ -524,7 +524,7 @@ fn collect_and_split_dataset_with_natural_terminal_adapters(
     train_ratio: f32,                    // 0.8
     val_ratio: f32,                      // 0.1
     test_ratio: f32,                     // 0.1
-    iternal_adapter_ratio: f32,          // 0.5
+    internal_adapter_ratio: f32,          // 0.5
     natural_terminal_adapter_ratio: f32, // 0.5
     positive_ratio: f32,
     prefix: Option<&str>,
@@ -538,9 +538,46 @@ fn collect_and_split_dataset_with_natural_terminal_adapters(
         train_ratio,
         val_ratio,
         test_ratio,
-        iternal_adapter_ratio,
+        internal_adapter_ratio,
         natural_terminal_adapter_ratio,
         positive_ratio,
+        prefix,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+#[pyfunction]
+fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapters(
+    internal_fq_path: PathBuf,
+    terminal_fq_path: PathBuf,
+    natural_terminal_fq_path: PathBuf,
+    both_fq_path: PathBuf,
+    negative_fq_path: PathBuf,
+    total_reads: f32,
+    train_ratio: f32,                    // 0.8
+    val_ratio: f32,                      // 0.1
+    test_ratio: f32,                     // 0.1
+    internal_adapter_ratio: f32,         // 0.4
+    terminal_adapter_ratio: f32,         // 0.4
+    both_terminal_adapter_ratio: f32,    // 0.2
+    natural_terminal_adapter_ratio: f32, // 0.5
+    positive_ratio: f32,                 // 0.9
+    prefix: Option<&str>,
+) -> Result<()> {
+    utils::collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapters(
+        internal_fq_path,
+        terminal_fq_path,
+        natural_terminal_fq_path,
+        both_fq_path,
+        negative_fq_path,
+        total_reads,
+        train_ratio,                    // 0.8
+        val_ratio,                      // 0.1
+        test_ratio,                     // 0.1
+        internal_adapter_ratio,         // 0.4
+        terminal_adapter_ratio,         // 0.4
+        both_terminal_adapter_ratio,    // 0.2
+        natural_terminal_adapter_ratio, // 0.5
+        positive_ratio,                 // 0.9
         prefix,
     )
 }
@@ -798,6 +835,10 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(convert_multiple_fqs_to_one_fq, m)?)?;
     m.add_function(wrap_pyfunction!(
         collect_and_split_dataset_with_natural_terminal_adapters,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(
+        collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapters,
         m
     )?)?;
     m.add_function(wrap_pyfunction!(output::left_right_soft_clip, m)?)?;
