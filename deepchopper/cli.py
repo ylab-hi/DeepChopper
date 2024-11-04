@@ -151,6 +151,10 @@ def predict(
         logger=False,
         limit_predict_batches=limit_predict_batches,
     )
+
+    import multiprocess.context as ctx
+
+    ctx._force_start_method("spawn")
     trainer.predict(model=model, dataloaders=datamodule, return_predictions=False)
 
 
