@@ -3,7 +3,10 @@ requires = ["maturin>=1.2.1,<2"]
 build-backend = "maturin"
 
 [tool.poetry]
-authors = ["Yangyang Li <yangyang.li@northwestern.edu>"]
+authors = [
+    "Yangyang Li <yangyang.li@northwestern.edu>",
+    "Ting-you Wang <tywang@northwestern.edu>",
+]
 license = "Apache-2.0"
 name = "deepchopper"
 version = "1.2.5"
@@ -11,9 +14,12 @@ description = "A Genomic Language Model for Chimera Artifact Detection in Nanopo
 readme = "README.md"
 
 [project]
+authors = [
+    { name = "Yangyang Li", email = "<yangyang.li@northwestern.edu>" },
+    { name = "Ting-you Wang", email = "<tywang@northwestern.edu>" },
+]
 name = "deepchopper"
 description = "A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing"
-authors = [{ name = "Yangyang Li", email = "<yangyang.li@northwestern.edu>" }]
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }

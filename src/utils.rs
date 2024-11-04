@@ -4,6 +4,7 @@ use rayon::prelude::*;
 use std::{fs::File, io::BufReader, ops::Range, path::Path};
 
 use crate::smooth::majority_voting;
+use log::info;
 
 pub fn summary_predict_generic<D: PartialEq + Send + Sync + Copy>(
     predictions: &[Vec<D>],
@@ -80,6 +81,11 @@ pub fn collect_and_split_dataset<P: AsRef<Path>>(
     let val_count = total_reads * val_ratio;
     let test_count = total_reads * test_ratio;
 
+    info!(
+        "train: {}, val: {}, test: {}",
+        train_count, val_count, test_count
+    );
+
     let train_positive_count = train_count * positive_ratio;
     let val_positive_count = val_count * positive_ratio;
     let test_positive_count = test_count * positive_ratio;
@@ -87,6 +93,10 @@ pub fn collect_and_split_dataset<P: AsRef<Path>>(
     let train_negative_count = (train_count * negative_ratio) as usize;
     let val_negative_count = (val_count * negative_ratio) as usize;
     let test_negative_count = (test_count * negative_ratio) as usize;
+
+    info!("train positive: {}, train negative: {}", train_positive_count, train_negative_count);
+    info!("val positive: {}, val negative: {}", val_positive_count, val_negative_count);
+    info!("test positive: {}, test negative: {}", test_positive_count, test_negative_count);
 
     let train_internal_adapter_count = (train_positive_count * internal_adapter_ratio) as usize;
     let train_terminal_adapter_count = (train_positive_count * terminal_adapter_ratio) as usize;
@@ -96,6 +106,10 @@ pub fn collect_and_split_dataset<P: AsRef<Path>>(
 
     let test_internal_adapter_count = (test_positive_count * internal_adapter_ratio) as usize;
     let test_terminal_adapter_count = (test_positive_count * terminal_adapter_ratio) as usize;
+
+    info!("train internal adapter: {}, train terminal adapter: {}", train_internal_adapter_count, train_terminal_adapter_count);
+    info!("val internal adapter: {}, val terminal adapter: {}", val_internal_adapter_count, val_terminal_adapter_count);
+    info!("test internal adapter: {}, test terminal adapter: {}", test_internal_adapter_count, test_terminal_adapter_count);
 
     let mut internal_fq_reader = File::open(internal_fq_path.as_ref())
         .map(BufReader::new)
@@ -211,6 +225,11 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters<P: AsRef<Path>>(
     let val_count = total_reads * val_ratio;
     let test_count = total_reads * test_ratio;
 
+    info!(
+        "train: {}, val: {}, test: {}",
+        train_count, val_count, test_count
+    );
+
     let train_positive_count = train_count * positive_ratio;
     let val_positive_count = val_count * positive_ratio;
     let test_positive_count = test_count * positive_ratio;
@@ -219,6 +238,10 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters<P: AsRef<Path>>(
     let val_negative_count = (val_count * negative_ratio) as usize;
     let test_negative_count = (test_count * negative_ratio) as usize;
 
+    info!("train positive: {}, train negative: {}", train_positive_count, train_negative_count);
+    info!("val positive: {}, val negative: {}", val_positive_count, val_negative_count);
+    info!("test positive: {}, test negative: {}", test_positive_count, test_negative_count);
+
     let train_internal_adapter_count = (train_positive_count * iternal_adapter_ratio) as usize;
     let train_terminal_adapter_count = train_positive_count * terminal_adapter_ratio;
     let train_natural_terminal_adapter_count =
@@ -226,13 +249,16 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters<P: AsRef<Path>>(
     let train_simulated_terminal_adapter_count =
         (train_terminal_adapter_count * (1.0 - natural_terminal_adapter_ratio)) as usize;
 
-    let val_internal_adapter_count = (val_positive_count * iternal_adapter_ratio) as usize;
+    info!("train internal adapter: {}, train terminal adapter: {}", train_internal_adapter_count, train_terminal_adapter_count);
 
+    let val_internal_adapter_count = (val_positive_count * iternal_adapter_ratio) as usize;
     let val_terminal_adapter_count = val_positive_count * terminal_adapter_ratio;
     let val_natural_terminal_adapter_count =
         (val_terminal_adapter_count * natural_terminal_adapter_ratio) as usize;
     let val_simulated_terminal_adapter_count =
         (val_terminal_adapter_count * (1.0 - natural_terminal_adapter_ratio)) as usize;
+
+    info!("val internal adapter: {}, val terminal adapter: {}", val_internal_adapter_count, val_terminal_adapter_count);
 
     let test_internal_adapter_count = (test_positive_count * iternal_adapter_ratio) as usize;
     let test_terminal_adapter_count = test_positive_count * terminal_adapter_ratio;
@@ -240,6 +266,8 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters<P: AsRef<Path>>(
         (test_terminal_adapter_count * natural_terminal_adapter_ratio) as usize;
     let test_simulated_terminal_adapter_count =
         (test_terminal_adapter_count * (1.0 - natural_terminal_adapter_ratio)) as usize;
+
+    info!("test internal adapter: {}, test terminal adapter: {}", test_internal_adapter_count, test_terminal_adapter_count);
 
     let mut internal_fq_reader = File::open(internal_fq_path.as_ref())
         .map(BufReader::new)
@@ -367,7 +395,7 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapter
     test_ratio: f32,                     // 0.1
     internal_adapter_ratio: f32,         // 0.4
     terminal_adapter_ratio: f32,         // 0.4
-    both_terminal_adapter_ratio: f32,    // 0.2
+    both_adapter_ratio: f32,    // 0.2
     natural_terminal_adapter_ratio: f32, // 0.5
     positive_ratio: f32,                 // 0.9
     prefix: Option<&str>,
@@ -378,7 +406,7 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapter
         ));
     }
 
-    if internal_adapter_ratio + terminal_adapter_ratio + both_terminal_adapter_ratio != 1.0 {
+    if internal_adapter_ratio + terminal_adapter_ratio + both_adapter_ratio != 1.0 {
         return Err(anyhow::anyhow!(
             "internal_adapter_ratio + terminal_adapter_ratio + both_terminal_adapter_ratio must be equal to 1.0"
         ));
@@ -391,6 +419,11 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapter
     let val_count = total_reads * val_ratio;
     let test_count = total_reads * test_ratio;
 
+    info!(
+        "train: {}, val: {}, test: {}",
+        train_count, val_count, test_count
+    );
+
     let train_positive_count = train_count * positive_ratio;
     let val_positive_count = val_count * positive_ratio;
     let test_positive_count = test_count * positive_ratio;
@@ -399,14 +432,20 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapter
     let val_negative_count = (val_count * negative_ratio) as usize;
     let test_negative_count = (test_count * negative_ratio) as usize;
 
+    info!("train positive: {}, train negative: {}", train_positive_count, train_negative_count);
+    info!("val positive: {}, val negative: {}", val_positive_count, val_negative_count);
+    info!("test positive: {}, test negative: {}", test_positive_count, test_negative_count);
+
     let train_internal_adapter_count = (train_positive_count * internal_adapter_ratio) as usize;
     let train_terminal_adapter_count = train_positive_count * terminal_adapter_ratio;
     let train_natural_terminal_adapter_count =
         (train_terminal_adapter_count * natural_terminal_adapter_ratio) as usize;
     let train_simulated_terminal_adapter_count =
         (train_terminal_adapter_count * (1.0 - natural_terminal_adapter_ratio)) as usize;
-    let train_both_terminal_adapter_count =
-        (train_positive_count * both_terminal_adapter_ratio) as usize;
+    let train_both_adapter_count =
+        (train_positive_count * both_adapter_ratio) as usize;
+
+    info!("train internal adapter: {}, train terminal adapter: {}, train both: {}", train_internal_adapter_count, train_terminal_adapter_count, train_both_adapter_count);
 
     let val_internal_adapter_count = (val_positive_count * internal_adapter_ratio) as usize;
     let val_terminal_adapter_count = val_positive_count * terminal_adapter_ratio;
@@ -414,8 +453,10 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapter
         (val_terminal_adapter_count * natural_terminal_adapter_ratio) as usize;
     let val_simulated_terminal_adapter_count =
         (val_terminal_adapter_count * (1.0 - natural_terminal_adapter_ratio)) as usize;
-    let val_both_terminal_adapter_count =
-        (val_positive_count * both_terminal_adapter_ratio) as usize;
+    let val_both_adapter_count =
+        (val_positive_count * both_adapter_ratio) as usize;
+
+    info!("val internal adapter: {}, val terminal adapter: {}, val both: {}", val_internal_adapter_count, val_terminal_adapter_count, val_both_adapter_count);
 
     let test_internal_adapter_count = (test_positive_count * internal_adapter_ratio) as usize;
     let test_terminal_adapter_count = test_positive_count * terminal_adapter_ratio;
@@ -423,8 +464,10 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapter
         (test_terminal_adapter_count * natural_terminal_adapter_ratio) as usize;
     let test_simulated_terminal_adapter_count =
         (test_terminal_adapter_count * (1.0 - natural_terminal_adapter_ratio)) as usize;
-    let test_both_terminal_adapter_count =
-        (test_positive_count * both_terminal_adapter_ratio) as usize;
+    let test_both_adapter_count =
+        (test_positive_count * both_adapter_ratio) as usize;
+
+    info!("test internal adapter: {}, test terminal adapter: {}, test both: {}", test_internal_adapter_count, test_terminal_adapter_count, test_both_adapter_count);
 
     let mut internal_fq_reader = File::open(internal_fq_path.as_ref())
         .map(BufReader::new)
@@ -471,7 +514,7 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapter
         });
     both_fq_reader
         .records()
-        .take(train_both_terminal_adapter_count)
+        .take(train_both_adapter_count)
         .for_each(|record| {
             train_writer.write_record(&record.unwrap()).unwrap();
         });
@@ -506,8 +549,8 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapter
         });
     both_fq_reader
         .records()
-        .skip(train_both_terminal_adapter_count)
-        .take(val_both_terminal_adapter_count)
+        .skip(train_both_adapter_count)
+        .take(val_both_adapter_count)
         .for_each(|record| {
             val_writer.write_record(&record.unwrap()).unwrap();
         });
@@ -544,8 +587,8 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapter
 
     both_fq_reader
         .records()
-        .skip(train_both_terminal_adapter_count + val_both_terminal_adapter_count)
-        .take(test_both_terminal_adapter_count)
+        .skip(train_both_adapter_count + val_both_adapter_count)
+        .take(test_both_adapter_count)
         .for_each(|record| {
             test_writer.write_record(&record.unwrap()).unwrap();
         });
