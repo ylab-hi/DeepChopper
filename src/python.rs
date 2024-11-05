@@ -2,7 +2,7 @@ use crate::{
     cli::{self, predict_cli},
     default::{BASES, KMER_SIZE, MIN_CHOPED_SEQ_LEN, QUAL_OFFSET, VECTORIZED_TARGET},
     fq_encode::{self, Encoder},
-    kmer::{self, vertorize_target, py_vectorize_targets},
+    kmer::{self, vectorize_target, py_vectorize_targets},
     output::{self, write_json, write_parquet},
     smooth::{self},
     stat,
@@ -800,7 +800,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     register_default_module(m)?;
 
     m.add_function(wrap_pyfunction!(splite_qual_by_offsets, m)?)?;
-    m.add_function(wrap_pyfunction!(vertorize_target, m)?)?;
+    m.add_function(wrap_pyfunction!(vectorize_target, m)?)?;
     m.add_function(wrap_pyfunction!(py_vectorize_targets, m)?)?;
     m.add_function(wrap_pyfunction!(normalize_seq, m)?)?;
     m.add_function(wrap_pyfunction!(seq_to_kmers, m)?)?;
