@@ -26,8 +26,8 @@ path = "src/bin/blat.rs"
 required-features = ["dev"]
 
 [[bin]]
-name = "chemericstat"
-path = "src/bin/chemericstat.rs"
+name = "chimericstat"
+path = "src/bin/chimericstat.rs"
 required-features = ["dev"]
 
 [[bin]]
