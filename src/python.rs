@@ -524,7 +524,7 @@ fn collect_and_split_dataset_with_natural_terminal_adapters(
     train_ratio: f32,                    // 0.8
     val_ratio: f32,                      // 0.1
     test_ratio: f32,                     // 0.1
-    internal_adapter_ratio: f32,          // 0.5
+    internal_adapter_ratio: f32,         // 0.5
     natural_terminal_adapter_ratio: f32, // 0.5
     positive_ratio: f32,
     prefix: Option<&str>,

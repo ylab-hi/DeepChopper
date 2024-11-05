@@ -43,7 +43,7 @@ pub trait Encoder {
             .context("Failed to get number part")?;
 
         let result = number_part
-            .par_split(|&c| c == b',')
+            .par_split(|&c| c == b'-')
             .map(|target| {
                 let mut parts = target.split(|&c| c == b':');
                 let start: usize =
@@ -55,6 +55,7 @@ pub trait Encoder {
             .collect::<Result<Vec<_>>>();
 
         if result.is_err() {
+            println!("Invalid target format - expected 'start1:end1-start2:end2'. Defaulting to [0,0]");
             Ok(vec![0..0])
         } else {
             result
@@ -156,7 +157,7 @@ mod tests {
     #[test]
     fn test_parse_target_from_id() {
         // Test case 1: Valid input
-        let src = b"@test_name|462:528,100:120";
+        let src = b"@test_name|462:528-100:120";
         let expected = vec![462..528, 100..120];
 
         struct TestEncoder;
@@ -186,7 +187,6 @@ mod tests {
             }
         }
         assert_eq!(TestEncoder::parse_target_from_id(src).unwrap(), expected);
-
         // Test case 2: Empty input
         let src = b"";
         let expected: Vec<Range<usize>> = Vec::new();
@@ -195,5 +195,39 @@ mod tests {
         let src = b"738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8";
         let result = TestEncoder::parse_target_from_id(src).unwrap();
         assert_eq!(result, vec![0..0]);
+    }
+
+    #[test]
+    fn test_parse_target_from_id_failing_case() {
+        // test case 2: invalid input
+        let src = b"@test_name|462:528,100:120";
+
+        struct TestEncoder;
+        impl Encoder for TestEncoder {
+            type TargetOutput = Result<Vec<Element>>;
+            type RecordOutput = Result<RecordData>;
+            type EncodeOutput = Result<Vec<RecordData>>;
+            fn encode_target(
+                &self,
+                _id: &[u8],
+                _kmer_seq_len: Option<usize>,
+            ) -> Self::TargetOutput {
+                Ok(Vec::new())
+            }
+            fn encode_multiple(
+                &mut self,
+                _paths: &[PathBuf],
+                _parallel: bool,
+            ) -> Self::EncodeOutput {
+                Ok(Vec::new())
+            }
+            fn encode<P: AsRef<Path>>(&mut self, _path: P) -> Self::EncodeOutput {
+                Ok(Vec::new())
+            }
+            fn encode_record(&self, _id: &[u8], _seq: &[u8], _qual: &[u8]) -> Self::RecordOutput {
+                Ok(RecordData::default())
+            }
+        }
+        assert!(TestEncoder::parse_target_from_id(src).is_err());
     }
 }
