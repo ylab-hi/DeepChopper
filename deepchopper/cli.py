@@ -247,22 +247,22 @@ def main(
 
 
 app.command(
-    help="DeepChopper is All You Need: encode the given fastq",
+    help="DeepChopper: encode the given fastq",
     epilog="Example: deepchopper encode fastq_path --verbose",
 )(encode)
 
 app.command(
-    help="DeepChopper is All You Need: predict the given dataset",
-    epilog="Example: deepchopper predict parquet_path --gpus 1 --output output_path",
+    help="DeepChopper: predict the given dataset",
+    epilog="Example: deepchopper predict parquet_path --gpus 1 --output predictions",
 )(predict)
 
 app.command(
-    help="DeepChopper is All You Need: chop the given predictions!",
-    epilog="Example: deepchopper chop predict.parquet --fq fastq_path",
+    help="DeepChopper: chop the given predictions!",
+    epilog="Example: deepchopper chop predictions/0 --fq fastq_path",
 )(chop)
 
 app.command(
-    help="DeepChopper is All You Need: a web ui!",
+    help="DeepChopper: a web ui!",
     epilog="Example: deepchopper web",
 )(web)
 
