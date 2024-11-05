@@ -55,7 +55,7 @@ pub trait Encoder {
             .collect::<Result<Vec<_>>>();
 
         if result.is_err() {
-            println!("Invalid target format - expected 'start1:end1-start2:end2'. Defaulting to [0,0]");
+            println!("Invalid target format - expected 'start:end' or 'start1:end1-start2:end2'. Defaulting to [0,0]");
             Ok(vec![0..0])
         } else {
             result
@@ -228,6 +228,6 @@ mod tests {
                 Ok(RecordData::default())
             }
         }
-        assert!(TestEncoder::parse_target_from_id(src).is_err());
+        assert_eq!(TestEncoder::parse_target_from_id(src).unwrap(), vec![0..0]);
     }
 }

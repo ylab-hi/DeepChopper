@@ -2,7 +2,7 @@ use crate::{
     cli::{self, predict_cli},
     default::{BASES, KMER_SIZE, MIN_CHOPED_SEQ_LEN, QUAL_OFFSET, VECTORIZED_TARGET},
     fq_encode::{self, Encoder},
-    kmer::{self, vertorize_target},
+    kmer::{self, vertorize_target, py_vectorize_targets},
     output::{self, write_json, write_parquet},
     smooth::{self},
     stat,
@@ -742,6 +742,7 @@ fn parse_psl_by_qname(file_path: PathBuf) -> Result<HashMap<String, Vec<smooth::
 }
 
 /// CLI func exported to Python
+/// unused now
 #[pyfunction(name = "predict_cli")]
 #[pyo3(signature = (
     predicts,
@@ -800,6 +801,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     m.add_function(wrap_pyfunction!(splite_qual_by_offsets, m)?)?;
     m.add_function(wrap_pyfunction!(vertorize_target, m)?)?;
+    m.add_function(wrap_pyfunction!(py_vectorize_targets, m)?)?;
     m.add_function(wrap_pyfunction!(normalize_seq, m)?)?;
     m.add_function(wrap_pyfunction!(seq_to_kmers, m)?)?;
     m.add_function(wrap_pyfunction!(kmers_to_seq, m)?)?;

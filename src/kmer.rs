@@ -26,6 +26,10 @@ pub fn splite_qual_by_offsets(target: &[usize], offsets: &[(usize, usize)]) -> R
     Ok(res)
 }
 
+/// Convert a target region to a binary vector
+/// where 1 indicates the target region and 0 otherwise.
+/// The target region is defined by the start and end indices.
+/// [start, end)
 #[pyfunction]
 pub fn vertorize_target(start: usize, end: usize, length: usize) -> Result<Vec<usize>> {
     if start > end || end > length {
@@ -39,6 +43,38 @@ pub fn vertorize_target(start: usize, end: usize, length: usize) -> Result<Vec<u
         .skip(start)
         .for_each(|x| *x = 1);
     Ok(result)
+}
+
+/// Convert a list of target regions to a binary vector
+/// where 1 indicates the target region and 0 otherwise.
+/// [start, end)
+pub fn vertorize_targets(targets: &[usize], length: usize) -> Result<Vec<usize>> {
+    if targets.is_empty() {
+        return Ok(vec![0; length]);
+    }
+
+    // Ensure the number of targets is even.
+    assert!(targets.len() % 2 == 0);
+
+    let mut result = vec![0; length];
+    for (start, end) in targets.into_iter().tuples() {
+        if start > end || end > &length {
+            return Err(Error::from(EncodingError::TargetRegionInvalid));
+        }
+
+        result
+            .par_iter_mut()
+            .take(*end)
+            .skip(*start)
+            .for_each(|x| *x = 1);
+    }
+    Ok(result)
+}
+
+
+#[pyfunction(name = "vectorize_targets")]
+pub fn py_vectorize_targets(targets: Vec<usize>, length: usize) -> Result<Vec<usize>> {
+    vertorize_targets(&targets, length)
 }
 
 pub fn kmerids_to_seq(kmer_ids: &[Element], id2kmer_table: Id2KmerTable) -> Result<Vec<u8>> {
@@ -400,4 +436,21 @@ mod tests {
         let result = vertorize_target(start, end, 2);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_vertorize_targets_valid() {
+        let targets = vec![0, 5, 7, 10];
+        let length = 15;
+        let result = vertorize_targets(targets, length).unwrap();
+        assert_eq!(result, vec![1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_vertorize_targets_invalid() {
+        let targets = vec![0, 5, 7, 20];
+        let length = 15;
+        let result = vertorize_targets(targets, length);
+        assert!(result.is_err());
+    }
+
 }
