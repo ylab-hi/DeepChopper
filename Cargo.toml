@@ -104,7 +104,7 @@ codegen-units = 1
 # panic = "abort"
 
 [dependencies]
-thiserror = "1.0"
+thiserror = "2.0"
 anyhow = "1.0"
 walkdir = { version = "2.5" }
 rayon = { version = "1.10" }
