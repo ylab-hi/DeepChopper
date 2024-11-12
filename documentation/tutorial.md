@@ -132,6 +132,7 @@ This command takes the original FASTQ file (`raw_no_trim.fastq`) and the predict
   **Solution**: Try using the `--chunk` option in the encode step
 
 - **Issue**: Out of memory errors for CPU or CUDA (GPU) when predicting
+
   **Solution**: Try to change the `--batch-size` to a lower value
 
 - **Issue**: Slow processing
