@@ -28,7 +28,7 @@ data:
   train_data_path: ${paths.root_dir}/data/600_000_both_samples/train.parquet
   val_data_path: ${paths.root_dir}/data/600_000_both_samples/val.parquet
   test_data_path: ${paths.root_dir}/data/600_000_both_samples/test.parquet
-  batch_size: 12
+  batch_size: 8
   num_workers: 63
   pin_memory: False
   max_val_samples: 3000
