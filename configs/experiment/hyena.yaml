@@ -16,7 +16,7 @@ callbacks:
   early_stopping:
     patience: 15
 
-tags: ["vcap_004_300000"]
+tags: ["vcap_002_300000_both"]
 
 seed: 12345
 
@@ -25,10 +25,10 @@ trainer:
   max_epochs: 60
 
 data:
-  train_data_path: ${paths.root_dir}/data/600_000_both_samples/train.parquet
-  val_data_path: ${paths.root_dir}/data/600_000_both_samples/val.parquet
-  test_data_path: ${paths.root_dir}/data/600_000_both_samples/test.parquet
-  batch_size: 8
+  train_data_path: ${paths.root_dir}/data/300_000_both_samples/train.parquet
+  val_data_path: ${paths.root_dir}/data/300_000_both_samples/val.parquet
+  test_data_path: ${paths.root_dir}/data/300_000_both_samples/test.parquet
+  batch_size: 12
   num_workers: 63
   pin_memory: False
   max_val_samples: 3000
