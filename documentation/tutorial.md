@@ -117,7 +117,16 @@ deepchopper chop predictions_chunk1/0 predictions_chunk2/0 raw_no_trim.fastq
 
 🎉 **Success**: Look for the output file with the `.chop.fq.bgz` suffix.
 
-This command takes the original FASTQ file (`raw_no_trim.fastq`) and the predictions (`predictions`), and produces a new FASTQ file (with suffix `.chop.fq.bgz`) with the chimeric reads chopped.
+This command takes the original FASTQ file (`raw_no_trim.fastq`) and the predictions (`predictions`), and produces a new FASTQ file (with suffix `.chop.fq.bgz`) with the chimeric-artifact chopped.
+
+The default output is a compressed file in BGZIP format.
+We can use `zless -S OUTPUT` to view the output file contents in a terminal.
+The `-S` flag prevents line wrapping, making it easier to read long sequences.
+
+The default parameters used in DeepChopper are optimized based on extensive testing and validation during our research, as detailed in our paper.
+These parameters have been shown to provide robust and reliable results across a wide range of sequencing data.
+
+In general, the whole process will take around 20-30 minutes for the demo data, but processing time may vary depending on your machine's specifications and whether you use CPU or GPU acceleration.
 
 ## Next Steps
 
