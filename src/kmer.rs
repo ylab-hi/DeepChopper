@@ -57,7 +57,7 @@ pub fn vectorize_targets(targets: &[usize], length: usize) -> Result<Vec<usize>>
     assert!(targets.len() % 2 == 0);
 
     let mut result = vec![0; length];
-    for (start, end) in targets.into_iter().tuples() {
+    for (start, end) in targets.iter().tuples() {
         if start > end || end > &length {
             return Err(Error::from(EncodingError::TargetRegionInvalid));
         }
@@ -70,7 +70,6 @@ pub fn vectorize_targets(targets: &[usize], length: usize) -> Result<Vec<usize>>
     }
     Ok(result)
 }
-
 
 #[pyfunction(name = "vectorize_targets")]
 pub fn py_vectorize_targets(targets: Vec<usize>, length: usize) -> Result<Vec<usize>> {
@@ -441,7 +440,7 @@ mod tests {
     fn test_vectorize_targets_valid() {
         let targets = vec![0, 5, 7, 10];
         let length = 15;
-        let result = vectorize_targets(targets, length).unwrap();
+        let result = vectorize_targets(&targets, length).unwrap();
         assert_eq!(result, vec![1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0]);
     }
 
@@ -449,8 +448,7 @@ mod tests {
     fn test_vectorize_targets_invalid() {
         let targets = vec![0, 5, 7, 20];
         let length = 15;
-        let result = vectorize_targets(targets, length);
+        let result = vectorize_targets(&targets, length);
         assert!(result.is_err());
     }
-
 }
