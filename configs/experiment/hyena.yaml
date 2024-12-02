@@ -25,9 +25,9 @@ trainer:
   max_epochs: 60
 
 data:
-  train_data_path: ${paths.root_dir}/data/vcap_004_300000_samples/train.parquet
-  val_data_path: ${paths.root_dir}/data/vcap_004_300000_samples/val.parquet
-  test_data_path: ${paths.root_dir}/data/vcap_004_300000_samples/test.parquet
+  train_data_path: ${paths.root_dir}/data/600_000_both_samples/train.parquet
+  val_data_path: ${paths.root_dir}/data/600_000_both_samples/val.parquet
+  test_data_path: ${paths.root_dir}/data/600_000_both_samples/test.parquet
   batch_size: 12
   num_workers: 63
   pin_memory: False

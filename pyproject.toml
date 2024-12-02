@@ -155,11 +155,12 @@ nvidia-cusparse-cu11 = { version = "^11.7.5.86", markers = "sys_platform == 'lin
 nvidia-nccl-cu11 = { version = "^2.19.3", markers = "sys_platform == 'linux'" }
 nvidia-nvtx-cu11 = { version = "^11.8.86", markers = "sys_platform == 'linux'" }
 nvidia-cublas-cu11 = { version = "^11.11.3.6", markers = "sys_platform == 'linux'" }
-mamba-ssm = { version = "^1.2.1.post1", markers = "sys_platform == 'linux'" }
-causal-conv1d = { version = "^1.2.1.post2", markers = "sys_platform == 'linux'" }
 bump-my-version = "^0.27.0"
 hydra-submitit-launcher = "^1.2.0"
 hydra-colorlog = "^1.2.0"
+
+[tool.poetry.extras]
+mamba = ["mamba-ssm", "causal-conv1d"]
 
 [tool.ruff]
 target-version = "py310"
