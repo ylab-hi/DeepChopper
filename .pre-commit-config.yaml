@@ -29,7 +29,7 @@ repos:
       - id: cargo-check
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.7.0"
+    rev: "v0.8.2"
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --unsafe-fixes]
@@ -62,7 +62,7 @@ repos:
 
   # md formatting
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.18
+    rev: 0.7.19
     hooks:
       - id: mdformat
         args: ["--number"]
@@ -75,13 +75,13 @@ repos:
 
   # jupyter notebook cell output clearing
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.7.1
+    rev: 0.8.1
     hooks:
       - id: nbstripout
 
   # jupyter notebook linting
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.8.7
+    rev: 1.9.1
     hooks:
       - id: nbqa-black
         args: ["--line-length=99"]
