@@ -111,6 +111,7 @@ pub struct BamRecord {
 #[pymethods]
 impl BamRecord {
     #[new]
+    #[pyo3(signature = (qname, mapping_quality, cigar, left_softclip, right_softclip, is_forward, is_mapped, is_supplementary, is_secondary, quality, sa_tag=None))]
     fn new(
         qname: String,
         mapping_quality: usize,
@@ -146,12 +147,12 @@ impl BamRecord {
         })?;
 
         // Convert JSON string to Python bytes
-        Ok(PyBytes::new_bound(py, serialized.as_bytes()).into())
+        Ok(PyBytes::new(py, serialized.as_bytes()).into())
     }
 
     fn __setstate__(&mut self, py: Python, state: PyObject) -> PyResult<()> {
-        // Expect a bytes object for state
-        let state_bytes: &PyBytes = state.extract(py)?;
+        // Convert PyObject to PyBytes
+        let state_bytes = state.downcast_bound::<PyBytes>(py)?;
 
         // Deserialize the JSON string into the current instance
         *self = serde_json::from_slice(state_bytes.as_bytes()).map_err(|e| {
@@ -331,6 +332,7 @@ pub fn py_read_bam_records(path: &str) -> Result<HashMap<String, BamRecord>> {
 
 #[pyfunction]
 #[pyo3(name = "read_bam_records_parallel")]
+#[pyo3(signature = (path, threads = None))]
 pub fn py_read_bam_records_parallel(
     path: &str,
     threads: Option<usize>,

@@ -3,6 +3,7 @@ use pyo3::prelude::*;
 use textwrap;
 
 #[pyfunction]
+#[pyo3(signature = (sequence, targets, text_width = None))]
 pub fn highlight_targets(
     sequence: &str,
     targets: Vec<(usize, usize)>,

@@ -108,7 +108,7 @@ thiserror = "2.0"
 anyhow = "1.0"
 walkdir = { version = "2.5" }
 rayon = { version = "1.10" }
-pyo3 = { version = "0.21.2", features = [
+pyo3 = { version = "0.23.3", features = [
     "abi3-py310",
     "extension-module",
     "anyhow",
@@ -116,8 +116,8 @@ pyo3 = { version = "0.21.2", features = [
 
 ctrlc = "3.4"
 log = "0.4"
-pyo3-log = "0.10"
-noodles = { version = "0.85.0", features = [
+pyo3-log = "0.12"
+noodles = { version = "0.87.0", features = [
     "bgzf",
     "core",
     "csi",
@@ -128,10 +128,10 @@ noodles = { version = "0.85.0", features = [
 ] }
 
 bio = "2.0"
-needletail = "0.5"
+needletail = "0.6"
 ahash = "0.8.11"
-numpy = "0.21"
-ndarray = { version = "0.15", features = ["serde", "rayon"] }
+numpy = "0.23"
+ndarray = { version = "0.16", features = ["serde", "rayon"] }
 num-traits = { version = "0.2" }
 serde = "1.0"
 serde_derive = "1.0"
@@ -139,16 +139,16 @@ serde_json = "1.0"
 rand = "0.8"
 rand_distr = "0.4"
 bitvec = "1.0"
-itertools = "0.13.0"
+itertools = "0.14.0"
 derive_builder = "0.20"
 lexical = "7.0"
 bstr = "1.10.0"
 lazy_static = "1.5.0"
 tempfile = "3.13"
-parquet = "52.2.0"
-arrow = "52.2"
-candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.8.0" }
-colored = "2"
+parquet = "54.0"
+arrow = "54.0"
+candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.8.1" }
+colored = "3"
 textwrap = "0.16"
 flate2 = { version = "1.0.34", features = [
     "zlib-ng",
