@@ -32,6 +32,7 @@ pub struct FqEncoderOption {
 #[pymethods]
 impl FqEncoderOption {
     #[new]
+    #[pyo3(signature = (kmer_size, qual_offset, bases, vectorized_target, threads = None))]
     fn py_new(
         kmer_size: u8,
         qual_offset: u8,

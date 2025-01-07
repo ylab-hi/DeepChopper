@@ -48,6 +48,7 @@ pub struct Predict {
 #[pymethods]
 impl Predict {
     #[new]
+    #[pyo3(signature=(prediction, seq, id, is_truncated, qual=None))]
     pub fn new(
         prediction: Vec<i8>,
         seq: String,
@@ -123,6 +124,7 @@ impl Predict {
         }
     }
 
+    #[pyo3(signature=(smooth_interval, text_width = None))]
     pub fn show_info(
         &self,
         smooth_interval: Vec<(usize, usize)>,
@@ -150,12 +152,12 @@ impl Predict {
         })?;
 
         // Convert JSON string to Python bytes
-        Ok(PyBytes::new_bound(py, serialized.as_bytes()).into())
+        Ok(PyBytes::new(py, serialized.as_bytes()).into())
     }
 
     fn __setstate__(&mut self, py: Python, state: PyObject) -> PyResult<()> {
-        // Expect a bytes object for state
-        let state_bytes: &PyBytes = state.extract(py)?;
+        // Convert PyObject to PyBytes
+        let state_bytes = state.downcast_bound::<PyBytes>(py)?;
 
         // Deserialize the JSON string into the current instance
         *self = serde_json::from_slice(state_bytes.as_bytes()).map_err(|e| {
@@ -208,6 +210,7 @@ impl Predict {
 }
 
 #[pyfunction]
+#[pyo3(signature = (pt_path, ignore_label = -100, max_predicts = None))]
 pub fn load_predicts_from_batch_pts(
     pt_path: PathBuf,
     ignore_label: i64,

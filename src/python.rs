@@ -2,7 +2,7 @@ use crate::{
     cli::{self, predict_cli},
     default::{BASES, KMER_SIZE, MIN_CHOPED_SEQ_LEN, QUAL_OFFSET, VECTORIZED_TARGET},
     fq_encode::{self, Encoder},
-    kmer::{self, vectorize_target, py_vectorize_targets},
+    kmer::{self, py_vectorize_targets, vectorize_target},
     output::{self, write_json, write_parquet},
     smooth::{self},
     stat,
@@ -43,7 +43,7 @@ fn test_log() {
 }
 
 fn register_default_module(parent_module: &Bound<'_, PyModule>) -> PyResult<()> {
-    let child_module = PyModule::new_bound(parent_module.py(), "default")?;
+    let child_module = PyModule::new(parent_module.py(), "default")?;
     child_module.add("QUAL_OFFSET", QUAL_OFFSET)?;
     child_module.add("BASES", String::from_utf8_lossy(BASES))?;
     child_module.add("KMER_SIZE", KMER_SIZE)?;
@@ -55,6 +55,7 @@ fn register_default_module(parent_module: &Bound<'_, PyModule>) -> PyResult<()> 
 #[pymethods]
 impl fq_encode::TensorEncoder {
     #[new]
+    #[pyo3(signature= (option, tensor_max_width=None, tensor_max_seq_len=None))]
     fn py_new(
         option: fq_encode::FqEncoderOption,
         tensor_max_width: Option<usize>,
@@ -165,6 +166,7 @@ fn extract_records_by_ids(ids: Vec<String>, path: PathBuf) -> Result<Vec<PyRecor
 }
 
 #[pyfunction]
+#[pyo3(signature = (records_data, file_path=None))]
 fn write_fq(records_data: Vec<PyRecordData>, file_path: Option<PathBuf>) -> Result<()> {
     let records: Vec<fq_encode::RecordData> = records_data
         .into_par_iter()
@@ -207,6 +209,7 @@ fn to_original_targtet_region(start: usize, end: usize, k: usize) -> (usize, usi
 }
 
 #[pyfunction]
+#[pyo3(signature = (start, end, k, seq_len=None))]
 fn to_kmer_target_region(
     start: usize,
     end: usize,
@@ -271,6 +274,16 @@ fn normalize_seq(seq: String, iupac: bool) -> String {
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 #[pyfunction]
+#[pyo3(signature = (
+    fq_paths,
+    k,
+    bases,
+    qual_offset,
+    vectorized_target,
+    parallel_for_files,
+    max_width=None,
+    max_seq_len=None
+))]
 fn encode_fq_paths_to_tensor(
     py: Python,
     fq_paths: Vec<PathBuf>,
@@ -309,15 +322,24 @@ fn encode_fq_paths_to_tensor(
         .collect();
 
     Ok((
-        input.into_pyarray_bound(py),
-        target.into_pyarray_bound(py),
-        qual.into_pyarray_bound(py),
+        input.into_pyarray(py),
+        target.into_pyarray(py),
+        qual.into_pyarray(py),
         kmer2id,
     ))
 }
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 #[pyfunction]
+#[pyo3(signature = (
+    fq_path,
+    k,
+    bases,
+    qual_offset,
+    vectorized_target,
+    max_width=None,
+    max_seq_len=None
+))]
 fn encode_fq_path_to_tensor(
     py: Python,
     fq_path: PathBuf,
@@ -355,14 +377,15 @@ fn encode_fq_path_to_tensor(
         .collect();
 
     Ok((
-        input.into_pyarray_bound(py),
-        target.into_pyarray_bound(py),
-        qual.into_pyarray_bound(py),
+        input.into_pyarray(py),
+        target.into_pyarray(py),
+        qual.into_pyarray(py),
         kmer2id,
     ))
 }
 
 #[pyfunction]
+#[pyo3(signature = (fq_path, k, bases, qual_offset, vectorized_target, result_path=None))]
 fn encode_fq_path_to_json(
     fq_path: PathBuf,
     k: usize,
@@ -421,6 +444,7 @@ fn encode_fq_path_to_parquet_chunk(
 }
 
 #[pyfunction]
+#[pyo3(signature = (fq_path, k, bases, qual_offset, vectorized_target, result_path=None))]
 fn encode_fq_path_to_parquet(
     fq_path: PathBuf,
     k: usize,
@@ -487,6 +511,18 @@ fn summary_predict(
 
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
+#[pyo3(signature = (
+    internal_fq_path,
+    terminal_fq_path,
+    negative_fq_path,
+    total_reads,
+    train_ratio,
+    val_ratio,
+    test_ratio,
+    internal_adapter_ratio,
+    positive_ratio,
+    prefix=None
+))]
 fn collect_and_split_dataset(
     internal_fq_path: PathBuf,
     terminal_fq_path: PathBuf,
@@ -515,6 +551,20 @@ fn collect_and_split_dataset(
 
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
+#[pyo3(signature = (
+    internal_fq_path,
+    terminal_fq_path,
+    natural_terminal_fq_path,
+    negative_fq_path,
+    total_reads,
+    train_ratio,
+    val_ratio,
+    test_ratio,
+    internal_adapter_ratio,
+    natural_terminal_adapter_ratio,
+    positive_ratio,
+    prefix=None
+))]
 fn collect_and_split_dataset_with_natural_terminal_adapters(
     internal_fq_path: PathBuf,
     terminal_fq_path: PathBuf,
@@ -544,8 +594,26 @@ fn collect_and_split_dataset_with_natural_terminal_adapters(
         prefix,
     )
 }
+
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
+#[pyo3(signature = (
+    internal_fq_path,
+    terminal_fq_path,
+    natural_terminal_fq_path,
+    both_fq_path,
+    negative_fq_path,
+    total_reads,
+    train_ratio,
+    val_ratio,
+    test_ratio,
+    internal_adapter_ratio,
+    terminal_adapter_ratio,
+    both_terminal_adapter_ratio,
+    natural_terminal_adapter_ratio,
+    positive_ratio,
+    prefix=None
+))]
 fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapters(
     internal_fq_path: PathBuf,
     terminal_fq_path: PathBuf,

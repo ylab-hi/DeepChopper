@@ -157,12 +157,12 @@ impl StatResult {
         })?;
 
         // Convert JSON string to Python bytes
-        Ok(PyBytes::new_bound(py, serialized.as_bytes()).into())
+        Ok(PyBytes::new(py, serialized.as_bytes()).into())
     }
 
     fn __setstate__(&mut self, py: Python, state: PyObject) -> PyResult<()> {
         // Expect a bytes object for state
-        let state_bytes: &PyBytes = state.extract(py)?;
+        let state_bytes = state.downcast_bound::<PyBytes>(py)?;
 
         // Deserialize the JSON string into the current instance
         *self = serde_json::from_slice(state_bytes.as_bytes()).map_err(|e| {
