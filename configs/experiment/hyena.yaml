@@ -33,6 +33,10 @@ data:
   pin_memory: False
   # max_val_samples: 3000
 
+model:
+  net:
+    use_qual: true
+
 logger:
   wandb:
     tags: ${tags}
