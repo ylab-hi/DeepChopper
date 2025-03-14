@@ -63,14 +63,10 @@ documentation = "https://github.com/ylab-hi/DeepChopper"
 repository = "https://github.com/ylab-hi/DeepChopper"
 changelog = "https://github.com/ylab-hi/DeepChopper/README.md"
 
-
 [project.scripts]
 deepchopper = "deepchopper.cli:app"
-
-[tool.poetry.scripts]
 dc-train = "deepchopper.train:main"
 dc-eval = "deepchopper.eval:main"
-deepchopper = "deepchopper.cli:app"
 
 [tool.poe.tasks.train]
 cmd = "dc-train"
@@ -82,10 +78,7 @@ env = { DC_CONFIG_PATH = "${POE_PWD}/configs" }
 
 [tool.poetry.dependencies]
 python = "^3.10, <=3.12"
-torch = [
-    { version = "^2.1.0+cu118", source = "pytorch", markers = "sys_platform == 'linux'" },
-    { version = "^2.1.0", source = "PyPI", markers = "sys_platform == 'darwin'" },
-]
+torch = "^2.6.0"
 lightning = "^2.1.2"
 torchmetrics = "^1.2.1"
 rich = "^13.7.0"
@@ -144,17 +137,6 @@ omegaconf = "^2.3.0"
 accelerate = "^0.27.2"
 deepspeed = "^0.13.4"
 deptry = "^0.20.0"
-nvidia-cuda-cupti-cu11 = { version = "^11.8.87", markers = "sys_platform == 'linux'" }
-nvidia-cuda-nvrtc-cu11 = { version = "^11.8.89", markers = "sys_platform == 'linux'" }
-nvidia-cuda-runtime-cu11 = { version = "^11.8.89", markers = "sys_platform == 'linux'" }
-nvidia-cudnn-cu11 = { version = "^8.9.6.50", markers = "sys_platform == 'linux'" }
-nvidia-cufft-cu11 = { version = "^10.9.0.58", markers = "sys_platform == 'linux'" }
-nvidia-curand-cu11 = { version = "^10.3.0.86", markers = "sys_platform == 'linux'" }
-nvidia-cusolver-cu11 = { version = "^11.4.1.48", markers = "sys_platform == 'linux'" }
-nvidia-cusparse-cu11 = { version = "^11.7.5.86", markers = "sys_platform == 'linux'" }
-nvidia-nccl-cu11 = { version = "^2.19.3", markers = "sys_platform == 'linux'" }
-nvidia-nvtx-cu11 = { version = "^11.8.86", markers = "sys_platform == 'linux'" }
-nvidia-cublas-cu11 = { version = "^11.11.3.6", markers = "sys_platform == 'linux'" }
 bump-my-version = "^0.27.0"
 hydra-submitit-launcher = "^1.2.0"
 hydra-colorlog = "^1.2.0"

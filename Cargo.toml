@@ -128,7 +128,7 @@ noodles = { version = "0.93.0", features = [
 ] }
 
 bio = "2.0"
-needletail = "0.6"
+needletail = "0.5"
 ahash = "0.8.11"
 numpy = "0.23"
 ndarray = { version = "0.16", features = ["serde", "rayon"] }
@@ -150,8 +150,8 @@ arrow = "54.0"
 candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.8.1" }
 colored = "3"
 textwrap = "0.16"
-flate2 = { version = "1.0.34", features = [
-    "zlib-ng",
+flate2 = { version = "1.0.17", features = [
+    "zlib-rs",
 ], default-features = false }
 
 

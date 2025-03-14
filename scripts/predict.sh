@@ -2,10 +2,10 @@
 set -euo pipefail # Combines the set commands into one line
 
 # Paths to checkpoint files
-# hyena_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-04-08_23-19-20/checkpoints/epoch_005_f1_0.9933.ckpt"
+hyena_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-04-08_23-19-20/checkpoints/epoch_005_f1_0.9933.ckpt"
 
 # train with both rna 002 data
-hyena_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-11-14_14-14-01/checkpoints/epoch_010_f1_0.9930.ckpt"
+# hyena_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-11-14_14-14-01/checkpoints/epoch_010_f1_0.9930.ckpt"
 
 # rna 004 only
 # hyena_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-07-02_15-20-53/checkpoints/epoch_008_f1_0.9946.ckpt"
@@ -14,8 +14,8 @@ cnn_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-
 caduceus_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-05-25_19-42-45/checkpoints/epoch_002_f1_0.9982.ckpt"
 
 # Default model selection
-sample_name="vcap002_hyena_both_model"
-data_folder="data/dorado_without_trim_fqs/VCaP.fastq_chunks"
+sample_name="vcap002_dorado_with_trim_bench"
+data_folder="vcap002_dorado_with_trim.fastq_chunks"
 
 num_workers=60
 batch_size=64
