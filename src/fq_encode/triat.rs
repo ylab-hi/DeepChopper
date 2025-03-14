@@ -39,7 +39,7 @@ pub trait Encoder {
         // remove content before |
         let number_part = src
             .split(|&c| c == b'|')
-            .last()
+            .next_back()
             .context("Failed to get number part")?;
 
         let result = number_part
