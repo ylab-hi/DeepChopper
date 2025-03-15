@@ -9,7 +9,7 @@ from datasets import Dataset
 from torch.utils.data import DataLoader
 
 import deepchopper
-from deepchopper.deepchopper import default, encode_qual, remove_intervals_and_keep_left, smooth_label_region
+from deepchopper.deepchopper import default, remove_intervals_and_keep_left, smooth_label_region
 from deepchopper.models.llm import (
     tokenize_and_align_labels_and_quals,
 )
@@ -26,10 +26,12 @@ def parse_fq_record(text: str):
         record_id, seq, _, qual = content
         assert len(seq) == len(qual)  # noqa: S101
 
+        input_qual = deepchopper.encode_qual(qual, default.KMER_SIZE)
+
         yield {
             "id": record_id,
             "seq": seq,
-            "qual": encode_qual(qual, default.KMER_SIZE),
+            "qual": torch.Tensor(input_qual),
             "target": [0, 0],
         }
 
@@ -66,7 +68,7 @@ def predict(
     accelerator = "gpu" if torch.cuda.is_available() else "cpu"
     trainer = lightning.pytorch.trainer.Trainer(
         accelerator=accelerator,
-        devices=-1,
+        devices="auto",
         deterministic=False,
         logger=False,
     )

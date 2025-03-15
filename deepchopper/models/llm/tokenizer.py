@@ -114,8 +114,15 @@ def load_tokenizer_from_hyena_model(model_name):
     )
 
 
+def to_list(data):
+    return list(data)
+
+
 def tokenize_and_align_labels_and_quals(data, tokenizer, max_length, pad_qual=0, pad_label=IGNORE_INDEX):
     tokenized_inputs = tokenizer(data["seq"], max_length=max_length, truncation=True, padding=True)
+
+    if isinstance(data["qual"], bytes):
+        data["qual"] = torch.Tensor(to_list(data["qual"]))
 
     if len(data["seq"]) >= max_length:
         if data["target"][1] + 2 > max_length:

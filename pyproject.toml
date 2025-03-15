@@ -41,7 +41,7 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-    "torch>=2.1.0",
+    "torch>=2.6.0",
     "lightning>=2.1.2",
     "torchmetrics>=1.2.1",
     "rich>=13.7.0",

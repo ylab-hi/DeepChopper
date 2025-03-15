@@ -23,13 +23,13 @@ use ahash::HashMap;
 use log::{debug, error, info, warn};
 
 #[pyfunction]
-fn encode_qual(qual: String, qual_offset: u8) -> Vec<u8> {
+fn encode_qual(qual: String, qual_offset: u8) -> Vec<usize> {
     let quals = qual.as_bytes();
     quals
         .par_iter()
         .map(|&q| {
             // Convert ASCII to Phred score for Phred+33 encoding
-            q - qual_offset
+            (q - qual_offset) as usize
         })
         .collect()
 }
