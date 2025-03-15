@@ -117,7 +117,7 @@ pyo3 = { version = "0.23.3", features = [
 ctrlc = "3.4"
 log = "0.4"
 pyo3-log = "0.12"
-noodles = { version = "0.93.0", features = [
+noodles = { version = "0.94.0", features = [
     "bgzf",
     "core",
     "csi",
@@ -158,9 +158,8 @@ clap = { version = "4.5.20", features = ["derive"] }
 env_logger = "0.11"
 human-panic = "2.0"
 
-
 [dev-dependencies]
 
 
 [build-dependencies]
-pyo3-build-config = "0.23"
+pyo3-build-config = "0.24"
