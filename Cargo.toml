@@ -136,8 +136,6 @@ num-traits = { version = "0.2" }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-rand = "0.9"
-rand_distr = "0.5"
 bitvec = "1.0"
 itertools = "0.14.0"
 derive_builder = "0.20"
@@ -147,7 +145,7 @@ lazy_static = "1.5.0"
 tempfile = "3.13"
 parquet = "54.0"
 arrow = "54.0"
-candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.8.1" }
+candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.8.4" }
 colored = "3"
 textwrap = "0.16"
 flate2 = { version = "1.0.17", features = [
