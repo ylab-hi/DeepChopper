@@ -69,7 +69,6 @@ class TokenClassificationHead(nn.Module):
         self.linear1 = nn.Linear(input_size, lin1_size)
         self.linear2 = nn.Linear(lin1_size, lin2_size)
         self.linear3 = nn.Linear(lin2_size, num_class)
-
         self.qual_linear1 = nn.Identity() if use_identity_layer_for_qual else nn.Linear(1, lin1_size)
 
     def forward(self, x: torch.Tensor, input_quals: torch.Tensor) -> torch.Tensor:
