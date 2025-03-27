@@ -130,6 +130,7 @@ In general, the whole process will take around 20-30 minutes for the demo data, 
 
 ## Next Steps
 
+- Check [our documentation](./parameters.md) of parameters for `chop` command
 - Explore advanced DeepChopper options with `deepchopper --help`
 - Use your cleaned data for downstream analyses
 - Check our documentation for integration with other bioinformatics tools
