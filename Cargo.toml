@@ -109,22 +109,22 @@ anyhow = "1.0"
 walkdir = { version = "2.5" }
 rayon = { version = "1.10" }
 pyo3 = { version = "0.23.5", features = [
-    "abi3-py310",
-    "extension-module",
-    "anyhow",
+  "abi3-py310",
+  "extension-module",
+  "anyhow",
 ] }
 
 ctrlc = "3.4"
 log = "0.4"
 pyo3-log = "0.12"
-noodles = { version = "0.94.0", features = [
-    "bgzf",
-    "core",
-    "csi",
-    "fasta",
-    "fastq",
-    "sam",
-    "bam",
+noodles = { version = "0.97.0", features = [
+  "bgzf",
+  "core",
+  "csi",
+  "fasta",
+  "fastq",
+  "sam",
+  "bam",
 ] }
 
 bio = "2.2"
@@ -143,14 +143,12 @@ lexical = "7.0"
 bstr = "1.11.3"
 lazy_static = "1.5.0"
 tempfile = "3.19"
-parquet = "54.3"
-arrow = "54.3"
-candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.8.4" }
+parquet = "55.0"
+arrow = "55.0"
+candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.9.0-alpha.5" }
 colored = "3"
 textwrap = "0.16"
-flate2 = { version = "1.1.0", features = [
-    "zlib-rs",
-], default-features = false }
+flate2 = { version = "1.1.0", features = ["zlib-rs"], default-features = false }
 
 
 # binaries
