@@ -182,26 +182,3 @@ pub fn blat<P: AsRef<Path> + AsRef<std::ffi::OsStr>>(
 
     parse_psl(output_file)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_blat() {
-        let seq = "TCCCTCCCACCCCCTCTCCATCATCCATATCATCCCACATCCTCCTATCCC";
-        let blat_cli = "/projects/b1171/ylk4626/project/DeepChopper/tmp/blat";
-        let hg38_2bit = "/projects/b1171/ylk4626/project/scan_data/hg38.2bit";
-        let _result = blat(seq, blat_cli, hg38_2bit, None).unwrap();
-    }
-
-    #[test]
-    fn test_parse_psl() {
-        let file = "output2.psl";
-        let seq = "TCCCTCCCACCCCCTCTCCATCATCCATATCATCCCACATCCTCCTATCCC";
-        let blat_cli = "/projects/b1171/ylk4626/project/DeepChopper/tmp/blat";
-        let hg38_2bit = "/projects/b1171/ylk4626/project/scan_data/hg38.2bit";
-        let alignments = blat(seq, blat_cli, hg38_2bit, Some(file)).unwrap();
-        println!("{:?}", alignments);
-    }
-}
