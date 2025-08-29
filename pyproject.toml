@@ -314,7 +314,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = "tests/"
-log_cli = "True"
+log_cli = true
 filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
 markers = [
     "smoke: a quick smoke test",
