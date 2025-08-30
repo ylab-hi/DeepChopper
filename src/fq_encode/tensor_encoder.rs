@@ -128,7 +128,7 @@ impl Encoder for TensorEncoder {
         info!("fetching records from {}", path.as_ref().display());
         let mut reader = File::open(path.as_ref())
             .map(BufReader::new)
-            .map(fastq::Reader::new)?;
+            .map(fastq::io::Reader::new)?;
 
         let mut records: Vec<RecordData> = Vec::new();
         let mut record = fastq::Record::default();
