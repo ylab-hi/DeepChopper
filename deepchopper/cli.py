@@ -12,11 +12,6 @@ from typer.core import TyperGroup
 
 import deepchopper
 
-from .deepchopper import (
-    default,
-    encode_fq_path_to_parquet,
-    encode_fq_path_to_parquet_chunk,
-)
 from .utils import (
     highlight_target,
 )
@@ -62,40 +57,9 @@ def encode(
     parallel: bool = typer.Option(False, "--parallel", "-p", help="Enable parallel processing"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
 ):
-    """Encode the given fastq files to parquet format."""
-    if verbose:
-        set_logging_level(logging.INFO)
-
-    if isinstance(fastq_path, str):
-        fastq_path = Path(fastq_path)
-
-    if not fastq_path.exists():
-        msg = f"Folder {fastq_path} does not exist."
-        logging.error(msg)
-
-    fq_files = (
-        [fastq_path] if fastq_path.is_file() else list(fastq_path.glob("*.fq")) + list(fastq_path.glob("*.fastq"))
-    )
-
-    for fq_file in fq_files:
-        logging.info(f"Processing {fq_file}")
-        if not chunk:
-            encode_fq_path_to_parquet(
-                fq_file,
-                default.KMER_SIZE,
-                bases=default.BASES,
-                qual_offset=default.QUAL_OFFSET,
-                vectorized_target=default.VECTORIZED_TARGET,
-            )
-        else:
-            encode_fq_path_to_parquet_chunk(
-                fq_file,
-                chunk_size=chunk_size,
-                parallel=parallel,
-                bases=default.BASES,
-                qual_offset=default.QUAL_OFFSET,
-                vectorized_target=default.VECTORIZED_TARGET,
-            )
+    """DEPRECATED: Please use `deepchopper predict fastq_path` directly."""
+    logging.warning("Encoding command is deprecated. Please use `deepchopper predict fastq_path` directly.")
+    raise typer.Exit()
 
 
 def predict(
@@ -111,6 +75,8 @@ def predict(
     """Predict the given dataset using DeepChopper."""
     if verbose:
         set_logging_level(logging.INFO)
+
+    lightning.seed_everything(42, workers=True)
 
     if isinstance(data_path, str):
         data_path = Path(data_path)
@@ -147,7 +113,7 @@ def predict(
         accelerator=accelerator,
         devices=devices,
         callbacks=callbacks,
-        deterministic=False,
+        deterministic=True,
         logger=False,
         limit_predict_batches=limit_predict_batches,
     )

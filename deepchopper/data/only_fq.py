@@ -6,7 +6,6 @@ from typing import Any
 
 import pyfastx
 from datasets import Dataset as HuggingFaceDataset
-from datasets import load_dataset
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoTokenizer
@@ -19,7 +18,7 @@ from deepchopper.models.llm import (
 )
 
 
-def parse_fastq_file(file_path: Path, *, has_targets: bool = True) -> Iterator[dict]:
+def parse_fastq_file(file_path: Path, has_targets: bool = True) -> Iterator[dict]:
     """Parse a FastQ file using pyfastx and return a dictionary .
 
     Args:
@@ -213,8 +212,6 @@ class OnlyFqDataModule(LightningDataModule):
             if self.hparams.test_data_path is None:
                 msg = "Please provide a test data path."
                 raise ValueError(msg)
-
-            load_dataset("parquet", data_files=data_files, num_proc=max(1, num_proc)).with_format("torch")
 
             train_dataset = HuggingFaceDataset.from_generator(
                 parse_fastq_file,
