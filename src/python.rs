@@ -272,6 +272,17 @@ fn normalize_seq(seq: String, iupac: bool) -> String {
     String::from_utf8_lossy(&seq.as_bytes().normalize(iupac)).to_string()
 }
 
+#[pyfunction]
+fn parse_target_from_id(src: &[u8]) -> Result<Vec<usize>> {
+    let target = fq_encode::parse_target_from_id(src)?;
+    let result = target
+        .into_par_iter()
+        .map(|x| [x.start, x.end])
+        .flatten()
+        .collect();
+    Ok(result)
+}
+
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 #[pyfunction]
 #[pyo3(signature = (
@@ -285,7 +296,7 @@ fn normalize_seq(seq: String, iupac: bool) -> String {
     max_seq_len=None
 ))]
 fn encode_fq_paths_to_tensor(
-    py: Python,
+    py: Python<'_>,
     fq_paths: Vec<PathBuf>,
     k: usize,
     bases: String,
@@ -341,7 +352,7 @@ fn encode_fq_paths_to_tensor(
     max_seq_len=None
 ))]
 fn encode_fq_path_to_tensor(
-    py: Python,
+    py: Python<'_>,
     fq_path: PathBuf,
     k: usize,
     bases: String,
@@ -893,6 +904,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(test_log, m)?)?;
     m.add_function(wrap_pyfunction!(extract_records_by_ids, m)?)?;
     m.add_function(wrap_pyfunction!(encode_qual, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_target_from_id, m)?)?;
 
     // add utils
     m.add_function(wrap_pyfunction!(reverse_complement, m)?)?;

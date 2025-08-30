@@ -108,6 +108,7 @@ pub struct BamRecord {
     pub sa_tag: Option<String>,
 }
 
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 #[pymethods]
 impl BamRecord {
     #[new]

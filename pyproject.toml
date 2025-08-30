@@ -45,6 +45,7 @@ dependencies = [
     "hydra-core>=1.3.2",
     "omegaconf>=2.3.0",
     "deepchopper-cli>=1.0.1",
+    "pyfastx>=2.2.0",
 ]
 
 [project.urls]

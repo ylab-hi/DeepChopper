@@ -291,13 +291,12 @@ impl Encoder for TensorEncoder {
                 let seq = data.seq.as_ref();
                 let qual = data.qual.as_ref();
 
-                match self.encode_record(id, seq, qual).context(format!(
-                    "encode fq read id {} error",
-                    String::from_utf8_lossy(id)
-                )) {
-                    Ok(result) => Some(result),
-                    Err(_e) => None,
-                }
+                self.encode_record(id, seq, qual)
+                    .context(format!(
+                        "encode fq read id {} error",
+                        String::from_utf8_lossy(id)
+                    ))
+                    .ok()
             })
             .collect();
 

@@ -26,7 +26,7 @@ def parse_fq_record(text: str):
         record_id, seq, _, qual = content
         assert len(seq) == len(qual)  # noqa: S101
 
-        input_qual = deepchopper.encode_qual(qual, default.KMER_SIZE)
+        input_qual = deepchopper.encode_qual(qual, default.QUAL_OFFSET)
 
         yield {
             "id": record_id,
