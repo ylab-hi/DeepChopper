@@ -114,6 +114,8 @@ def predict(
 
     if isinstance(data_path, str):
         data_path = Path(data_path)
+    
+    lightning.seed_everything(42, workers=True)
 
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
     datamodule: LightningDataModule = deepchopper.data.fq_datamodule.FqDataModule(
@@ -147,7 +149,7 @@ def predict(
         accelerator=accelerator,
         devices=devices,
         callbacks=callbacks,
-        deterministic=False,
+        deterministic=True,
         logger=False,
         limit_predict_batches=limit_predict_batches,
     )

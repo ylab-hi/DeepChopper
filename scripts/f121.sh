@@ -14,8 +14,8 @@ cnn_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-
 caduceus_ckpt_path="/projects/b1171/ylk4626/project/DeepChopper/logs/train/runs/2024-05-25_19-42-45/checkpoints/epoch_002_f1_0.9982.ckpt"
 
 # Default model selection
-sample_name="F121-9_dorado_with_trim2"
-data_folder="rebutt/F121-9_dorado_with_trim2.fastq_chunks"
+sample_name="F121-9_dorado_with_trim"
+data_folder="rebutt/F121-9_dorado_with_trim.fastq_chunks"
 
 num_workers=15
 batch_size=64
