@@ -593,4 +593,4 @@ scripts/*.json
 hg_deepchopper
 analysis_data
 poetry.lock
-/tt
+issues_resolve
