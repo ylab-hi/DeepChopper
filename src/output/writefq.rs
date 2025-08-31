@@ -8,6 +8,7 @@ use anyhow::Result;
 use flate2::read::GzDecoder;
 use noodles::fastq::{self as fastq, record::Definition};
 
+use flate2::read::GzDecoder;
 use noodles::bgzf;
 use noodles::fastq::record::Record as FastqRecord;
 use rayon::prelude::*;
@@ -364,8 +365,8 @@ mod tests {
         // Call the function being tested
         write_zip_fq_parallel(&records, file_path, None).unwrap();
 
-        let decoder = bgzf::Reader::new(file.reopen().unwrap());
-        let mut reader = fastq::Reader::new(decoder);
+        let decoder = bgzf::io::Reader::new(file.reopen().unwrap());
+        let mut reader = fastq::io::Reader::new(decoder);
 
         let actual_result: Vec<RecordData> = reader
             .records()
