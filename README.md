@@ -21,7 +21,6 @@
   - [📚 Cite](#-cite)
   - [🤝 Contribution](#-contribution)
     - [Build Environment](#build-environment)
-    - [Install Dependencies](#install-dependencies)
   - [📬 Support](#-support)
 
 <!--toc:end-->
@@ -165,19 +164,17 @@ We welcome contributions! Here's how to set up your development environment:
 
 ### Build Environment
 
+Install [UV](https://docs.astral.sh/uv/getting-started/installation/#installation-methods) and [Rust](https://www.rust-lang.org/tools/install)
+
 ```bash
 git clone https://github.com/ylab-hi/DeepChopper.git
 cd DeepChopper
-conda env create -n environment.yaml
-conda activate deepchopper
-```
 
-### Install Dependencies
+# Install dependencies
+uv sync
 
-```bash
-pip install pipx
-pipx install --suffix @master git+https://github.com/python-poetry/poetry.git@master
-poetry@master install
+# Run DeepChopper
+uv run deepchopper --help
 ```
 
 🎉 Ready to contribute? Check out our [Contribution Guidelines](./CONTRIBUTING.md) to get started!
