@@ -190,7 +190,7 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(
         thread::available_parallelism().unwrap_or(NonZeroUsize::MIN)
     };
 
-    let decoder = bgzf::MultithreadedReader::with_worker_count(worker_count, file);
+    let decoder = bgzf::io::MultithreadedReader::with_worker_count(worker_count, file);
 
     let mut reader = bam::io::Reader::from(decoder);
     let _header = reader.read_header()?;

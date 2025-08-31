@@ -154,7 +154,7 @@ pub fn create_reader_for_compressed_file<P: AsRef<Path>>(
     Ok(match compressed_type {
         CompressedType::Uncompress => Box::new(file),
         CompressedType::Gzip => Box::new(GzDecoder::new(file)),
-        CompressedType::Bgzip => Box::new(bgzf::Reader::new(file)),
+        CompressedType::Bgzip => Box::new(bgzf::io::Reader::new(file)),
         _ => return Err(anyhow::anyhow!("unsupported compression type")),
     })
 }
@@ -163,14 +163,14 @@ pub fn read_noodel_records_from_fq_or_zip_fq<P: AsRef<Path>>(
     file_path: P,
 ) -> Result<Vec<FastqRecord>> {
     let reader = create_reader_for_compressed_file(&file_path)?;
-    let mut reader = fastq::Reader::new(BufReader::new(reader));
+    let mut reader = fastq::io::Reader::new(BufReader::new(reader));
     reader.records().map(|record| Ok(record?)).collect()
 }
 
 pub fn read_noodle_records_from_fq<P: AsRef<Path>>(file_path: P) -> Result<Vec<FastqRecord>> {
     let mut reader = File::open(file_path)
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let records: Result<Vec<FastqRecord>> = reader
         .records()
         .par_bridge()
@@ -204,7 +204,7 @@ pub fn write_zip_fq_parallel(
         .unwrap();
 
     let sink = File::create(file_path)?;
-    let encoder = bgzf::MultithreadedWriter::with_worker_count(worker_count, sink);
+    let encoder = bgzf::io::MultithreadedWriter::with_worker_count(worker_count, sink);
 
     let mut writer = fastq::io::Writer::new(encoder);
 
@@ -229,7 +229,7 @@ pub fn write_fq_parallel_for_noodle_record(
         .unwrap();
 
     let sink = File::create(file_path)?;
-    let encoder = bgzf::MultithreadedWriter::with_worker_count(worker_count, sink);
+    let encoder = bgzf::io::MultithreadedWriter::with_worker_count(worker_count, sink);
 
     let mut writer = fastq::io::Writer::new(encoder);
 
@@ -244,7 +244,7 @@ pub fn read_noodle_records_from_gzip_fq<P: AsRef<Path>>(file_path: P) -> Result<
     let mut reader = File::open(file_path)
         .map(GzDecoder::new)
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
 
     let records: Result<Vec<FastqRecord>> = reader
         .records()
@@ -258,8 +258,8 @@ pub fn read_noodle_records_from_gzip_fq<P: AsRef<Path>>(file_path: P) -> Result<
 }
 
 pub fn read_noodle_records_from_bzip_fq<P: AsRef<Path>>(file_path: P) -> Result<Vec<FastqRecord>> {
-    let decoder = bgzf::Reader::new(File::open(file_path)?);
-    let mut reader = fastq::Reader::new(decoder);
+    let decoder = bgzf::io::Reader::new(File::open(file_path)?);
+    let mut reader = fastq::io::Reader::new(decoder);
 
     let records: Result<Vec<FastqRecord>> = reader
         .records()

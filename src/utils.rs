@@ -131,13 +131,13 @@ pub fn collect_and_split_dataset<P: AsRef<Path>>(
 
     let mut internal_fq_reader = File::open(internal_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let mut terminal_fq_reader = File::open(terminal_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let mut negative_fq_reader = File::open(negative_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
 
     let train_data_path = format!("train{}.fq", prefix.unwrap_or_default());
     let val_data_path = format!("val{}.fq", prefix.unwrap_or_default());
@@ -307,16 +307,16 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters<P: AsRef<Path>>(
 
     let mut internal_fq_reader = File::open(internal_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let mut terminal_fq_reader = File::open(terminal_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let mut natural_terminal_fq_reader = File::open(natural_terminal_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let mut negative_fq_reader = File::open(negative_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
 
     let train_data_path = format!("train{}.fq", prefix.unwrap_or_default());
     let val_data_path = format!("val{}.fq", prefix.unwrap_or_default());
@@ -522,19 +522,19 @@ pub fn collect_and_split_dataset_with_natural_terminal_adapters_and_both_adapter
 
     let mut internal_fq_reader = File::open(internal_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let mut terminal_fq_reader = File::open(terminal_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let mut natural_terminal_fq_reader = File::open(natural_terminal_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let mut both_fq_reader = File::open(both_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let mut negative_fq_reader = File::open(negative_fq_path.as_ref())
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
 
     let train_data_path = format!("train{}.fq", prefix.unwrap_or_default());
     let val_data_path = format!("val{}.fq", prefix.unwrap_or_default());
