@@ -214,17 +214,17 @@ def main(
 
 app.command(
     help="DeepChopper: encode the given fastq (DEPRECATED)",
-    epilog="Example: deepchopper encode fastq_path --verbose",
+    epilog="DEPRECATED: Please use `deepchopper predict fastq_path` directly.",
 )(encode)
 
 app.command(
     help="DeepChopper: predict the given dataset",
-    epilog="Example: deepchopper predict parquet_path --gpus 1 --output predictions",
+    epilog="Example: deepchopper predict fastq_path --gpus 1 --output predictions",
 )(predict)
 
 app.command(
     help="DeepChopper: chop the given predictions!",
-    epilog="Example: deepchopper chop predictions/0 --fq fastq_path",
+    epilog="Example: deepchopper chop predictions/0 fastq_path",
 )(chop)
 
 app.command(
