@@ -240,7 +240,6 @@ pub fn write_fq_parallel_for_noodle_record(
 }
 
 pub fn read_noodle_records_from_gzip_fq<P: AsRef<Path>>(file_path: P) -> Result<Vec<FastqRecord>> {
-    use flate2::read::GzDecoder;
     let mut reader = File::open(file_path)
         .map(GzDecoder::new)
         .map(BufReader::new)
