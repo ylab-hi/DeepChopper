@@ -160,4 +160,4 @@ human-panic = "2.0"
 
 
 [build-dependencies]
-pyo3-build-config = "0.25"
+pyo3-build-config = "0.26"
