@@ -15,7 +15,7 @@
   - [📦 Installation](#-installation)
     - [Compatibility and Support](#compatibility-and-support)
       - [PyPI Support](#pypi-support)
-  - [🛠️ Usage](#️-usage)
+  - [🛠️ Usage](#%EF%B8%8F-usage)
     - [Command-Line Interface](#command-line-interface)
     - [Python Library](#python-library)
   - [📚 Cite](#-cite)
@@ -186,7 +186,7 @@ Need help? Have questions?
 - 📖 Check our [Documentation](./documentation/tutorial.md)
 - 🐛 [Report issues](https://github.com/ylab-hi/DeepChopper/issues)
 
----
+______________________________________________________________________
 
 DeepChopper is developed with ❤️ by the YLab team.
 Happy sequencing! 🧬🔬

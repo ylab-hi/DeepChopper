@@ -51,7 +51,7 @@ def random_show_seq(dataset, sample: int = 3):
 
 
 def encode(
-    fastq_path: Path = typer.Argument(..., help="Path to the fastq file"),
+    fastq_path: Path = typer.Argument(..., help="Path to the fastq file (DEPRECATED)"),
     chunk: bool = typer.Option(False, "--chunk", "-c", help="Enable chunking"),
     chunk_size: int = typer.Option(1000000, "--chunk-size", "-s", help="Chunk size"),
     parallel: bool = typer.Option(False, "--parallel", "-p", help="Enable parallel processing"),
@@ -213,7 +213,7 @@ def main(
 
 
 app.command(
-    help="DeepChopper: encode the given fastq",
+    help="DeepChopper: encode the given fastq (DEPRECATED)",
     epilog="Example: deepchopper encode fastq_path --verbose",
 )(encode)
 
