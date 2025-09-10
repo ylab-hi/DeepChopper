@@ -142,7 +142,7 @@ derive_builder = "0.20"
 lexical = "7.0"
 bstr = "1.12.0"
 lazy_static = "1.5.0"
-tempfile = "3.21"
+tempfile = "3.22"
 parquet = "56.1"
 arrow = "56.1"
 candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.9.0-alpha.5" }
