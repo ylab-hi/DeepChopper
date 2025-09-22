@@ -127,7 +127,7 @@ noodles = { version = "0.101.0", features = [
   "bam",
 ] }
 
-bio = "2.3"
+bio = "3.0"
 needletail = "0.5"
 ahash = "0.8.12"
 numpy = "0.23"
