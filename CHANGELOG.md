@@ -373,7 +373,7 @@ All notable changes to this project will be documented in this file.
 - Update batch size to 32
 - Update batch size to 18
 - Update data_path and num_workers in eval script
-- Update condition to check for intervals_number <= 4
+- Update condition to check for intervals_number \<= 4
 - Remove read with unmap, supp, secondary
 - Correct indexing in id_list2seq functions
 - Use pyo3 new features
@@ -559,7 +559,7 @@ All notable changes to this project will be documented in this file.
 ### ⚙️ Miscellaneous Tasks
 
 - Add test_log function for logging
-- Update .gitignore to exclude massif.out.*
+- Update .gitignore to exclude massif.out.\*
 - Add task.slurm to .gitignore
 - Update exclude paths in pyproject.toml
 - Update .gitignore for wandb and checkpoints
