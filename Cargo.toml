@@ -144,7 +144,7 @@ bstr = "1.12.0"
 lazy_static = "1.5.0"
 tempfile = "3.20"
 parquet = "55.2"
-arrow = "55.2"
+arrow = "56.2"
 candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.9.0-alpha.5" }
 colored = "3"
 textwrap = "0.16"
