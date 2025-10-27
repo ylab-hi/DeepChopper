@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use std::{io, thread};
 
 use anyhow::Result;
-use flate2::read::GzDecoder;
 use noodles::fastq::{self as fastq, record::Definition};
 
 use flate2::read::GzDecoder;
