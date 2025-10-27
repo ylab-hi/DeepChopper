@@ -364,8 +364,8 @@ mod tests {
         // Call the function being tested
         write_zip_fq_parallel(&records, file_path, None).unwrap();
 
-        let decoder = bgzf::Reader::new(file.reopen().unwrap());
-        let mut reader = fastq::Reader::new(decoder);
+        let decoder = bgzf::io::Reader::new(file.reopen().unwrap());
+        let mut reader = fastq::io::Reader::new(decoder);
 
         let actual_result: Vec<RecordData> = reader
             .records()
