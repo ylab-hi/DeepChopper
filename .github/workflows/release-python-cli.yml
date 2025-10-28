@@ -121,8 +121,6 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
-          - runner: windows-latest
-            target: x86
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
