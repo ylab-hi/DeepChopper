@@ -15,7 +15,7 @@
   - [📦 Installation](#-installation)
     - [Compatibility and Support](#compatibility-and-support)
       - [PyPI Support](#pypi-support)
-  - [🛠️ Usage](#️-usage)
+  - [🛠️ Usage](#%EF%B8%8F-usage)
     - [Command-Line Interface](#command-line-interface)
     - [Python Library](#python-library)
   - [📚 Cite](#-cite)
@@ -84,9 +84,9 @@ Below are the compatibility matrices for PyPI installations:
 
 | Python Version | Linux x86_64 | macOS Intel | macOS Apple Silicon | Windows x86_64 |
 | :------------: | :----------: | :---------: | :-----------------: | :------------: |
-|      3.10      |      ✅      |     ✅      |         ✅          |       ✅       |
-|      3.11      |      ✅      |     ✅      |         ✅          |       ✅       |
-|      3.12      |      ✅      |     ✅      |         ✅          |       ✅       |
+| 3.10 | ✅ | ✅ | ✅ | ✅ |
+| 3.11 | ✅ | ✅ | ✅ | ✅ |
+| 3.12 | ✅ | ✅ | ✅ | ✅ |
 
 🆘 Trouble installing? Check our [Troubleshooting Guide](https://github.com/ylab-hi/DeepChopper/blob/main/documentation/tutorial.md#troubleshooting) or [open an issue](https://github.com/ylab-hi/DeepChopper/issues).
 
@@ -189,7 +189,7 @@ Need help? Have questions?
 - 📖 Check our [Documentation](./documentation/tutorial.md)
 - 🐛 [Report issues](https://github.com/ylab-hi/DeepChopper/issues)
 
----
+______________________________________________________________________
 
 DeepChopper is developed with ❤️ by the YLab team.
 Happy sequencing! 🧬🔬
