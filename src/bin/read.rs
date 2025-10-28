@@ -26,7 +26,7 @@ fn main() -> Result<()> {
 
     let mut reader = File::open(cli.input)
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
 
     let mut records: Vec<RecordData> = Vec::new();
     let mut record = fastq::Record::default();

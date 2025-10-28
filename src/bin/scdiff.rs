@@ -90,7 +90,7 @@ fn compare_right_softclip_for_terminal_chop<P: AsRef<Path>>(
     let cpfile = File::open(cpbam.as_ref())?;
     let bamfile = File::open(bam.as_ref())?;
 
-    let bamdecoder = bgzf::MultithreadedReader::with_worker_count(worker_count, bamfile);
+    let bamdecoder = bgzf::io::MultithreadedReader::with_worker_count(worker_count, bamfile);
     let mut bamreader = bam::io::Reader::from(bamdecoder);
     let _header = bamreader.read_header()?;
 
@@ -114,7 +114,7 @@ fn compare_right_softclip_for_terminal_chop<P: AsRef<Path>>(
         })
         .collect();
 
-    let cpdecoder = bgzf::MultithreadedReader::with_worker_count(worker_count, cpfile);
+    let cpdecoder = bgzf::io::MultithreadedReader::with_worker_count(worker_count, cpfile);
     let mut cpreader = bam::io::Reader::from(cpdecoder);
     let _header = cpreader.read_header()?;
 

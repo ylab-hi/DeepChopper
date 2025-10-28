@@ -32,7 +32,9 @@ struct Cli {
 }
 
 fn compare_length<P: AsRef<Path>>(fq: P, chop_fq: P) -> Result<HashMap<String, usize>> {
-    let mut fq_reader = File::open(fq).map(BufReader::new).map(fastq::Reader::new)?;
+    let mut fq_reader = File::open(fq)
+        .map(BufReader::new)
+        .map(fastq::io::Reader::new)?;
     let fq_records: Result<HashMap<String, FastqRecord>> = fq_reader
         .records()
         .par_bridge()
@@ -46,7 +48,7 @@ fn compare_length<P: AsRef<Path>>(fq: P, chop_fq: P) -> Result<HashMap<String, u
 
     let mut chop_reader = File::open(chop_fq)
         .map(BufReader::new)
-        .map(fastq::Reader::new)?;
+        .map(fastq::io::Reader::new)?;
     let chop_records: Result<HashMap<String, FastqRecord>> = chop_reader
         .records()
         .par_bridge()
@@ -73,7 +75,7 @@ fn compare_length<P: AsRef<Path>>(fq: P, chop_fq: P) -> Result<HashMap<String, u
                 None
             } else {
                 log::warn!("{} not found in chop fq", name);
-                return Some((name.clone(), fq_record.sequence().len()));
+                Some((name.clone(), fq_record.sequence().len()))
             }
         })
         .collect::<HashMap<String, usize>>();
