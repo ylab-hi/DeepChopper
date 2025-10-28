@@ -52,7 +52,7 @@ jobs:
         with:
           name: wheels-linux-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: dist
-      - name: pytest
+      - name: Test CLI
         if: ${{ startsWith(matrix.platform.target, 'x86_64') }}
         shell: bash
         run: |
@@ -61,21 +61,6 @@ jobs:
           source .venv/bin/activate
           pip install deepchopper --find-links dist --force-reinstall
           deepchopper -h
-      - name: pytest
-        if: ${{ !startsWith(matrix.platform.target, 'x86') && matrix.platform.target != 'ppc64' }}
-        uses: uraimo/run-on-arch-action@v3
-        with:
-          arch: ${{ matrix.platform.target }}
-          distro: ubuntu22.04
-          githubToken: ${{ github.token }}
-          install: |
-            apt-get update
-            apt-get install -y --no-install-recommends python3 python3-pip
-            pip3 install -U pip pytest
-          run: |
-            set -e
-            pip3 install deepchopper --find-links dist --force-reinstall
-            deepchopper -h
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -97,12 +82,15 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python${{ matrix.python-version }}
           sccache: "true"
+        env:
+          # Override the native CPU target with baseline
+          RUSTFLAGS: "-C target-cpu=x86-64 -C target-feature=+sse2"
       - name: Upload wheels
         uses: actions/upload-artifact@v5
         with:
           name: wheels-windows-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: dist
-      - name: pytest
+      - name: Test CLI
         if: ${{ !startsWith(matrix.platform.target, 'aarch64') }}
         shell: bash
         run: |
@@ -139,7 +127,7 @@ jobs:
         with:
           name: wheels-macos-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: dist
-      - name: pytest
+      - name: Test CLI
         run: |
           set -e
           python3 -m venv .venv
