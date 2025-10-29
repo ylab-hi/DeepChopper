@@ -222,7 +222,7 @@ pub fn load_predicts_from_batch_pts(
         .into_iter()
         .par_bridge()
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().map_or(false, |ext| ext == "pt"))
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "pt"))
         .collect();
 
     info!(

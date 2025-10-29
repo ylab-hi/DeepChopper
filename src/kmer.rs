@@ -54,7 +54,7 @@ pub fn vectorize_targets(targets: &[usize], length: usize) -> Result<Vec<usize>>
     }
 
     // Ensure the number of targets is even.
-    assert!(targets.len() % 2 == 0);
+    assert!(targets.len().is_multiple_of(2));
 
     let mut result = vec![0; length];
     for (start, end) in targets.iter().tuples() {
