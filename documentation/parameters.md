@@ -16,11 +16,11 @@ This parameter is applied first in the processing pipeline.
 This parameter determines the minimum length of sequence that can be classified as an adapter region.
 This parameter is applied after the smoothing process during adapter region identification.
 
-| Value | Use Case                                                     |
+| Value | Use Case |
 | ----- | ------------------------------------------------------------ |
-| 8-10  | Increased sensitivity to detect very short adapter fragments |
-| 13    | **Default - Balanced detection for typical adapter lengths** |
-| 15-20 | Higher precision, reduces false positives in noisy data      |
+| 8-10 | Increased sensitivity to detect very short adapter fragments |
+| 13 | **Default - Balanced detection for typical adapter lengths** |
+| 15-20 | Higher precision, reduces false positives in noisy data |
 
 **Recommendation**: For RNA004 chemistry or newer protocols with cleaner data, consider increasing to 15 to reduce false positives.
 
@@ -29,11 +29,11 @@ This parameter is applied after the smoothing process during adapter region iden
 Limits how many adapter regions are processed per read.
 This parameter is applied after the smoothing process.
 
-| Value | Use Case                                         |
+| Value | Use Case |
 | ----- | ------------------------------------------------ |
-| 2-3   | Conservative approach for high-quality data      |
-| 4     | **Default - Suitable for most applications**     |
-| 5-8   | For highly fragmented reads or complex libraries |
+| 2-3 | Conservative approach for high-quality data |
+| 4 | **Default - Suitable for most applications** |
+| 5-8 | For highly fragmented reads or complex libraries |
 
 **Recommendation**: Monitor read fragmentation metrics after processing. If reads are being over-fragmented, decrease this value.
 
@@ -42,11 +42,11 @@ This parameter is applied after the smoothing process.
 Specifies the minimum length of sequences to retain after chopping.
 This parameter is applied after the smoothing process during the final filtering stage.
 
-| Value | Use Case                                        |
+| Value | Use Case |
 | ----- | ----------------------------------------------- |
-| 10    | Small RNA or short fragment applications        |
-| 20    | **Default - General purpose**                   |
-| 50+   | When only substantial fragments are of interest |
+| 10 | Small RNA or short fragment applications |
+| 20 | **Default - General purpose** |
+| 50+ | When only substantial fragments are of interest |
 
 **Recommendation**: Adjust based on your downstream application requirements.
 

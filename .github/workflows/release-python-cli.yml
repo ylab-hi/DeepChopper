@@ -53,7 +53,7 @@ jobs:
         with:
           name: wheels-linux-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: ./py_cli/dist
-      - name: pytest
+      - name: Test CLI
         if: ${{ startsWith(matrix.platform.target, 'x86_64') }}
         shell: bash
         working-directory: ./py_cli
