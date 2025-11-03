@@ -131,7 +131,7 @@ bio = "3.0"
 needletail = "0.5"
 ahash = "0.8.12"
 numpy = "0.23"
-ndarray = { version = "0.16", features = ["serde", "rayon"] }
+ndarray = { version = "0.17", features = ["serde", "rayon"] }
 num-traits = { version = "0.2" }
 serde = "1.0"
 serde_derive = "1.0"
