@@ -11,6 +11,7 @@ use clap::Parser;
 use noodles::bgzf;
 use noodles::fastq;
 use rayon::prelude::*;
+use sysinfo::System;
 
 use deepchopper::default;
 use deepchopper::output;
@@ -76,6 +77,50 @@ struct Cli {
     /// Turn debugging information on
     #[arg(short, long, action = clap::ArgAction::Count)]
     debug: u8,
+}
+
+/// Get current process memory usage in bytes (RSS - Resident Set Size)
+///
+/// This tracks only THIS process's memory usage, not system-wide or other processes.
+/// Includes ALL memory used by this process:
+/// - Main thread memory
+/// - All Rayon worker threads (they share the same PID/process)
+/// - All heap allocations across all threads
+/// - Thread stacks
+///
+/// Important when running on shared HPC nodes with multiple jobs.
+fn get_memory_usage_bytes(sys: &mut System) -> u64 {
+    let pid = sysinfo::Pid::from_u32(std::process::id());
+
+    // Refresh system info to get latest memory stats
+    sys.refresh_all();
+
+    if let Some(process) = sys.process(pid) {
+        // Returns RSS (Resident Set Size) for THIS process only (including all threads)
+        process.memory()
+    } else {
+        0
+    }
+}
+
+/// Format bytes into human-readable memory size (MB, GB, etc.)
+fn format_memory(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
+    const TB: u64 = GB * 1024;
+
+    if bytes >= TB {
+        format!("{:.2} TB", bytes as f64 / TB as f64)
+    } else if bytes >= GB {
+        format!("{:.2} GB", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+        format!("{:.1} MB", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+        format!("{:.1} KB", bytes as f64 / KB as f64)
+    } else {
+        format!("{} B", bytes)
+    }
 }
 
 /// Process a chunk of FASTQ records with their predictions
@@ -159,6 +204,11 @@ fn main() -> Result<()> {
     // set log level
     env_logger::builder().filter_level(log_level).init();
 
+    // Initialize system info for memory monitoring (only for this process, not all processes)
+    let mut sys = System::new();
+    let initial_mem = get_memory_usage_bytes(&mut sys);
+    log::info!("Initial memory usage: {}", format_memory(initial_mem));
+
     rayon::ThreadPoolBuilder::new()
         .num_threads(cli.threads.unwrap())
         .build_global()
@@ -182,17 +232,17 @@ fn main() -> Result<()> {
         .collect::<HashMap<_, _>>();
 
     let all_predicts_number = all_predicts.len();
-    log::info!("Collected {} predictions", all_predicts_number);
+    let mem_after_predictions = get_memory_usage_bytes(&mut sys);
+    log::info!(
+        "Collected {} predictions (memory: {}, +{})",
+        all_predicts_number,
+        format_memory(mem_after_predictions),
+        format_memory(mem_after_predictions.saturating_sub(initial_mem))
+    );
+
     log::info!(
         "Processing FASTQ records in chunks of {} (streaming mode to reduce memory)",
         cli.chunk_size
-    );
-
-    // Estimate peak memory usage for user awareness
-    let est_chunk_memory_mb = (cli.chunk_size * 500) / 1_048_576; // Rough estimate: ~500 bytes per record
-    log::info!(
-        "Estimated peak memory per chunk: ~{}MB (vs loading all records at once)",
-        est_chunk_memory_mb.max(1)
     );
 
     // Determine output directory to create temp file in the same filesystem as final output.
@@ -226,6 +276,7 @@ fn main() -> Result<()> {
     let mut current_chunk = Vec::new();
     let mut total_fq_count = 0;
     let mut total_output_count = 0;
+    let mut peak_memory = mem_after_predictions;
 
     for record_result in streaming_reader {
         let fq_record = record_result?;
@@ -247,14 +298,17 @@ fn main() -> Result<()> {
 
             current_chunk.clear();
 
-            // Progress logging every 10 chunks (or in debug mode every chunk)
+            // Track peak memory and progress logging every 10 chunks (or in debug mode every chunk)
             if cli.debug > 0 || (total_fq_count / cli.chunk_size) % 10 == 0 {
+                let current_mem = get_memory_usage_bytes(&mut sys);
+                peak_memory = peak_memory.max(current_mem);
                 let chunks_processed = total_fq_count / cli.chunk_size;
                 log::info!(
-                    "Progress: {} chunks ({} reads) processed -> {} output records",
+                    "Progress: {} chunks ({} reads) -> {} output records | Memory: {}",
                     chunks_processed,
                     total_fq_count,
-                    total_output_count
+                    total_output_count,
+                    format_memory(current_mem)
                 );
             }
         }
@@ -310,8 +364,17 @@ fn main() -> Result<()> {
 
     log::info!("Wrote {} records to {}", total_output_count, output_file);
 
+    // Final memory and timing report
+    let final_mem = get_memory_usage_bytes(&mut sys);
+    peak_memory = peak_memory.max(final_mem);
     let elapsed = start.elapsed();
-    log::info!("elapsed time: {:.2?}", elapsed);
+
+    log::info!(
+        "Completed in {:.2?} | Peak memory: {} | Final memory: {}",
+        elapsed,
+        format_memory(peak_memory),
+        format_memory(final_mem)
+    );
 
     Ok(())
 }
