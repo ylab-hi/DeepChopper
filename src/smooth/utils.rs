@@ -41,7 +41,7 @@ pub fn id_list2seq(id_list: &[u8]) -> String {
 
 pub fn majority_voting(labels: &[i8], window_size: usize) -> Vec<i8> {
     // Adjust window size to be odd
-    let window_size = if window_size % 2 == 0 {
+    let window_size = if window_size.is_multiple_of(2) {
         window_size + 1
     } else {
         window_size

@@ -12,11 +12,6 @@ from typer.core import TyperGroup
 
 import deepchopper
 
-from .deepchopper import (
-    default,
-    encode_fq_path_to_parquet,
-    encode_fq_path_to_parquet_chunk,
-)
 from .utils import (
     highlight_target,
 )
@@ -56,46 +51,15 @@ def random_show_seq(dataset, sample: int = 3):
 
 
 def encode(
-    fastq_path: Path = typer.Argument(..., help="Path to the fastq file"),
+    fastq_path: Path = typer.Argument(..., help="Path to the fastq file (DEPRECATED)"),
     chunk: bool = typer.Option(False, "--chunk", "-c", help="Enable chunking"),
     chunk_size: int = typer.Option(1000000, "--chunk-size", "-s", help="Chunk size"),
     parallel: bool = typer.Option(False, "--parallel", "-p", help="Enable parallel processing"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
 ):
-    """Encode the given fastq files to parquet format."""
-    if verbose:
-        set_logging_level(logging.INFO)
-
-    if isinstance(fastq_path, str):
-        fastq_path = Path(fastq_path)
-
-    if not fastq_path.exists():
-        msg = f"Folder {fastq_path} does not exist."
-        logging.error(msg)
-
-    fq_files = (
-        [fastq_path] if fastq_path.is_file() else list(fastq_path.glob("*.fq")) + list(fastq_path.glob("*.fastq"))
-    )
-
-    for fq_file in fq_files:
-        logging.info(f"Processing {fq_file}")
-        if not chunk:
-            encode_fq_path_to_parquet(
-                fq_file,
-                default.KMER_SIZE,
-                bases=default.BASES,
-                qual_offset=default.QUAL_OFFSET,
-                vectorized_target=default.VECTORIZED_TARGET,
-            )
-        else:
-            encode_fq_path_to_parquet_chunk(
-                fq_file,
-                chunk_size=chunk_size,
-                parallel=parallel,
-                bases=default.BASES,
-                qual_offset=default.QUAL_OFFSET,
-                vectorized_target=default.VECTORIZED_TARGET,
-            )
+    """DEPRECATED: Please use `deepchopper predict fastq_path` directly."""
+    logging.warning("Encoding command is deprecated. Please use `deepchopper predict fastq_path` directly.")
+    raise typer.Exit()
 
 
 def predict(
@@ -112,13 +76,15 @@ def predict(
     if verbose:
         set_logging_level(logging.INFO)
 
+    lightning.seed_everything(42, workers=True)
+
     if isinstance(data_path, str):
         data_path = Path(data_path)
 
     lightning.seed_everything(42, workers=True)
 
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
-    datamodule: LightningDataModule = deepchopper.data.fq_datamodule.FqDataModule(
+    datamodule: LightningDataModule = deepchopper.data.OnlyFqDataModule(
         train_data_path="dummy.parquet",
         tokenizer=tokenizer,
         predict_data_path=data_path.as_posix(),
@@ -249,18 +215,18 @@ def main(
 
 
 app.command(
-    help="DeepChopper: encode the given fastq",
-    epilog="Example: deepchopper encode fastq_path --verbose",
+    help="DeepChopper: encode the given fastq (DEPRECATED)",
+    epilog="DEPRECATED: Please use `deepchopper predict fastq_path` directly.",
 )(encode)
 
 app.command(
     help="DeepChopper: predict the given dataset",
-    epilog="Example: deepchopper predict parquet_path --gpus 1 --output predictions",
+    epilog="Example: deepchopper predict fastq_path --gpus 1 --output predictions",
 )(predict)
 
 app.command(
     help="DeepChopper: chop the given predictions!",
-    epilog="Example: deepchopper chop predictions/0 --fq fastq_path",
+    epilog="Example: deepchopper chop predictions/0 fastq_path",
 )(chop)
 
 app.command(
