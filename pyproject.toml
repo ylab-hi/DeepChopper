@@ -221,7 +221,6 @@ select = [
     "ISC",
     "FA",
     "EXE",
-    # "CPY",
     "COM",
 ]
 

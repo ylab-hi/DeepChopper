@@ -16,7 +16,7 @@ callbacks:
   early_stopping:
     patience: 15
 
-tags: ["vcap_002_120000_qual"]
+tags: ["vcap_004_fintune"]
 
 seed: 12345
 
@@ -25,17 +25,22 @@ trainer:
   max_epochs: 60
 
 data:
-  train_data_path: ${paths.root_dir}/data/12_0000_samples/train.parquet
-  val_data_path: ${paths.root_dir}/data/12_0000_samples/val.parquet
-  test_data_path: ${paths.root_dir}/data/12_0000_samples/test.parquet
-  batch_size: 12
-  num_workers: 10
+  train_data_path: ${paths.root_dir}/data/vcap_004_300000_samples/train.parquet
+  val_data_path: ${paths.root_dir}/data/vcap_004_300000_samples/val.parquet
+  test_data_path: ${paths.root_dir}/data/vcap_004_300000_samples/test.parquet
+  batch_size: 20
+  num_workers: 30
   pin_memory: False
   # max_val_samples: 3000
 
 model:
-  net:
-    use_qual: true
+  optimizer:
+    lr: 0.00001  # Lower LR for fine-tuning (1e-5)
+    weight_decay: 0.01  # Small weight decay for regularization during fine-tuning
+
+  scheduler:
+    factor: 0.5  # More gradual LR reduction for fine-tuning (0.5 instead of 0.1)
+    patience: 10  # Patience for LR reduction
 
 logger:
   wandb:
