@@ -67,6 +67,7 @@ struct Cli {
     debug: u8,
 }
 
+// TODO: Use streaming mode to save memory
 fn main() -> Result<()> {
     let start = std::time::Instant::now();
     let cli = Cli::parse();
