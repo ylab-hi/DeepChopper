@@ -195,9 +195,22 @@ fn main() -> Result<()> {
         est_chunk_memory_mb.max(1)
     );
 
-    // Create temporary output file for incremental writing
-    let temp_output =
-        std::env::temp_dir().join(format!("deepchopper_temp_{}.fq.gz", std::process::id()));
+    // Determine output directory to create temp file in the same filesystem as final output.
+    // This prevents "Invalid cross-device link" errors when renaming across filesystems.
+    let output_dir = if let Some(ref prefix) = cli.output_prefix {
+        std::path::Path::new(prefix)
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("."))
+            .to_path_buf()
+    } else {
+        cli.fq
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("."))
+            .to_path_buf()
+    };
+
+    // Create temporary output file in the same directory as the final output
+    let temp_output = output_dir.join(format!(".deepchopper_temp_{}.fq.gz", std::process::id()));
 
     // Set up the writer for incremental writing
     let worker_count = NonZeroUsize::new(cli.threads.unwrap_or(2))
@@ -289,7 +302,11 @@ fn main() -> Result<()> {
     }
 
     // Rename temp file to final output file
-    std::fs::rename(&temp_output, &output_file)?;
+    if let Err(e) = std::fs::rename(&temp_output, &output_file) {
+        // Clean up temp file on error
+        let _ = std::fs::remove_file(&temp_output);
+        return Err(e.into());
+    }
 
     log::info!("Wrote {} records to {}", total_output_count, output_file);
 
