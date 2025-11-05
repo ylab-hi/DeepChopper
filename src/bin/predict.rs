@@ -156,7 +156,7 @@ fn process_chunk(
 
             if predict.seq.len() != fq_record.quality_scores().len() {
                 // truncate seq prediction, do not process
-                log::warn!("truncate seq prediction, do not process: {}", id);
+                log::debug!("truncate seq prediction, do not process: {}", id);
                 return Some(Ok(vec![fq_record.clone()]));
             }
 
