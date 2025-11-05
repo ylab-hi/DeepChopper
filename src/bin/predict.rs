@@ -79,16 +79,21 @@ struct Cli {
     debug: u8,
 }
 
-/// Get current process memory usage in bytes (RSS - Resident Set Size)
+/// Get current process memory usage in bytes
 ///
-/// This tracks only THIS process's memory usage, not system-wide or other processes.
-/// Includes ALL memory used by this process:
-/// - Main thread memory
-/// - All Rayon worker threads (they share the same PID/process)
+/// Returns: **Current RSS (Resident Set Size)** - actual physical RAM used NOW
+///
+/// This is NOT:
+/// - MaxRSS (peak RSS) - we calculate that separately by tracking max(current_rss)
+/// - VmSize (virtual memory) - we don't track this, it includes unused address space
+///
+/// What RSS includes:
+/// - Actual physical RAM pages mapped to this process
 /// - All heap allocations across all threads
-/// - Thread stacks
+/// - Thread stacks for main thread + all Rayon workers
+/// - Shared library code pages currently in memory
 ///
-/// Important when running on shared HPC nodes with multiple jobs.
+/// Important: Only tracks THIS process (same PID), not other jobs on HPC node.
 fn get_memory_usage_bytes(sys: &mut System) -> u64 {
     let pid = sysinfo::Pid::from_u32(std::process::id());
 
@@ -96,7 +101,7 @@ fn get_memory_usage_bytes(sys: &mut System) -> u64 {
     sys.refresh_all();
 
     if let Some(process) = sys.process(pid) {
-        // Returns RSS (Resident Set Size) for THIS process only (including all threads)
+        // Returns current RSS (Resident Set Size) in bytes - actual physical RAM used
         process.memory()
     } else {
         0
@@ -304,7 +309,7 @@ fn main() -> Result<()> {
                 peak_memory = peak_memory.max(current_mem);
                 let chunks_processed = total_fq_count / cli.chunk_size;
                 log::info!(
-                    "Progress: {} chunks ({} reads) -> {} output records | Memory: {}",
+                    "Progress: {} chunks ({} reads) -> {} output records | RSS: {}",
                     chunks_processed,
                     total_fq_count,
                     total_output_count,
@@ -369,8 +374,11 @@ fn main() -> Result<()> {
     peak_memory = peak_memory.max(final_mem);
     let elapsed = start.elapsed();
 
+    // Peak memory = MaxRSS (maximum RSS observed during execution)
+    // Final memory = Current RSS at end
+    // Both show actual physical RAM used (not virtual memory)
     log::info!(
-        "Completed in {:.2?} | Peak memory: {} | Final memory: {}",
+        "Completed in {:.2?} | Peak RSS: {} | Final RSS: {}",
         elapsed,
         format_memory(peak_memory),
         format_memory(final_mem)
