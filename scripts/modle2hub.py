@@ -25,13 +25,13 @@ def create_model_card(
     description: Optional[str] = None,
 ) -> str:
     """Generate a comprehensive model card for the Hugging Face Hub.
-    
+
     Args:
         model_name: The name/identifier for the model on Hugging Face Hub
         ckpt_path: Path to the checkpoint file
         f1_score: Optional F1 score from checkpoint filename or manual input
         description: Optional custom description
-        
+
     Returns:
         A formatted markdown string containing the model card
     """
@@ -47,7 +47,7 @@ def create_model_card(
                     f1_score = float(match.group(1))
             except (ValueError, AttributeError):
                 pass
-    
+
     # Default description
     if description is None:
         description = (
@@ -55,7 +55,7 @@ def create_model_card(
             "chimera artifacts in Nanopore direct RNA sequencing data. It uses a HyenaDNA backbone "
             "with a token classification head to identify artificial adapter sequences within reads."
         )
-    
+
     model_card = f"""---
 tags:
 - genomics
@@ -158,10 +158,10 @@ The model was trained on Nanopore direct RNA sequencing data with manually curat
 ### Testing Data & Metrics
 
 """
-    
+
     if f1_score is not None:
         model_card += f"- **F1 Score:** {f1_score:.4f}\n"
-    
+
     model_card += """
 The model is evaluated on held-out test sets using:
 - F1 Score (primary metric)
@@ -251,7 +251,7 @@ YLab Team
 
 For questions about this model, please open an issue on the [GitHub repository](https://github.com/ylab-hi/DeepChopper/issues).
 """
-    
+
     return model_card.replace("MODEL_NAME", model_name)
 
 
@@ -291,17 +291,17 @@ def main(
 ) -> None:
     """
     Push a DeepChopper checkpoint to Hugging Face Hub with comprehensive metadata.
-    
+
     This script:
     - Validates the checkpoint file
     - Loads the model from the checkpoint
     - Generates a comprehensive model card
     - Pushes the model to Hugging Face Hub with proper tags and metadata
-    
+
     Example usage:
-    
+
         python modle2hub.py epoch_012_f1_0.9947.ckpt --model-name username/deepchopper-v1
-        
+
         python modle2hub.py model.ckpt -m username/my-model -f 0.9947 --private
     """
     # Validate checkpoint path
@@ -309,10 +309,10 @@ def main(
     if not ckpt_file.exists():
         console.print(f"[bold red]Error:[/bold red] Checkpoint file not found: {ckpt_path}")
         raise typer.Exit(code=1)
-    
+
     if not ckpt_file.suffix == ".ckpt":
         console.print(f"[bold yellow]Warning:[/bold yellow] File doesn't have .ckpt extension: {ckpt_path}")
-    
+
     # Display configuration
     console.print(Panel.fit(
         f"[bold cyan]DeepChopper Model Upload Configuration[/bold cyan]\n\n"
@@ -324,20 +324,20 @@ def main(
         title="Upload Configuration",
         border_style="cyan"
     ))
-    
+
     # Generate model card
     console.print("\n[bold cyan]Generating model card...[/bold cyan]")
     model_card_content = create_model_card(model_name, ckpt_path, f1_score, description)
-    
+
     # Show model card preview
     if typer.confirm("\nWould you like to preview the model card?", default=False):
         console.print(Panel(model_card_content, title="Model Card Preview", border_style="green"))
-    
+
     # Confirm upload
     if not typer.confirm("\nProceed with upload to Hugging Face Hub?", default=True):
         console.print("[yellow]Upload cancelled.[/yellow]")
         raise typer.Exit(code=0)
-    
+
     try:
         with Progress(
             SpinnerColumn(),
@@ -348,35 +348,35 @@ def main(
             task = progress.add_task("Loading model from checkpoint...", total=None)
             model = deepchopper.DeepChopper.from_checkpoint(ckpt_path)  # type: ignore[attr-defined]
             progress.update(task, completed=True)
-            
+
             # Prepare token
             hf_token = token if token else os.environ.get("HF_TOKEN")
-            
+
             # Push model to hub
             task = progress.add_task("Pushing model to Hugging Face Hub...", total=None)
-            
+
             # Prepare push_to_hub kwargs
             push_kwargs = {
                 "repo_id": model_name,
                 "commit_message": commit_message,
                 "private": private,
             }
-            
+
             if hf_token:
                 push_kwargs["token"] = hf_token
-            
+
             model.push_to_hub(**push_kwargs)
             progress.update(task, completed=True)
-            
+
             # Upload model card
             task = progress.add_task("Uploading model card (README_HG.md)...", total=None)
             api = HfApi(token=hf_token)
-            
+
             # Create temporary model card file
             model_card_path = Path("README_HG.md")
             with open(model_card_path, "w", encoding="utf-8") as f:
                 f.write(model_card_content)
-            
+
             # Upload the README.md file
             api.upload_file(
                 path_or_fileobj=str(model_card_path),
@@ -386,11 +386,11 @@ def main(
                 repo_type="model",
             )
             progress.update(task, completed=True)
-            
+
             # Clean up temporary model card
             if model_card_path.exists():
                 model_card_path.unlink()
-        
+
         # Success message
         console.print(Panel.fit(
             f"[bold green]✓ Success![/bold green]\n\n"
@@ -401,7 +401,7 @@ def main(
             title="Upload Complete",
             border_style="green"
         ))
-            
+
     except Exception as e:
         console.print(f"\n[bold red]Error during upload:[/bold red] {str(e)}")
         console.print("\n[yellow]Troubleshooting tips:[/yellow]")
@@ -409,12 +409,12 @@ def main(
         console.print("2. Check your internet connection")
         console.print("3. Verify the model name format: [dim]username/model-name[/dim]")
         console.print("4. Ensure you have write permissions for this repository")
-        
+
         # Clean up temporary files
         readme_path = Path("README_HG.md")
         if readme_path.exists():
             readme_path.unlink()
-        
+
         raise typer.Exit(code=1)
 
 
