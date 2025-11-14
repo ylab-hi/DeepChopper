@@ -104,9 +104,22 @@ def predict(
     output_path: Path | None = typer.Option(None, "--output", "-o", help="Output path for predictions"),
     batch_size: int = typer.Option(12, "--batch-size", "-b", help="Batch size"),
     num_workers: int = typer.Option(0, "--workers", "-w", help="Number of workers"),
+    model: str = typer.Option(
+        "rna002",
+        "--model",
+        "-m",
+        help="Model name (choices: rna002, rna004)",
+        show_choices=True,
+        case_sensitive=False,
+        metavar="MODEL",
+        rich_help_panel="Model",
+        callback=lambda v: v.lower()
+        if v.lower() in {"rna002", "rna004"}
+        else typer.BadParameter("Model must be one of: rna002, rna004"),
+    ),
+    limit_predict_batches: int | None = typer.Option(None, "--limit-batches", help="Limit prediction batches"),
+    max_sample: int | None = typer.Option(None, "--max-sample", help="Maximum number of samples to process"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
-    max_sample: int | None = typer.Option(None, "--max-sample", "-m", help="Maximum number of samples to process"),
-    limit_predict_batches: int | None = typer.Option(None, "--limit-batches", "-l", help="Limit prediction batches"),
 ):
     """Predict the given dataset using DeepChopper."""
     if verbose:
@@ -127,7 +140,11 @@ def predict(
         max_predict_samples=max_sample,
     )
 
-    model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
+    model = (
+        deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
+        if model == "rna002":
+        else deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper-rna004")
+    )
     output_path = Path(output_path or "predictions")
     callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir=output_path, write_interval="batch")]
 
