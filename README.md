@@ -122,6 +122,21 @@ DeepChopper offers three main commands: `encode`, `predict`, and `chop`.
    deepchopper chop <predictions> raw.fq
    ```
 
+   **Memory Optimization:** For large datasets (>5M reads), use the `--chunk-size` parameter to control memory usage:
+
+   ```bash
+   # Low memory (~1-2GB): Slower but memory-efficient
+   deepchopper chop <predictions> raw.fq --chunk-size 1000
+
+   # Balanced (default, ~5-10GB): Good balance of speed and memory
+   deepchopper chop <predictions> raw.fq --chunk-size 10000
+
+   # High performance (~20-50GB): Fastest, requires more memory
+   deepchopper chop <predictions> raw.fq --chunk-size 50000
+   ```
+
+   The chop command uses **streaming mode** to minimize memory usage. Instead of loading all reads into memory at once (which can require 100GB+ for 20M reads), it processes records in configurable chunks and writes results incrementally.
+
 Want a GUI? Launch the web interface (note: limited to one FASTQ record at a time):
 
 ```bash

@@ -167,6 +167,31 @@ pub fn read_noodel_records_from_fq_or_zip_fq<P: AsRef<Path>>(
     reader.records().map(|record| Ok(record?)).collect()
 }
 
+/// Streaming reader for FASTQ records that owns the underlying reader
+///
+/// This struct provides an iterator interface for reading FASTQ records
+/// without loading all records into memory at once.
+pub struct StreamingFastqReader {
+    reader: fastq::io::Reader<BufReader<Box<dyn io::Read>>>,
+}
+
+impl StreamingFastqReader {
+    /// Creates a new streaming reader for a FASTQ file (compressed or uncompressed)
+    pub fn new<P: AsRef<Path>>(file_path: P) -> Result<Self> {
+        let reader = create_reader_for_compressed_file(&file_path)?;
+        let reader = fastq::io::Reader::new(BufReader::new(reader));
+        Ok(Self { reader })
+    }
+}
+
+impl Iterator for StreamingFastqReader {
+    type Item = Result<FastqRecord>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.reader.records().next().map(|r| r.map_err(Into::into))
+    }
+}
+
 pub fn read_noodle_records_from_fq<P: AsRef<Path>>(file_path: P) -> Result<Vec<FastqRecord>> {
     let mut reader = File::open(file_path)
         .map(BufReader::new)
@@ -316,6 +341,54 @@ mod tests {
     use super::*;
 
     use tempfile::NamedTempFile;
+
+    #[test]
+    fn test_streaming_fastq_reader() {
+        // Create test FASTQ records
+        let test_records = vec![
+            RecordData {
+                id: b"read1".into(),
+                seq: b"ATCGATCG".into(),
+                qual: b"IIIIIIII".into(),
+            },
+            RecordData {
+                id: b"read2".into(),
+                seq: b"GCTAGCTA".into(),
+                qual: b"HHHHHHHH".into(),
+            },
+            RecordData {
+                id: b"read3".into(),
+                seq: b"AAAATTTT".into(),
+                qual: b"JJJJJJJJ".into(),
+            },
+        ];
+
+        // Write test data to a temporary gzip file
+        let file = NamedTempFile::new().unwrap();
+        let file_path = file.path().to_path_buf();
+        write_zip_fq_parallel(&test_records, file_path.clone(), Some(2)).unwrap();
+
+        // Test streaming reader
+        let mut streaming_reader = StreamingFastqReader::new(&file_path).unwrap();
+
+        let mut count = 0;
+        while let Some(result) = streaming_reader.next() {
+            let record = result.unwrap();
+            assert!(count < test_records.len());
+
+            let id = record.definition().name();
+            let seq = record.sequence();
+            let qual = record.quality_scores();
+
+            assert_eq!(id, test_records[count].id.as_slice());
+            assert_eq!(seq, test_records[count].seq.as_slice());
+            assert_eq!(qual, test_records[count].qual.as_slice());
+
+            count += 1;
+        }
+
+        assert_eq!(count, test_records.len());
+    }
 
     #[test]
     fn test_write_fq_with_file_path() {
