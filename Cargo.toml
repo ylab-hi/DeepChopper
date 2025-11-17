@@ -99,8 +99,9 @@ dev = []
 debug = 1
 
 [profile.release]
-lto = true
-codegen-units = 1
+lto = "thin"
+codegen-units = 16
+opt-level = 3
 # panic = "abort"
 
 [dependencies]

@@ -135,6 +135,8 @@ jobs:
           args: --release -b bin --out dist -i python${{ matrix.python-version }}
           sccache: "true"
           working-directory: ./py_cli
+        env:
+          RUSTFLAGS: "-C target-cpu=x86-64"
       - name: Upload wheels
         uses: actions/upload-artifact@v5
         with:
@@ -173,6 +175,8 @@ jobs:
           args: --release -b bin --out dist -i python${{ matrix.python-version }}
           sccache: "true"
           working-directory: ./py_cli
+        env:
+          RUSTFLAGS: "-C link-args=-Wl,-undefined,dynamic_lookup"
       - name: Upload wheels
         uses: actions/upload-artifact@v5
         with:
@@ -185,6 +189,7 @@ jobs:
           source .venv/bin/activate
           cd py_cli
           pip install deepchopper-cli --find-links dist --force-reinstall
+          python3 -c "import sys; print(f'Python: {sys.executable}'); print(f'Version: {sys.version}')"
           deepchopper-chop --help
 
   sdist:
