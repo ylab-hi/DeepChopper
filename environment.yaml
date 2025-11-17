@@ -39,10 +39,10 @@ dependencies:
   - omegaconf>=2.3.0
   - rust
   - pip:
-    - gradio==5.0.1
-    - fastapi==0.112.2
-    - deepchopper-cli>=1.0.1
-    - maturin>=1.2.1,<2
+      - gradio==5.0.1
+      - fastapi==0.112.2
+      - deepchopper-cli>=1.0.1
+      - maturin>=1.2.1,<2
 
   # --------- loggers --------- #
   # - wandb
