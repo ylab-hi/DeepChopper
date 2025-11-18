@@ -47,7 +47,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release -b bin --out dist  -i python${{ matrix.python-version }} -- --uv
+          args: --release -b bin --out dist  -i python${{ matrix.python-version }}
           sccache: "true"
           manylinux: auto
           working-directory: ./py_cli
@@ -94,7 +94,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release -b bin --out dist  -i python${{ matrix.python-version }} -- --uv
+          args: --release -b bin --out dist  -i python${{ matrix.python-version }}
           sccache: "true"
           manylinux: musllinux_1_2
           working-directory: ./py_cli
@@ -125,7 +125,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release -b bin --out dist -i python${{ matrix.python-version }} -- --uv
+          args: --release -b bin --out dist -i python${{ matrix.python-version }}
           sccache: "true"
           working-directory: ./py_cli
         env:
@@ -167,7 +167,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release -b bin --out dist -i python${{ matrix.python-version }} -- --uv
+          args: --release -b bin --out dist -i python${{ matrix.python-version }}
           sccache: "true"
           working-directory: ./py_cli
         env:

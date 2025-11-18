@@ -47,7 +47,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python${{ matrix.python-version }} -- --uv
+          args: --release --out dist -i python${{ matrix.python-version }}
           sccache: "true"
           manylinux: auto
       - name: Upload wheels
@@ -86,7 +86,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python${{ matrix.python-version }} -- --uv
+          args: --release --out dist -i python${{ matrix.python-version }}
           sccache: "true"
         env:
           # Override the native CPU target with baseline
@@ -128,7 +128,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist  -i python${{ matrix.python-version }} -- --uv
+          args: --release --out dist  -i python${{ matrix.python-version }}
           sccache: "true"
       - name: Upload wheels
         uses: actions/upload-artifact@v5
