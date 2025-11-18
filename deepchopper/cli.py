@@ -94,7 +94,6 @@ def predict(
     if isinstance(data_path, str):
         data_path = Path(data_path)
 
-
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
     datamodule: LightningDataModule = deepchopper.data.OnlyFqDataModule(
         train_data_path="dummy.parquet",

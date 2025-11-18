@@ -51,8 +51,7 @@ def parse_fastq_file(file_path: Path, has_targets: bool = True) -> Iterator[dict
 
 
 class OnlyFqDataModule(LightningDataModule):
-    """
-    PyTorch Lightning DataModule for genomic sequence data in FASTQ format.
+    """PyTorch Lightning DataModule for genomic sequence data in FASTQ format.
 
     This DataModule is designed to handle FASTQ files containing DNA or RNA sequences,
     along with their associated quality scores and optional target labels embedded in the sequence identifiers.
@@ -79,7 +78,7 @@ class OnlyFqDataModule(LightningDataModule):
         - test_dataloader
         - predict_dataloader
         - teardown
-    """
+
     This allows you to share a full dataset without explaining how to download,
     split, transform and process the data.
 
