@@ -37,6 +37,17 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.platform.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform.target }}-cargo-
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
@@ -58,9 +69,9 @@ jobs:
           path: ./py_cli/dist
       - name: Test CLI
         shell: bash
-        working-directory: ./py_cli
         run: |
           set -e
+          cd py_cli
           uv venv
           source .venv/bin/activate
           uv pip install deepchopper-cli --find-links dist --force-reinstall
@@ -84,6 +95,17 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.platform.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform.target }}-cargo-
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
@@ -114,6 +136,17 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.platform.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform.target }}-cargo-
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
@@ -137,9 +170,9 @@ jobs:
           path: ./py_cli/dist
       - name: Test CLI
         shell: bash
-        working-directory: ./py_cli
         run: |
           set -e
+          cd py_cli
           uv venv
           source .venv/Scripts/activate
           uv pip install deepchopper-cli --find-links dist --force-reinstall
@@ -157,6 +190,17 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.platform.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform.target }}-cargo-
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
@@ -178,9 +222,9 @@ jobs:
           name: wheels-macos-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: ./py_cli/dist
       - name: Test CLI
-        working-directory: ./py_cli
         run: |
           set -e
+          cd py_cli
           uv venv
           source .venv/bin/activate
           uv pip install deepchopper-cli --find-links dist --force-reinstall

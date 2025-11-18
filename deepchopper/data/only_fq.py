@@ -25,17 +25,34 @@ def parse_fastq_file(file_path: Path, has_targets: bool = True) -> Iterator[dict
         file_path: Path to the FastQ file (.fq, .fastq, .fq.gz, .fastq.gz)
         has_targets: Whether the file contains target labels in the identifier line
 
+    Raises:
+        ValueError: If file is empty, corrupted, or contains invalid records
+        RuntimeError: If parsing fails
     """
     try:
         # Use pyfastx to parse the file
         fq = pyfastx.Fastx(str(file_path), uppercase=True)
 
+        record_count = 0
         for name, seq, qual in fq:
+            # Validate record completeness
+            if not name or not seq or not qual:
+                msg = f"Incomplete FASTQ record at position {record_count} in {file_path}"
+                raise ValueError(msg)
+
+            # Validate sequence and quality lengths match
+            if len(seq) != len(qual):
+                msg = f"Sequence/quality length mismatch in record '{name}': seq={len(seq)}, qual={len(qual)}"
+                raise ValueError(msg)
+
             # Parse target if present
             target = [0, 0]
             if has_targets:
-                # Assuming format: seq_id|target_label
-                target = deepchopper.parse_target_from_id(name)
+                try:
+                    target = deepchopper.parse_target_from_id(name)
+                except Exception as e:
+                    msg = f"Failed to parse target from ID '{name}': {e}"
+                    raise ValueError(msg) from e
 
             encoded_qual = deepchopper.encode_qual(qual, deepchopper.default.QUAL_OFFSET)
 
@@ -45,7 +62,21 @@ def parse_fastq_file(file_path: Path, has_targets: bool = True) -> Iterator[dict
                 "qual": encoded_qual,
                 "target": target,
             }
+
+            record_count += 1
+
+        # Ensure we read at least one record
+        if record_count == 0:
+            msg = f"No valid records found in {file_path}"
+            raise ValueError(msg)
+
+    except pyfastx.FastxError as e:
+        msg = f"FASTQ parsing error in {file_path}: {e}"
+        raise RuntimeError(msg) from e
     except Exception as e:
+        # Re-raise ValueError and RuntimeError as-is
+        if isinstance(e, (ValueError, RuntimeError)):
+            raise
         msg = f"Error parsing FastQ file {file_path}: {e}"
         raise RuntimeError(msg) from e
 
@@ -171,12 +202,25 @@ class OnlyFqDataModule(LightningDataModule):
                 msg = "Predict data path is required for prediction stage."
                 raise ValueError(msg)
 
-            num_proc = min(self.hparams.num_workers, multiprocessing.cpu_count() - 1)
+            # Calculate appropriate num_proc based on file size
+            file_path = Path(self.hparams.predict_data_path)
+            file_size_gb = file_path.stat().st_size / (1024**3)
+
+            base_num_proc = min(self.hparams.num_workers, multiprocessing.cpu_count() - 1)
+
+            # Reduce parallelism for large files to avoid memory issues
+            if file_size_gb > 1.0:  # Files larger than 1GB
+                num_proc = min(max(1, base_num_proc), 4)
+                import logging
+
+                logging.info(f"Large file detected ({file_size_gb:.2f}GB), limiting num_proc to {num_proc}")
+            else:
+                num_proc = max(1, base_num_proc)
 
             predict_dataset = HuggingFaceDataset.from_generator(
                 parse_fastq_file,
                 gen_kwargs={"file_path": self.hparams.predict_data_path, "has_targets": False},
-                num_proc=max(1, num_proc),
+                num_proc=num_proc,
             ).with_format("torch")
 
             self.data_predict = predict_dataset.map(
@@ -224,15 +268,15 @@ class OnlyFqDataModule(LightningDataModule):
 
             if self.hparams.max_train_samples is not None:
                 max_train_samples = min(self.hparams.max_train_samples, len(train_dataset))
-                train_dataset = HuggingFaceDataset.from_dict(train_dataset[:max_train_samples]).with_format("torch")
+                train_dataset = train_dataset.select(range(max_train_samples))
 
             if self.hparams.max_val_samples is not None:
                 max_val_samples = min(self.hparams.max_val_samples, len(val_dataset))
-                val_dataset = HuggingFaceDataset.from_dict(val_dataset[:max_val_samples]).with_format("torch")
+                val_dataset = val_dataset.select(range(max_val_samples))
 
             if self.hparams.max_test_samples is not None:
                 max_test_samples = min(self.hparams.max_test_samples, len(test_dataset))
-                test_dataset = HuggingFaceDataset.from_dict(test_dataset[:max_test_samples]).with_format("torch")
+                test_dataset = test_dataset.select(range(max_test_samples))
 
             self.data_train = train_dataset.map(
                 partial(

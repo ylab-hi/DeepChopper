@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 🐛 Bug Fixes
+
+- **Critical**: Replace deprecated `HuggingFaceDataset.from_dict()` with `.select()` for datasets>=3.0.0 compatibility in `only_fq.py`
+  - Fixes compatibility issues with HuggingFace datasets library v3.0.0+
+  - Prevents `ValueError: Feature type 'List' not found` errors
+  - Affects sample limiting functionality in train/val/test dataset preparation
+- **CI/CD**: Fix working directory inconsistency in GitHub Actions test workflows
+  - Replace `working-directory:` with explicit `cd` commands for clarity
+  - Ensures venv creation and activation happen in correct directory
+- **CLI**: Improve deprecated `encode` command error messaging
+  - Simplified function signature (removed unused parameters)
+  - Added clear, colored error message directing users to `deepchopper predict`
+  - Exit with code 1 to indicate error
+- **Core**: Move random seed initialization after path validation in `predict()`
+  - Prevents unnecessary seed setting when path validation fails
+  - Improves early exit behavior and error handling
+
+### ⚡ Performance Improvements
+
+- **CI/CD**: Add Rust/Cargo build artifact caching to all GitHub Actions workflows
+  - Cache `~/.cargo/` and `target/` directories across workflow runs
+  - Expected 30-40% faster build times on cache hits
+  - Applied to linux, musllinux, windows, and macos jobs in both release workflows
+- **Data Pipeline**: Add intelligent memory management for large FASTQ files
+  - Automatically reduces parallel workers for files >1GB (from cpu_count to max 4)
+  - Prevents out-of-memory errors on large dataset processing
+  - Logs file size and adjusted worker count for transparency
+- **Data Pipeline**: Add comprehensive FASTQ file validation
+  - Validates record completeness (name, sequence, quality string)
+  - Validates sequence/quality length matching
+  - Validates target parsing from sequence IDs
+  - Early detection of corrupted or malformed FASTQ files
+  - Clear error messages with file path and record position
+
 ### 🔧 Build & Tooling
 
 - **Migration**: Migrate from Poetry to uv for dependency management
@@ -21,10 +55,18 @@ All notable changes to this project will be documented in this file.
   - ~50% faster CI runs with uv caching
   - Applied to both release-python.yml and release-python-cli.yml
 
+### ⚠️ Testing Changes
+
+- **ARM Architecture Testing**: ARM platform testing (aarch64, armv7, etc.) temporarily disabled in CI/CD workflows
+  - ARM wheel builds are still created and published
+  - ARM platform users should verify functionality after installation
+  - To be re-enabled in future release with uv-compatible testing infrastructure
+
 ### 📚 Documentation
 
 - Update CONTRIBUTING.md with uv setup instructions
 - Add alternative setup method without conda
+- Update CHANGELOG.md with comprehensive list of bug fixes and improvements
 
 ## [py-cli-v1.2.9] - 2025-11-17
 

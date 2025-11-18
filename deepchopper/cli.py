@@ -51,15 +51,15 @@ def random_show_seq(dataset, sample: int = 3):
 
 
 def encode(
-    fastq_path: Path = typer.Argument(..., help="Path to the fastq file (DEPRECATED)"),
-    chunk: bool = typer.Option(False, "--chunk", "-c", help="Enable chunking"),
-    chunk_size: int = typer.Option(1000000, "--chunk-size", "-s", help="Chunk size"),
-    parallel: bool = typer.Option(False, "--parallel", "-p", help="Enable parallel processing"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
+    fastq_path: Path = typer.Argument(None, help="DEPRECATED: Use 'deepchopper predict' instead"),
 ):
     """DEPRECATED: Please use `deepchopper predict fastq_path` directly."""
-    logging.warning("Encoding command is deprecated. Please use `deepchopper predict fastq_path` directly.")
-    raise typer.Exit()
+    typer.secho(
+        "❌ Error: The 'encode' command is deprecated.\n   Please use 'deepchopper predict <fastq_path>' instead.",
+        fg=typer.colors.RED,
+        err=True,
+    )
+    raise typer.Exit(1)
 
 
 def predict(
@@ -89,10 +89,16 @@ def predict(
     if verbose:
         set_logging_level(logging.INFO)
 
-    lightning.seed_everything(42, workers=True)
-
+    # Path validation
     if isinstance(data_path, str):
         data_path = Path(data_path)
+
+    if not data_path.exists():
+        typer.secho(f"❌ Error: Data path '{data_path}' does not exist.", fg=typer.colors.RED, err=True)
+        raise typer.Exit(1)
+
+    # Set seed only after validation passes
+    lightning.seed_everything(42, workers=True)
 
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
     datamodule: LightningDataModule = deepchopper.data.OnlyFqDataModule(
