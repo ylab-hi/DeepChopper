@@ -47,7 +47,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python${{ matrix.python-version }} --uv
+          args: --release --out dist -i python${{ matrix.python-version }} -- --uv
           sccache: "true"
           manylinux: auto
       - name: Upload wheels
@@ -86,7 +86,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python${{ matrix.python-version }} --uv
+          args: --release --out dist -i python${{ matrix.python-version }} -- --uv
           sccache: "true"
         env:
           # Override the native CPU target with baseline
@@ -104,7 +104,6 @@ jobs:
           uv venv
           source .venv/Scripts/activate
           uv pip install deepchopper --find-links dist --force-reinstall
-          uv pip install pytest
           deepchopper -h
 
   macos:
@@ -129,7 +128,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist  -i python${{ matrix.python-version }} --uv
+          args: --release --out dist  -i python${{ matrix.python-version }} -- --uv
           sccache: "true"
       - name: Upload wheels
         uses: actions/upload-artifact@v5
@@ -142,8 +141,8 @@ jobs:
           uv venv
           source .venv/bin/activate
           uv pip install deepchopper --find-links dist --force-reinstall
-          uv pip install pytest
           deepchopper -h
+
   sdist:
     runs-on: ubuntu-latest
     steps:
