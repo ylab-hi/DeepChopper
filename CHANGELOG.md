@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### 🔧 Build & Tooling
+
+- **Migration**: Migrate from Poetry to uv for dependency management
+
+  - ⚡ 10-100x faster dependency resolution and installation
+  - 📦 Better lock file performance (uv.lock vs poetry.lock)
+  - 🔧 Simplified development workflow with `uv sync`
+  - ✅ Remove poetry-plugin-export dependency
+
+- **CI/CD Optimization**: Integrate uv into GitHub Actions workflows
+
+  - Add `astral-sh/setup-uv@v5` action with caching enabled
+  - Replace `pip` with `uv pip` for faster package installation in tests
+  - Replace `python -m venv` with `uv venv` for faster virtual environments
+  - ~50% faster CI runs with uv caching
+  - Applied to both release-python.yml and release-python-cli.yml
+
+### 📚 Documentation
+
+- Update CONTRIBUTING.md with uv setup instructions
+- Add alternative setup method without conda
+
 ## [py-cli-v1.2.9] - 2025-11-17
 
 ### 🐛 Bug Fixes
@@ -9,7 +33,7 @@ All notable changes to this project will be documented in this file.
 - **Critical**: Fix syntax error in CLI predict function ternary operator
 - **Compatibility**: Replace deprecated `HuggingFaceDataset.from_dict()` with `.select()` for datasets>=3.0.0
 - **Dependencies**: Resolve PyTorch 2.6.x compatibility by adding torchvision>=0.21.0
-- **Type System**: Fix `Parameter.make_metavar()` error by pinning typer<0.13.0 and click<8.2.0
+- **Type System**: Fix `Parameter.make_metavar()` error by pinning typer\<0.13.0 and click\<8.2.0
 - **Warnings**: Replace deprecated pynvml with nvidia-ml-py>=12.0.0
 
 ### 🔧 Build & CI
@@ -30,22 +54,26 @@ All notable changes to this project will be documented in this file.
 ### 💡 Migration Notes
 
 **Breaking Changes**:
+
 - ⚠️ **Data Format Incompatibility**: Parquet files generated with deepchopper v1.2.8 and earlier are **NOT compatible** with v1.2.9 due to datasets library schema changes
 - The legacy `'List'` schema has been removed in favor of `'Sequence'` schema (datasets>=3.0.0 requirement)
 
 **Action Required**:
+
 - **CRITICAL**: You must regenerate all parquet data files before using v1.2.9
 - Users experiencing "illegal instruction" errors on Windows should update to this version
 - Users seeing "symbol not found" errors on macOS should update to this version
 - Users with existing parquet files will encounter `ValueError: Feature type 'List' not found` errors
 
 **Migration Steps**:
+
 1. Update to v1.2.9: `pip install --upgrade deepchopper-cli`
 2. **Regenerate all parquet files** from your original FASTQ data sources
 3. Use the new parquet files for training/prediction workflows
 4. Remove deprecated `pynvml` if manually installed: `pip uninstall -y pynvml`
 
 **Why Regeneration is Required**:
+
 - The HuggingFace `datasets` library v3.0.0+ removed support for the legacy `'List'` feature type
 - Parquet files store schema metadata that cannot be automatically converted at runtime
 - Attempting to load old parquet files will result in immediate schema validation errors

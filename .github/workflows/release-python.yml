@@ -37,6 +37,9 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -44,7 +47,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python${{ matrix.python-version }}
+          args: --release --out dist -i python${{ matrix.python-version }} --uv
           sccache: "true"
           manylinux: auto
       - name: Upload wheels
@@ -57,9 +60,9 @@ jobs:
         shell: bash
         run: |
           set -e
-          python3 -m venv .venv
+          uv venv
           source .venv/bin/activate
-          pip install deepchopper --find-links dist --force-reinstall
+          uv pip install deepchopper --find-links dist --force-reinstall
           deepchopper -h
 
   windows:
@@ -72,6 +75,9 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -80,7 +86,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python${{ matrix.python-version }}
+          args: --release --out dist -i python${{ matrix.python-version }} --uv
           sccache: "true"
         env:
           # Override the native CPU target with baseline
@@ -95,10 +101,10 @@ jobs:
         shell: bash
         run: |
           set -e
-          python3 -m venv .venv
+          uv venv
           source .venv/Scripts/activate
-          pip install deepchopper --find-links dist --force-reinstall
-          pip install pytest
+          uv pip install deepchopper --find-links dist --force-reinstall
+          uv pip install pytest
           deepchopper -h
 
   macos:
@@ -113,6 +119,9 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -120,7 +129,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist  -i python${{ matrix.python-version }}
+          args: --release --out dist  -i python${{ matrix.python-version }} --uv
           sccache: "true"
       - name: Upload wheels
         uses: actions/upload-artifact@v5
@@ -130,10 +139,10 @@ jobs:
       - name: Test CLI
         run: |
           set -e
-          python3 -m venv .venv
+          uv venv
           source .venv/bin/activate
-          pip install deepchopper --find-links dist --force-reinstall
-          pip install pytest
+          uv pip install deepchopper --find-links dist --force-reinstall
+          uv pip install pytest
           deepchopper -h
   sdist:
     runs-on: ubuntu-latest

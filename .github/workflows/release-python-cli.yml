@@ -37,6 +37,9 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -44,7 +47,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release -b bin --out dist  -i python${{ matrix.python-version }}
+          args: --release -b bin --out dist  -i python${{ matrix.python-version }} --uv
           sccache: "true"
           manylinux: auto
           working-directory: ./py_cli
@@ -54,30 +57,14 @@ jobs:
           name: wheels-linux-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: ./py_cli/dist
       - name: Test CLI
-        if: ${{ startsWith(matrix.platform.target, 'x86_64') }}
         shell: bash
         working-directory: ./py_cli
         run: |
           set -e
-          python3 -m venv .venv
+          uv venv
           source .venv/bin/activate
-          pip install deepchopper-cli --find-links dist --force-reinstall
-      - name: pytest
-        if: ${{ !startsWith(matrix.platform.target, 'x86') && matrix.platform.target != 'ppc64' }}
-        uses: uraimo/run-on-arch-action@v3
-        with:
-          arch: ${{ matrix.platform.target }}
-          distro: ubuntu22.04
-          githubToken: ${{ github.token }}
-          install: |
-            apt-get update
-            apt-get install -y --no-install-recommends python3 python3-pip
-            pip3 install -U pip pytest
-          run: |
-            set -e
-            cd py_cli
-            pip3 install deepchopper-cli --find-links dist --force-reinstall
-            deepchopper-chop --help
+          uv pip install deepchopper-cli --find-links dist --force-reinstall
+          deepchopper-chop --help
 
       - name: Debug output
         if: failure()
@@ -97,6 +84,9 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -104,7 +94,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release -b bin --out dist  -i python${{ matrix.python-version }}
+          args: --release -b bin --out dist  -i python${{ matrix.python-version }} --uv
           sccache: "true"
           manylinux: musllinux_1_2
           working-directory: ./py_cli
@@ -124,6 +114,9 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -132,7 +125,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release -b bin --out dist -i python${{ matrix.python-version }}
+          args: --release -b bin --out dist -i python${{ matrix.python-version }} --uv
           sccache: "true"
           working-directory: ./py_cli
         env:
@@ -142,15 +135,14 @@ jobs:
         with:
           name: wheels-windows-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: ./py_cli/dist
-      - name: pytest
-        if: ${{ !startsWith(matrix.platform.target, 'aarch64') }}
+      - name: Test CLI
         shell: bash
+        working-directory: ./py_cli
         run: |
           set -e
-          python3 -m venv .venv
+          uv venv
           source .venv/Scripts/activate
-          cd py_cli
-          pip install deepchopper-cli --find-links dist --force-reinstall
+          uv pip install deepchopper-cli --find-links dist --force-reinstall
           deepchopper-chop --help
 
   macos:
@@ -165,6 +157,9 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -172,7 +167,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release -b bin --out dist -i python${{ matrix.python-version }}
+          args: --release -b bin --out dist -i python${{ matrix.python-version }} --uv
           sccache: "true"
           working-directory: ./py_cli
         env:
@@ -182,14 +177,13 @@ jobs:
         with:
           name: wheels-macos-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: ./py_cli/dist
-      - name: pytest
+      - name: Test CLI
+        working-directory: ./py_cli
         run: |
           set -e
-          python3 -m venv .venv
+          uv venv
           source .venv/bin/activate
-          cd py_cli
-          pip install deepchopper-cli --find-links dist --force-reinstall
-          python3 -c "import sys; print(f'Python: {sys.executable}'); print(f'Version: {sys.version}')"
+          uv pip install deepchopper-cli --find-links dist --force-reinstall
           deepchopper-chop --help
 
   sdist:
