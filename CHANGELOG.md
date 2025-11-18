@@ -2,17 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [py-cli-v1.2.8] - 2025-11-17
+
+### 💼 Other
+
+- Update the macos sys version
+- Fix abi incompability in macos and windows
+- Bump verison to v1.2.8
+
+## [py-cli-v1.2.7] - 2025-11-17
 
 ### 🚀 Features
 
 - Add poetry-plugin-export
+- Add new model configuration for hyena experiment
+- Seed everything
+- Add TODO for memory optimization in prediction script
+- Implement memory optimization and streaming processing in prediction script
+- Enhance temporary file handling in prediction script
+- Add memory usage tracking in prediction script
+- Enhance DeepChopper class with model loading and pushing methods
+- Enhance CLI options for prediction and update documentation
 
 ### 🐛 Bug Fixes
 
 - Fix incorrect usage of references in function arguments
 - Update pre-commit hooks versions
 - Update macOS runner version to 13
+- Update data paths and workers count
+- Update dependencies versions and Rust toolchain channel
+- Update versions in Cargo.toml
+- Update log_cli value in pyproject.toml to boolean
+- Change log level for sequence prediction truncation
 
 ### 💼 Other
 
@@ -20,16 +41,54 @@ All notable changes to this project will be documented in this file.
 - Update noodles requirement from 0.84.0 to 0.85.0
 - *(deps)* Bump actions/attest-build-provenance from 1 to 2
 - Update noodles requirement from 0.87.0 to 0.88.0
+- Update noodles requirement from 0.88.0 to 0.90.0
+- Update rand requirement from 0.8 to 0.9
+- Update rand_distr requirement from 0.4 to 0.5
+- Update noodles requirement from 0.90.0 to 0.91.0
+- Update noodles requirement from 0.91.0 to 0.93.0
+- Update dependencies and actions versions
+- Update needletail requirement from 0.5 to 0.6
+- Update pyo3-build-config requirement from 0.24 to 0.25
+- *(deps)* Bump actions/download-artifact from 4 to 5
+- *(deps)* Bump actions/checkout from 4 to 5
+- *(deps)* Bump rayon from 1.10 to 1.11 and clap from 4.5.43 to 4.5.45
+- *(deps)* Update noodles to version 0.101.0 and refactor fastq reader usage
+- *(deps)* Bump actions/attest-build-provenance from 2 to 3
+- *(deps)* Bump actions/setup-python from 5 to 6
+- Update bio requirement from 2.3 to 3.0
+- Update pyo3-build-config requirement from 0.25 to 0.27
+- Upgrade candle
+- *(deps)* Bump actions/download-artifact from 5 to 6
+- *(deps)* Bump actions/upload-artifact from 4 to 5
+- Bump deepchopper-cli version
 
 ### 🚜 Refactor
 
 - Update dependencies versions and function signatures
+- Update data type conversion for quality score in tokenizer
 
 ### 📚 Documentation
 
 - Update troubleshooting section in tutorial
 - Update tutorial.md with memory error solution
 - Update tutorial with additional information
+- Add parameter optimization guidelines to documentation
+- Improve memory usage documentation in predict.rs
+
+### ⚙️ Miscellaneous Tasks
+
+- Add default configuration file and git-cliff template
+- Update dependencies versions and script paths
+- Upgrade dependencies
+- Upgrade dependencies
+- Add gitignore
+- Rename pytest steps to Test CLI and refactor workflow for clarity
+- Update workflow to improve clarity and remove redundant steps
+- Update dependencies and improve documentation
+- Update configuration files for model training
+- Update sysinfo dependency version in Cargo.toml
+- Remove outdated checkpoint file
+- Update pre-commit configuration and enhance model upload guide
 
 ## [py-cli-v1.2.6] - 2024-11-05
 
