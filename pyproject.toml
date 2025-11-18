@@ -4,30 +4,30 @@ build-backend = "maturin"
 
 [project]
 authors = [
-    { name = "Yangyang Li", email = "<yangyang.li@northwestern.edu>" },
-    { name = "Ting-you Wang", email = "<tywang@northwestern.edu>" },
+  { name = "Yangyang Li", email = "<yangyang.li@northwestern.edu>" },
+  { name = "Ting-you Wang", email = "<tywang@northwestern.edu>" },
 ]
 name = "deepchopper"
-version = "1.2.6"
+version = "1.2.8"
 description = "A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 keywords = ["deep learning", "bioinformatics", "rust"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Environment :: Console",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Rust",
-    "Topic :: Scientific/Engineering",
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Rust",
+  "Topic :: Scientific/Engineering",
 ]
 dependencies = [
     "torch>=2.6.0",
@@ -136,55 +136,55 @@ exclude = [
 [tool.ruff.lint]
 fixable = ["ALL"]
 select = [
-    "ANN",
-    "D",
-    "A",
-    "F",
-    "E",
-    "W",
-    "C90",
-    "I",
-    "UP",
-    "N",
-    "YTT",
-    "TID",
-    "S",
-    "BLE",
-    "FBT",
-    "PLR",
-    "B",
-    "B9",
-    "A",
-    "C4",
-    "T10",
-    "EM",
-    "ICN",
-    "T20",
-    "Q",
-    "RET",
-    "SIM",
-    "ARG",
-    "DTZ",
-    "ERA",
-    "PD",
-    "PGH",
-    "PLC",
-    "PLE",
-    "PLW",
-    "RUF",
-    "PL",
-    "TD",
-    "FIX",
-    "PTH",
-    "TCH",
-    "SLOT",
-    "PT",
-    "PYI",
-    "PIE",
-    "ISC",
-    "FA",
-    "EXE",
-    "COM",
+  "ANN",
+  "D",
+  "A",
+  "F",
+  "E",
+  "W",
+  "C90",
+  "I",
+  "UP",
+  "N",
+  "YTT",
+  "TID",
+  "S",
+  "BLE",
+  "FBT",
+  "PLR",
+  "B",
+  "B9",
+  "A",
+  "C4",
+  "T10",
+  "EM",
+  "ICN",
+  "T20",
+  "Q",
+  "RET",
+  "SIM",
+  "ARG",
+  "DTZ",
+  "ERA",
+  "PD",
+  "PGH",
+  "PLC",
+  "PLE",
+  "PLW",
+  "RUF",
+  "PL",
+  "TD",
+  "FIX",
+  "PTH",
+  "TCH",
+  "SLOT",
+  "PT",
+  "PYI",
+  "PIE",
+  "ISC",
+  "FA",
+  "EXE",
+  "COM",
 ]
 
 ignore = [
@@ -257,10 +257,10 @@ show_missing = true
 fail_under = 40
 ignore_errors = true
 exclude_lines = [
-    "pragma: nocover",
-    "raise NotImplementedError",
-    "raise NotImplementedError()",
-    "if __name__ == .__main__.:",
+  "pragma: nocover",
+  "raise NotImplementedError",
+  "raise NotImplementedError()",
+  "if __name__ == .__main__.:",
 ]
 
 [tool.mypy]
@@ -277,17 +277,17 @@ testpaths = "tests/"
 log_cli = true
 filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
 markers = [
-    "smoke: a quick smoke test",
-    "failing: failing tests",
-    "imports: importing tests",
-    "slow: slow tests",
+  "smoke: a quick smoke test",
+  "failing: failing tests",
+  "imports: importing tests",
+  "slow: slow tests",
 ]
 addopts = [
-    "--color=yes",
-    "--durations=0",
-    "--strict-markers",
-    "--doctest-modules",
-    "--import-mode=importlib",
+  "--color=yes",
+  "--durations=0",
+  "--strict-markers",
+  "--doctest-modules",
+  "--import-mode=importlib",
 ]
 
 [dependency-groups]

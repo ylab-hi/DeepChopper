@@ -1,6 +1,6 @@
 [package]
 name = "deepchopper"
-version = "1.2.6"
+version = "1.2.8"
 edition = "2021"
 authors = ["Yangyang Li <yangyang.li@northwestern.edu>"]
 description = "A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing"
@@ -99,8 +99,9 @@ dev = []
 debug = 1
 
 [profile.release]
-lto = true
-codegen-units = 1
+lto = "thin"
+codegen-units = 16
+opt-level = 3
 # panic = "abort"
 
 [dependencies]
@@ -152,7 +153,7 @@ flate2 = { version = "1.1.5", features = ["zlib-rs"], default-features = false }
 
 
 # binaries
-clap = { version = "4.5.50", features = ["derive"] }
+clap = { version = "4.5.52", features = ["derive"] }
 env_logger = "0.11"
 human-panic = "2.0"
 sysinfo = "0.37"
