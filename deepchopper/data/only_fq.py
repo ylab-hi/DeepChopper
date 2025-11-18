@@ -19,12 +19,12 @@ from deepchopper.models.llm import (
 
 
 def parse_fastq_file(file_path: Path, has_targets: bool = True) -> Iterator[dict]:
-    """Parse a FastQ file using pyfastx and return a dictionary .
+    """Parse a FastQ file using pyfastx and return a dictionary.
 
     Args:
         file_path: Path to the FastQ file (.fq, .fastq, .fq.gz, .fastq.gz)
         has_targets: Whether the file contains target labels in the identifier line
-        build_index: Whether to build an index for random access (uses more memory)
+
     """
     try:
         # Use pyfastx to parse the file
@@ -51,43 +51,35 @@ def parse_fastq_file(file_path: Path, has_targets: bool = True) -> Iterator[dict
 
 
 class OnlyFqDataModule(LightningDataModule):
-    """`LightningDataModule` for the MNIST dataset.
+    """
+    PyTorch Lightning DataModule for genomic sequence data in FASTQ format.
 
-    The MNIST database of handwritten digits has a training set of 60,000 examples, and a test set of 10,000 examples.
-    It is a subset of a larger set available from NIST. The digits have been size-normalized and centered in a
-    fixed-size image. The original black and white images from NIST were size normalized to fit in a 20x20 pixel box
-    while preserving their aspect ratio. The resulting images contain grey levels as a result of the anti-aliasing
-    technique used by the normalization algorithm. the images were centered in a 28x28 image by computing the center of
-    mass of the pixels, and translating the image so as to position this point at the center of the 28x28 field.
+    This DataModule is designed to handle FASTQ files containing DNA or RNA sequences,
+    along with their associated quality scores and optional target labels embedded in the sequence identifiers.
+    It parses FASTQ files using pyfastx, encodes quality scores, and extracts targets for supervised learning tasks.
 
-    A `LightningDataModule` implements 7 key methods:
+    The module provides train, validation, test, and predict dataloaders compatible with PyTorch Lightning workflows.
+    It supports integration with HuggingFace tokenizers and custom data collators for token classification tasks.
 
-    ```python
-        def prepare_data(self):
-        # Things to do on 1 GPU/TPU (not on every GPU/TPU in DDP).
-        # Download data, pre-process, split, save to disk, etc...
+    Expected input:
+        - FASTQ files (.fq, .fastq, .fq.gz, .fastq.gz) with sequence identifiers optionally containing target labels.
+        - Each record includes a sequence, quality string, and (optionally) a target label.
 
-        def setup(self, stage):
-        # Things to do on every process in DDP.
-        # Load data, set variables, etc...
+    Key features:
+        - Efficient parsing of large FASTQ files using pyfastx.
+        - Encoding of quality scores for model input.
+        - Extraction of target labels from sequence identifiers.
+        - Customizable data collation and tokenization for downstream models.
 
-        def train_dataloader(self):
-        # return train dataloader
-
-        def val_dataloader(self):
-        # return validation dataloader
-
-        def test_dataloader(self):
-        # return test dataloader
-
-        def predict_dataloader(self):
-        # return predict dataloader
-
-        def teardown(self, stage):
-        # Called on every process in DDP.
-        # Clean up after fit or test.
-    ```
-
+    Implements the standard LightningDataModule interface:
+        - prepare_data
+        - setup
+        - train_dataloader
+        - val_dataloader
+        - test_dataloader
+        - predict_dataloader
+        - teardown
+    """
     This allows you to share a full dataset without explaining how to download,
     split, transform and process the data.
 

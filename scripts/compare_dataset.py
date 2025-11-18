@@ -3,8 +3,8 @@ from datasets import Dataset as HuggingFaceDataset
 from deepchopper.data.only_fq import parse_fastq_file
 
 def main():
-    parquet_dataset =  load_dataset("parquet", data_files={"predict": "./tmp/raw_no_trim.parquet"})["predict"]
-    iter_dataset = {i["id"]:i for i in  HuggingFaceDataset.from_generator(parse_fastq_file, gen_kwargs={"file_path": "./tmp/raw_no_trim.fastq", "has_targets": False}).with_format("torch")}
+    parquet_dataset = load_dataset("parquet", data_files={"predict": "./tmp/raw_no_trim.parquet"})["predict"]
+    iter_dataset = {i["id"]: i for i in HuggingFaceDataset.from_generator(parse_fastq_file, gen_kwargs={"file_path": "./tmp/raw_no_trim.fastq", "has_targets": False}).with_format("torch")}
 
 
     for key, value in parquet_dataset.items():
