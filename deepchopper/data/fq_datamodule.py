@@ -5,7 +5,6 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from datasets import Dataset as HuggingFaceDataset
 from datasets import load_dataset
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
@@ -173,9 +172,7 @@ class FqDataModule(LightningDataModule):
             predict_dataset = predict_dataset["predict"]
             if self.hparams.max_predict_samples is not None:
                 max_predict_samples = min(self.hparams.max_predict_samples, len(predict_dataset))
-                predict_dataset = HuggingFaceDataset.from_dict(predict_dataset[:max_predict_samples]).with_format(
-                    "torch"
-                )
+                predict_dataset = predict_dataset.select(range(max_predict_samples))
 
             self.data_predict = predict_dataset.map(
                 partial(
@@ -235,15 +232,15 @@ class FqDataModule(LightningDataModule):
 
             if self.hparams.max_train_samples is not None:
                 max_train_samples = min(self.hparams.max_train_samples, len(train_dataset))
-                train_dataset = HuggingFaceDataset.from_dict(train_dataset[:max_train_samples]).with_format("torch")
+                train_dataset = train_dataset.select(range(max_train_samples))
 
             if self.hparams.max_val_samples is not None:
                 max_val_samples = min(self.hparams.max_val_samples, len(val_dataset))
-                val_dataset = HuggingFaceDataset.from_dict(val_dataset[:max_val_samples]).with_format("torch")
+                val_dataset = val_dataset.select(range(max_val_samples))
 
             if self.hparams.max_test_samples is not None:
                 max_test_samples = min(self.hparams.max_test_samples, len(test_dataset))
-                test_dataset = HuggingFaceDataset.from_dict(test_dataset[:max_test_samples]).with_format("torch")
+                test_dataset = test_dataset.select(range(max_test_samples))
 
             self.data_train = train_dataset.map(
                 partial(

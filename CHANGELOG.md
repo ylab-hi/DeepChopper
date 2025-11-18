@@ -2,17 +2,98 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [py-cli-v1.2.9] - 2025-11-17
+
+### 🐛 Bug Fixes
+
+- **Critical**: Fix syntax error in CLI predict function ternary operator
+- **Compatibility**: Replace deprecated `HuggingFaceDataset.from_dict()` with `.select()` for datasets>=3.0.0
+- **Dependencies**: Resolve PyTorch 2.6.x compatibility by adding torchvision>=0.21.0
+- **Type System**: Fix `Parameter.make_metavar()` error by pinning typer<0.13.0 and click<8.2.0
+- **Warnings**: Replace deprecated pynvml with nvidia-ml-py>=12.0.0
+
+### 🔧 Build & CI
+
+- Optimize Rust release profile for broader CPU compatibility (Windows/macOS)
+  - Change `lto = true` to `lto = "thin"` for faster builds
+  - Increase `codegen-units` from 1 to 16 for better compatibility
+  - Add `RUSTFLAGS` for x86-64 baseline compatibility on Windows
+  - Add dynamic symbol lookup for macOS Python ABI compatibility
+
+### 📦 Dependencies
+
+- Add `torchvision>=0.21.0` (required for PyTorch 2.6.x)
+- Pin `typer>=0.12.0,<0.13.0` (avoid breaking API changes)
+- Pin `click>=8.1.0,<8.2.0` (ensure compatibility with typer)
+- Add `nvidia-ml-py>=12.0.0` (replace deprecated pynvml)
+
+### 💡 Migration Notes
+
+**Breaking Changes**:
+- ⚠️ **Data Format Incompatibility**: Parquet files generated with deepchopper v1.2.8 and earlier are **NOT compatible** with v1.2.9 due to datasets library schema changes
+- The legacy `'List'` schema has been removed in favor of `'Sequence'` schema (datasets>=3.0.0 requirement)
+
+**Action Required**:
+- **CRITICAL**: You must regenerate all parquet data files before using v1.2.9
+- Users experiencing "illegal instruction" errors on Windows should update to this version
+- Users seeing "symbol not found" errors on macOS should update to this version
+- Users with existing parquet files will encounter `ValueError: Feature type 'List' not found` errors
+
+**Migration Steps**:
+1. Update to v1.2.9: `pip install --upgrade deepchopper-cli`
+2. **Regenerate all parquet files** from your original FASTQ data sources
+3. Use the new parquet files for training/prediction workflows
+4. Remove deprecated `pynvml` if manually installed: `pip uninstall -y pynvml`
+
+**Why Regeneration is Required**:
+- The HuggingFace `datasets` library v3.0.0+ removed support for the legacy `'List'` feature type
+- Parquet files store schema metadata that cannot be automatically converted at runtime
+- Attempting to load old parquet files will result in immediate schema validation errors
+
+### 🔍 Technical Details
+
+This release addresses several critical compatibility issues:
+
+1. **datasets Library Compatibility**: The HuggingFace `datasets` library removed support for the legacy `'List'` feature type in version 3.0.0. The codebase now uses `.select()` instead of `.from_dict()` to avoid schema conversion issues.
+
+2. **PyTorch Ecosystem**: PyTorch 2.6.x requires torchvision 0.21.x for proper operation. Missing this dependency caused runtime errors with CUDA/GPU operations.
+
+3. **Typer/Click API Changes**: Typer 0.13+ introduced breaking changes to the `Parameter.make_metavar()` API. Pinning to compatible versions ensures CLI stability.
+
+4. **Cross-Platform Binary Compatibility**: Optimized Rust compiler settings to generate binaries that work on a wider range of CPUs, particularly addressing issues on GitHub Actions runners.
+
+## [py-cli-v1.2.8] - 2025-11-17
+
+### 💼 Other
+
+- Update the macos sys version
+- Fix abi incompability in macos and windows
+- Bump verison to v1.2.8
+
+## [py-cli-v1.2.7] - 2025-11-17
 
 ### 🚀 Features
 
 - Add poetry-plugin-export
+- Add new model configuration for hyena experiment
+- Seed everything
+- Add TODO for memory optimization in prediction script
+- Implement memory optimization and streaming processing in prediction script
+- Enhance temporary file handling in prediction script
+- Add memory usage tracking in prediction script
+- Enhance DeepChopper class with model loading and pushing methods
+- Enhance CLI options for prediction and update documentation
 
 ### 🐛 Bug Fixes
 
 - Fix incorrect usage of references in function arguments
 - Update pre-commit hooks versions
 - Update macOS runner version to 13
+- Update data paths and workers count
+- Update dependencies versions and Rust toolchain channel
+- Update versions in Cargo.toml
+- Update log_cli value in pyproject.toml to boolean
+- Change log level for sequence prediction truncation
 
 ### 💼 Other
 
@@ -20,16 +101,54 @@ All notable changes to this project will be documented in this file.
 - Update noodles requirement from 0.84.0 to 0.85.0
 - *(deps)* Bump actions/attest-build-provenance from 1 to 2
 - Update noodles requirement from 0.87.0 to 0.88.0
+- Update noodles requirement from 0.88.0 to 0.90.0
+- Update rand requirement from 0.8 to 0.9
+- Update rand_distr requirement from 0.4 to 0.5
+- Update noodles requirement from 0.90.0 to 0.91.0
+- Update noodles requirement from 0.91.0 to 0.93.0
+- Update dependencies and actions versions
+- Update needletail requirement from 0.5 to 0.6
+- Update pyo3-build-config requirement from 0.24 to 0.25
+- *(deps)* Bump actions/download-artifact from 4 to 5
+- *(deps)* Bump actions/checkout from 4 to 5
+- *(deps)* Bump rayon from 1.10 to 1.11 and clap from 4.5.43 to 4.5.45
+- *(deps)* Update noodles to version 0.101.0 and refactor fastq reader usage
+- *(deps)* Bump actions/attest-build-provenance from 2 to 3
+- *(deps)* Bump actions/setup-python from 5 to 6
+- Update bio requirement from 2.3 to 3.0
+- Update pyo3-build-config requirement from 0.25 to 0.27
+- Upgrade candle
+- *(deps)* Bump actions/download-artifact from 5 to 6
+- *(deps)* Bump actions/upload-artifact from 4 to 5
+- Bump deepchopper-cli version
 
 ### 🚜 Refactor
 
 - Update dependencies versions and function signatures
+- Update data type conversion for quality score in tokenizer
 
 ### 📚 Documentation
 
 - Update troubleshooting section in tutorial
 - Update tutorial.md with memory error solution
 - Update tutorial with additional information
+- Add parameter optimization guidelines to documentation
+- Improve memory usage documentation in predict.rs
+
+### ⚙️ Miscellaneous Tasks
+
+- Add default configuration file and git-cliff template
+- Update dependencies versions and script paths
+- Upgrade dependencies
+- Upgrade dependencies
+- Add gitignore
+- Rename pytest steps to Test CLI and refactor workflow for clarity
+- Update workflow to improve clarity and remove redundant steps
+- Update dependencies and improve documentation
+- Update configuration files for model training
+- Update sysinfo dependency version in Cargo.toml
+- Remove outdated checkpoint file
+- Update pre-commit configuration and enhance model upload guide
 
 ## [py-cli-v1.2.6] - 2024-11-05
 

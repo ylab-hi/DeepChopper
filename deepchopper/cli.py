@@ -108,7 +108,7 @@ def predict(
 
     model = (
         deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
-        if model == "rna002":
+        if model == "rna002"
         else deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper-rna004")
     )
     output_path = Path(output_path or "predictions")
