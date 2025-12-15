@@ -49,7 +49,7 @@ jobs:
           manylinux: auto
           working-directory: ./py_cli
       - name: Upload wheels
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-linux-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: ./py_cli/dist
@@ -109,7 +109,7 @@ jobs:
           manylinux: musllinux_1_2
           working-directory: ./py_cli
       - name: Upload wheels
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: ./py_cli/dist
@@ -138,7 +138,7 @@ jobs:
         env:
           RUSTFLAGS: "-C target-cpu=x86-64"
       - name: Upload wheels
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-windows-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: ./py_cli/dist
@@ -178,7 +178,7 @@ jobs:
         env:
           RUSTFLAGS: "-C link-args=-Wl,-undefined,dynamic_lookup"
       - name: Upload wheels
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-macos-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: ./py_cli/dist
@@ -203,7 +203,7 @@ jobs:
           args: --out dist
           working-directory: ./py_cli
       - name: Upload sdist
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-sdist
           path: ./py_cli/dist
