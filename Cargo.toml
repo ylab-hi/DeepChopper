@@ -129,7 +129,7 @@ noodles = { version = "0.104.0", features = [
 ] }
 
 bio = "3.0"
-needletail = "0.5"
+needletail = "0.6.3"
 ahash = "0.8.12"
 numpy = "0.27.1"
 ndarray = { version = "0.17", features = ["serde", "rayon"] }
