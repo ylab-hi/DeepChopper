@@ -101,8 +101,10 @@ impl From<fq_encode::RecordData> for PyRecordData {
 }
 
 // Implement FromPyObject for PyRecordData
-impl<'py> FromPyObject<'py> for PyRecordData {
-    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'a, 'py> FromPyObject<'a, 'py> for PyRecordData {
+    type Error = PyErr;
+
+    fn extract(ob: pyo3::Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
         // Assuming Python objects are tuples of (id, seq, qual)
         let (id, seq, qual): (String, String, String) = ob.extract()?;
         Ok(PyRecordData(fq_encode::RecordData {
@@ -272,6 +274,17 @@ fn normalize_seq(seq: String, iupac: bool) -> String {
     String::from_utf8_lossy(&seq.as_bytes().normalize(iupac)).to_string()
 }
 
+#[pyfunction]
+fn parse_target_from_id(src: &[u8]) -> Result<Vec<usize>> {
+    let target = fq_encode::parse_target_from_id(src)?;
+    let result = target
+        .into_par_iter()
+        .map(|x| [x.start, x.end])
+        .flatten()
+        .collect();
+    Ok(result)
+}
+
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 #[pyfunction]
 #[pyo3(signature = (
@@ -285,7 +298,7 @@ fn normalize_seq(seq: String, iupac: bool) -> String {
     max_seq_len=None
 ))]
 fn encode_fq_paths_to_tensor(
-    py: Python,
+    py: Python<'_>,
     fq_paths: Vec<PathBuf>,
     k: usize,
     bases: String,
@@ -341,7 +354,7 @@ fn encode_fq_paths_to_tensor(
     max_seq_len=None
 ))]
 fn encode_fq_path_to_tensor(
-    py: Python,
+    py: Python<'_>,
     fq_path: PathBuf,
     k: usize,
     bases: String,
@@ -444,10 +457,10 @@ fn encode_fq_path_to_parquet_chunk(
 }
 
 #[pyfunction]
-#[pyo3(signature = (fq_path, k, bases, qual_offset, vectorized_target, result_path=None))]
+#[pyo3(signature = (fq_path, _k, bases, qual_offset, vectorized_target, result_path=None))]
 fn encode_fq_path_to_parquet(
     fq_path: PathBuf,
-    k: usize,
+    _k: usize,
     bases: String,
     qual_offset: usize,
     vectorized_target: bool,
@@ -893,6 +906,7 @@ fn deepchopper(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(test_log, m)?)?;
     m.add_function(wrap_pyfunction!(extract_records_by_ids, m)?)?;
     m.add_function(wrap_pyfunction!(encode_qual, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_target_from_id, m)?)?;
 
     // add utils
     m.add_function(wrap_pyfunction!(reverse_complement, m)?)?;

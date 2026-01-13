@@ -149,6 +149,8 @@ def tokenize_and_align_labels_and_quals_ids(
 
     truncation = False
 
+    # TODO: remove target and labels during prediction
+
     if len(data["seq"]) >= max_length:
         truncation = True
         if data["target"][1] + 2 > max_length:

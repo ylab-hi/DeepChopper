@@ -145,7 +145,7 @@ impl Predict {
         result
     }
 
-    fn __getstate__(&self, py: Python) -> Result<PyObject> {
+    fn __getstate__(&self, py: Python) -> Result<Py<PyAny>> {
         // Serialize the struct to a JSON string
         let serialized = serde_json::to_string(self).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to serialize: {}", e))
@@ -155,9 +155,9 @@ impl Predict {
         Ok(PyBytes::new(py, serialized.as_bytes()).into())
     }
 
-    fn __setstate__(&mut self, py: Python, state: PyObject) -> PyResult<()> {
+    fn __setstate__(&mut self, py: Python, state: Py<PyAny>) -> PyResult<()> {
         // Convert PyObject to PyBytes
-        let state_bytes = state.downcast_bound::<PyBytes>(py)?;
+        let state_bytes = state.cast_bound::<PyBytes>(py)?;
 
         // Deserialize the JSON string into the current instance
         *self = serde_json::from_slice(state_bytes.as_bytes()).map_err(|e| {

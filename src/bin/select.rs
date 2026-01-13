@@ -133,7 +133,7 @@ fn select_by_type<P: AsRef<Path>>(
             if id.contains(&b'|') {
                 // name|region|anno
                 // get anno
-                let anno = id.split(|&x| x == b'|').last().unwrap();
+                let anno = id.split(|&x| x == b'|').next_back().unwrap();
                 if anno[0] == selected_type.to_byte() {
                     return true;
                 }
@@ -224,7 +224,7 @@ fn main() -> Result<()> {
                     // name|region|anno
                     let mut splits = id.split(|&x| x == b'|');
                     let name = splits.next().unwrap();
-                    let anno = splits.last().unwrap();
+                    let anno = splits.next_back().unwrap();
                     if anno[0] == selected_type.to_byte() {
                         return Some(name.to_vec());
                     }

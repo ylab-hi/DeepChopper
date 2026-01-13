@@ -18,9 +18,17 @@ We welcome contributions to DeepChopper! This document provides guidelines for c
    ```bash
    conda env create -n environment.yaml
    conda activate deepchopper
-   pip install pipx
-   pipx install --suffix @master git+https://github.com/python-poetry/poetry.git@master
-   poetry@master install
+   pip install uv
+   uv sync --all-extras
+   ```
+
+   Alternatively, without conda:
+
+   ```bash
+   pip install uv
+   uv venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   uv sync --all-extras
    ```
 
 ## Making Changes
