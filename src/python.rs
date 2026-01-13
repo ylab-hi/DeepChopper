@@ -101,8 +101,10 @@ impl From<fq_encode::RecordData> for PyRecordData {
 }
 
 // Implement FromPyObject for PyRecordData
-impl<'py> FromPyObject<'py> for PyRecordData {
-    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'a, 'py> FromPyObject<'a, 'py> for PyRecordData {
+    type Error = PyErr;
+
+    fn extract(ob: pyo3::Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
         // Assuming Python objects are tuples of (id, seq, qual)
         let (id, seq, qual): (String, String, String) = ob.extract()?;
         Ok(PyRecordData(fq_encode::RecordData {
@@ -455,10 +457,10 @@ fn encode_fq_path_to_parquet_chunk(
 }
 
 #[pyfunction]
-#[pyo3(signature = (fq_path, k, bases, qual_offset, vectorized_target, result_path=None))]
+#[pyo3(signature = (fq_path, _k, bases, qual_offset, vectorized_target, result_path=None))]
 fn encode_fq_path_to_parquet(
     fq_path: PathBuf,
-    k: usize,
+    _k: usize,
     bases: String,
     qual_offset: usize,
     vectorized_target: bool,

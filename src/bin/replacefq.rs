@@ -39,9 +39,9 @@ fn load_internal_records<P: AsRef<Path>>(path: P) -> Result<HashMap<BString, Fas
         .filter_map(|record| {
             let name = record.definition().name().to_owned();
             if name.contains(&b'|') {
-                let ctype = name.split(|&c| c == b'|').last().unwrap();
+                let ctype = name.split(|&c| c == b'|').next_back().unwrap();
                 if ctype == b"I" {
-                    Some((name.into(), record.clone()))
+                    Some((name, record.clone()))
                 } else {
                     None
                 }

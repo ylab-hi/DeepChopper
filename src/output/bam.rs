@@ -141,19 +141,19 @@ impl BamRecord {
         }
     }
 
-    fn __getstate__(&self, py: Python) -> PyResult<PyObject> {
+    fn __getstate__<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
         // Serialize the struct to a JSON string
         let serialized = serde_json::to_string(self).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to serialize: {}", e))
         })?;
 
         // Convert JSON string to Python bytes
-        Ok(PyBytes::new(py, serialized.as_bytes()).into())
+        Ok(PyBytes::new(py, serialized.as_bytes()))
     }
 
-    fn __setstate__(&mut self, py: Python, state: PyObject) -> PyResult<()> {
+    fn __setstate__(&mut self, py: Python, state: Py<PyAny>) -> PyResult<()> {
         // Convert PyObject to PyBytes
-        let state_bytes = state.downcast_bound::<PyBytes>(py)?;
+        let state_bytes = state.cast_bound::<PyBytes>(py)?;
 
         // Deserialize the JSON string into the current instance
         *self = serde_json::from_slice(state_bytes.as_bytes()).map_err(|e| {
