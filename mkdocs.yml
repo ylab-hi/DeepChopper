@@ -9,9 +9,26 @@ edit_uri: edit/main/docs/
 # Copyright
 copyright: Copyright &copy; 2026 Yangyang Li
 
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: installation.md
+      - Tutorial: tutorial.md
+  - User Guide:
+      - CLI Reference: cli-reference.md
+      - Parameter Tuning: parameters.md
+      - FAQ: faq.md
+  - Development:
+      - Contributing: contributing.md
+  - About:
+      - Changelog: https://github.com/ylab-hi/DeepChopper/blob/main/CHANGELOG.md
+      - License: https://github.com/ylab-hi/DeepChopper/blob/main/LICENSE
+
 # Theme configuration
 theme:
   name: material
+  custom_dir: docs/overrides
   language: en
   logo: logo.webp
   favicon: logo.webp
@@ -138,6 +155,9 @@ plugins:
       htmlmin_opts:
         remove_comments: true
       cache_safe: true
+  - git-committers:
+      repository: ylab-hi/DeepChopper
+      branch: main
 
 # Extra configuration
 extra:
@@ -184,21 +204,3 @@ extra:
 # Extra CSS
 extra_css:
   - stylesheets/extra.css
-
-# Navigation
-nav:
-  - Home: index.md
-  - Getting Started:
-      - Installation: installation.md
-      - Tutorial: tutorial.md
-  - User Guide:
-      - CLI Reference: cli-reference.md
-      - Parameter Tuning: parameters.md
-      - FAQ: faq.md
-  - Development:
-      - Contributing: contributing.md
-      - Agent Guidelines: AGENTS.md
-  - About:
-      - Versions: versions.md
-      - Changelog: CHANGELOG.md
-      - License: https://github.com/ylab-hi/DeepChopper/blob/main/LICENSE

@@ -1,19 +1,12 @@
-# DeepChopper
+# **DeepChopper** [![social](https://img.shields.io/github/stars/ylab-hi/DeepChopper?style=social)](https://github.com/ylab-hi/DeepChopper/stargazers)
 
-<div align="center">
-  <img src="logo.webp" alt="DeepChopper Logo" width="300"/>
-  
-  <p>
-    <a href="https://pypi.python.org/pypi/deepchopper"><img src="https://img.shields.io/pypi/v/deepchopper.svg" alt="PyPI"></a>
-    <a href="https://pypi.org/project/deepchopper/#files"><img src="https://img.shields.io/pypi/wheel/deepchopper" alt="PyPI - Wheel"></a>
-    <a href="https://github.com/ylab-hi/DeepChopper/blob/main/LICENSE"><img src="https://img.shields.io/pypi/l/deepchopper.svg" alt="License"></a>
-    <a href="https://pypi.python.org/pypi/deepchopper"><img src="https://img.shields.io/pypi/pyversions/deepchopper.svg" alt="Python Version"></a>
-    <br/>
-    <a href="https://pypi.org/project/deepchopper/#files"><img src="https://img.shields.io/badge/platform-linux%20%7C%20osx%20%7C%20win-blue" alt="Platform"></a>
-    <a href="https://github.com/ylab-hi/DeepChopper/actions"><img src="https://github.com/ylab-hi/DeepChopper/actions/workflows/release-python.yml/badge.svg" alt="Actions Status"></a>
-    <a href="https://huggingface.co/spaces/yangliz5/deepchopper"><img src="https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg" alt="Hugging Face Space"></a>
-  </p>
-</div>
+[![pypi](https://img.shields.io/pypi/v/deepchopper.svg)](https://pypi.python.org/pypi/deepchopper)
+[![PyPI - Wheel](https://img.shields.io/pypi/wheel/deepchopper)](https://pypi.org/project/deepchopper/#files)
+[![license](https://img.shields.io/pypi/l/deepchopper.svg)](https://github.com/ylab-hi/DeepChopper/blob/main/LICENSE)
+[![pypi version](https://img.shields.io/pypi/pyversions/deepchopper.svg)](https://pypi.python.org/pypi/deepbiop)
+[![platform](https://img.shields.io/badge/platform-linux%20%7C%20osx%20%7C%20win-blue)](https://pypi.org/project/deepchopper/#files)
+[![Actions status](https://github.com/ylab-hi/DeepChopper/actions/workflows/release-python.yml/badge.svg)](https://github.com/ylab-hi/DeepChopper/actions)
+[![Space](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)](https://huggingface.co/spaces/yangliz5/deepchopper)
 
 ## Overview
 
@@ -126,13 +119,13 @@ For a complete walkthrough, check out the [Tutorial](tutorial.md).
 
     ---
 
-    Remove chimeric reads to improve transcript reconstruction and assembly quality
+    Remove chimera artifacts to improve transcript reconstruction and assembly quality
 
 - :material-link-variant:{ .feature-icon } **Gene Fusion Detection**
 
     ---
 
-    Eliminate false positives from adapter artifacts for accurate fusion calling
+    Eliminate false positives from adapter-bridged artifacts for accurate fusion calling
 
 - :material-chart-bar:{ .feature-icon } **Differential Expression**
 
@@ -149,18 +142,6 @@ For a complete walkthrough, check out the [Tutorial](tutorial.md).
 </div>
 
 ---
-
-## :material-speedometer: Performance
-
-!!! tip "Benchmarks"
-    DeepChopper has been extensively validated on real-world datasets:
-
-    | Metric | Performance |
-    |--------|-------------|
-    | :material-check-circle: **Detection Rate** | >95% sensitivity for chimeric reads |
-    | :material-bullseye-arrow: **Precision** | <1% false positive rate |
-    | :material-clock-fast: **Speed** | Process millions of reads in minutes (with GPU) |
-    | :material-auto-fix: **Zero-shot** | Works on RNA004 without retraining (trained on RNA002) |
 
 ## Citation
 
