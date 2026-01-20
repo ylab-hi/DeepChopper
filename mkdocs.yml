@@ -1,0 +1,206 @@
+site_name: DeepChopper Documentation
+site_description: Genomic language model mitigates chimera artifacts in nanopore direct RNA sequencing
+site_author: Yangyang Li
+site_url: https://ylab-hi.github.io/DeepChopper/
+repo_name: ylab-hi/DeepChopper
+repo_url: https://github.com/ylab-hi/DeepChopper
+edit_uri: edit/main/docs/
+
+# Copyright
+copyright: Copyright &copy; 2026 Yangyang Li
+
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: installation.md
+      - Tutorial: tutorial.md
+  - User Guide:
+      - CLI Reference: cli-reference.md
+      - Parameter Tuning: parameters.md
+      - FAQ: faq.md
+  - Development:
+      - Contributing: contributing.md
+  - About:
+      - Changelog: https://github.com/ylab-hi/DeepChopper/blob/main/CHANGELOG.md
+      - License: https://github.com/ylab-hi/DeepChopper/blob/main/LICENSE
+
+# Theme configuration
+theme:
+  name: material
+  custom_dir: docs/overrides
+  language: en
+  logo: logo.webp
+  favicon: logo.webp
+
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  features:
+    - announce.dismiss # Dismissible announcements
+    - navigation.instant # Instant loading
+    - navigation.instant.prefetch # Prefetch pages
+    - navigation.instant.progress # Progress indicator
+    - navigation.tracking # Anchor tracking
+    - navigation.tabs # Top-level tabs
+    - navigation.tabs.sticky # Sticky tabs
+    - navigation.sections # Section navigation
+    - navigation.expand # Expand all sections by default
+    - navigation.path # Breadcrumbs
+    - navigation.indexes # Section index pages
+    - navigation.top # Back to top button
+    - navigation.footer # Footer navigation
+    - search.suggest # Search suggestions
+    - search.highlight # Highlight search results
+    - search.share # Share search results
+    - toc.follow # TOC follows scrolling
+    # - toc.integrate # TOC integrated in navigation (disabled for clearer left sidebar)
+    - content.code.copy # Copy code blocks
+    - content.code.annotate # Code annotations
+    - content.tabs.link # Link tabs
+    - content.tooltips # Improved tooltips
+    - content.action.edit # Edit this page button
+    - content.action.view # View source button
+
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+
+# Extensions
+markdown_extensions:
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      title: On this page
+
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
+      lang: en
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
+  - glightbox:
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      slide_effect: slide
+      width: 100%
+      height: auto
+      zoomable: true
+      draggable: true
+      skip_classes:
+        - custom-skip-class-name
+      auto_caption: false
+      caption_position: bottom
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+        remove_comments: true
+      cache_safe: true
+  - git-committers:
+      repository: ylab-hi/DeepChopper
+      branch: main
+
+# # Extra configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ylab-hi/DeepChopper
+      name: GitHub Repository
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/deepchopper/
+      name: PyPI Package
+    - icon: fontawesome/solid/face-smile
+      link: https://huggingface.co/spaces/yangliz5/deepchopper
+      name: Hugging Face Space
+
+  version:
+    provider: mike
+    default: latest
+
+  status:
+    new: Recently added
+    deprecated: Deprecated
+
+  analytics:
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/thumb-up-outline
+          name: This page was helpful
+          data: 1
+          note: Thanks for your feedback!
+        - icon: material/thumb-down-outline
+          name: This page could be improved
+          data: 0
+          note: Thanks for your feedback! Help us improve by opening an issue.
+
+  consent:
+    title: Cookie consent
+    description: >-
+      We use cookies to recognize your repeated visits and preferences, as well
+      as to measure the effectiveness of our documentation and whether users
+      find what they're searching for. With your consent, you're helping us to
+      make our documentation better.
+
+# Extra CSS
+extra_css:
+  - stylesheets/extra.css

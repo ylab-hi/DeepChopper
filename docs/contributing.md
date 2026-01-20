@@ -1,6 +1,8 @@
-# Contributing to DeepChopper
+# Contributing
 
-We welcome contributions to DeepChopper! This document provides guidelines for contributing to the project.
+**Guidelines for contributing to DeepChopper development.**
+
+We welcome contributions! This guide covers setting up your development environment, coding standards, and the contribution process.
 
 ## Getting Started
 
@@ -16,19 +18,32 @@ We welcome contributions to DeepChopper! This document provides guidelines for c
 3. Set up your development environment:
 
    ```bash
-   conda env create -n environment.yaml
-   conda activate deepchopper
+   # Install uv package manager
    pip install uv
-   uv sync --all-extras
+   
+   # Install dependencies
+   uv sync
+   
+   # Build and install in development mode
+   maturin develop --release
+   
+   # Run tests to verify
+   uv run pytest tests -k "not slow"
    ```
 
-   Alternatively, without conda:
+   Alternatively, with conda:
 
    ```bash
+   # Create conda environment
+   conda create -n deepchopper python=3.10
+   conda activate deepchopper
+   
+   # Install uv and dependencies
    pip install uv
-   uv venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   uv sync --all-extras
+   uv sync
+   
+   # Build and install
+   maturin develop --release
    ```
 
 ## Making Changes

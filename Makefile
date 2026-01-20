@@ -2,23 +2,9 @@ SHELL := /bin/bash
 
 ts := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# get current pwd
-current_dir = $(shell pwd)
-DC_CONFIG_PATH = $(current_dir)/configs
-POETRY  = poetry@master
-
 .PHONY: help
 help: ## This help message
 	@echo -e "$$(grep -hE '^\S+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*##\s*/:/' -e 's/^\(.\+\):\(.*\)/\\x1b[36m\1\\x1b[m:\2/' | column -c2 -t -s :)"
-
-##############################################
-#      Train Models for the project
-
-.PHONY: train
-train: ## Train models
-	DC_CONFIG_PATH=$(DC_CONFIG_PATH) deepchopper-train
-
-##############################################
 
 .PHONY: develop
 develop:
@@ -42,7 +28,7 @@ install: dev-packages ## Install module into current virtualenv
 
 .PHONY: publish
 publish: ## Publish crate on Pypi
-	$(POETRY) run maturin publish
+	uv run maturin publish
 
 .PHONY: clean
 clean: ## Clean up build artifacts
@@ -60,7 +46,7 @@ clean-logs: ## Clean logs
 
 .PHONY: dev-packages
 dev-packages: ## Install Python development packages for project
-	$(POETRY)  install
+	uv sync
 
 .PHONY: cargo-test
 cargo-test: ## Run cargo tests only
@@ -71,23 +57,19 @@ test: cargo-test dev-packages install quicktest ## Install rscannls module and r
 
 .PHONY: quicktest
 quicktest: ## Run tests on already installed hyperjson module
-	$(POETRY)  run python -m pytest tests -k "not slow"
+	uv run pytest tests -k "not slow"
 
 .PHONY: test-all
 test-all: ## Run all tests
-	$(POETRY)  run python -m pytest tests
+	uv run pytest tests
 
 .PHONY: bench
 bench: ## Run benchmarks
-	$(POETRY)  run python -m pytest benchmarks
+	uv run pytest benchmarks
 
 .PHONY: bench-compare
 bench-compare: nightly dev-packages install ## Run benchmarks and compare results with other JSON encoders
-	$(POETRY)  run python -m pytest benchmarks --compare
-
-.PHONY: build-profile
-build-profile: ## Builds binary for profiling
-	cd profiling && $(POETRY)  run cargo build --release
+	uv run pytest benchmarks --compare
 
 # Setup instructions here:
 # https://gist.github.com/dlaehnemann/df31787c41bd50c0fe223df07cf6eb89

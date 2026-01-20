@@ -109,7 +109,7 @@ thiserror = "2.0"
 anyhow = "1.0"
 walkdir = { version = "2.5" }
 rayon = { version = "1.11" }
-pyo3 = { version = "0.23.5", features = [
+pyo3 = { version = "0.27.2", features = [
   "abi3-py310",
   "extension-module",
   "anyhow",
@@ -117,7 +117,7 @@ pyo3 = { version = "0.23.5", features = [
 
 ctrlc = "3.5"
 log = "0.4"
-pyo3-log = "0.12"
+pyo3-log = "0.13.2"
 noodles = { version = "0.104.0", features = [
   "bgzf",
   "core",
@@ -129,9 +129,9 @@ noodles = { version = "0.104.0", features = [
 ] }
 
 bio = "3.0"
-needletail = "0.5"
+needletail = "0.6.3"
 ahash = "0.8.12"
-numpy = "0.23"
+numpy = "0.27.1"
 ndarray = { version = "0.17", features = ["serde", "rayon"] }
 num-traits = { version = "0.2" }
 serde = "1.0"
@@ -150,7 +150,6 @@ candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.
 colored = "3"
 textwrap = "0.16"
 flate2 = { version = "1.1.5", features = ["zlib-rs"], default-features = false }
-
 
 # binaries
 clap = { version = "4.5.52", features = ["derive"] }

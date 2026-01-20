@@ -11,6 +11,42 @@ use crate::types::Element;
 
 use super::RecordData;
 
+pub fn parse_target_from_id(src: &[u8]) -> Result<Vec<Range<usize>>> {
+    // check empty input
+    if src.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // TODO: add code to parse negative case and then return [0, 0) <03-02-24, Yangyang Li>
+    // if no | in the id, return [0, 0)
+    if !src.contains(&b'|') {
+        return Ok(vec![0..0]);
+    }
+    // @738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8|462:528,100:120
+    // remove content before |
+    let number_part = src
+        .split(|&c| c == b'|')
+        .next_back()
+        .context("Failed to get number part")?;
+
+    let result = number_part
+        .par_split(|&c| c == b'-')
+        .map(|target| {
+            let mut parts = target.split(|&c| c == b':');
+            let start: usize = lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
+            let end: usize = lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
+            Ok(start..end)
+        })
+        .collect::<Result<Vec<_>>>();
+
+    if result.is_err() {
+        println!("Invalid target format - expected 'start:end' or 'start1:end1-start2:end2'. Defaulting to [0,0]");
+        Ok(vec![0..0])
+    } else {
+        result
+    }
+}
+
 pub trait Encoder {
     type TargetOutput;
     type EncodeOutput;
@@ -25,41 +61,7 @@ pub trait Encoder {
     fn encode_record(&self, id: &[u8], seq: &[u8], qual: &[u8]) -> Self::RecordOutput;
 
     fn parse_target_from_id(src: &[u8]) -> Result<Vec<Range<usize>>> {
-        // check empty input
-        if src.is_empty() {
-            return Ok(Vec::new());
-        }
-
-        // TODO: add code to parse negative case  and then return [0, 0) <03-02-24, Yangyang Li>
-        // if no | in the id, return [0, 0)
-        if !src.contains(&b'|') {
-            return Ok(vec![0..0]);
-        }
-        // @738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8|462:528,100:120
-        // remove content before |
-        let number_part = src
-            .split(|&c| c == b'|')
-            .next_back()
-            .context("Failed to get number part")?;
-
-        let result = number_part
-            .par_split(|&c| c == b'-')
-            .map(|target| {
-                let mut parts = target.split(|&c| c == b':');
-                let start: usize =
-                    lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
-                let end: usize =
-                    lexical::parse(parts.next().ok_or(anyhow!("parse number error"))?)?;
-                Ok(start..end)
-            })
-            .collect::<Result<Vec<_>>>();
-
-        if result.is_err() {
-            println!("Invalid target format - expected 'start:end' or 'start1:end1-start2:end2'. Defaulting to [0,0]");
-            Ok(vec![0..0])
-        } else {
-            result
-        }
+        parse_target_from_id(src)
     }
 
     fn fetch_records<P: AsRef<Path>>(&mut self, path: P, kmer_size: u8) -> Result<Vec<RecordData>> {
