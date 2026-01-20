@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://ylab-hi.github.io/DeepChopper/0.1.0/</loc>
+         <loc>https://ylab-hi.github.io/DeepChopper/dev/</loc>
          <lastmod>2026-01-20</lastmod>
     </url>
     <url>
-         <loc>https://ylab-hi.github.io/DeepChopper/0.1.0/cli-reference/</loc>
+         <loc>https://ylab-hi.github.io/DeepChopper/dev/cli-reference/</loc>
          <lastmod>2026-01-20</lastmod>
     </url>
     <url>
-         <loc>https://ylab-hi.github.io/DeepChopper/0.1.0/contributing/</loc>
+         <loc>https://ylab-hi.github.io/DeepChopper/dev/contributing/</loc>
          <lastmod>2026-01-20</lastmod>
     </url>
     <url>
-         <loc>https://ylab-hi.github.io/DeepChopper/0.1.0/faq/</loc>
+         <loc>https://ylab-hi.github.io/DeepChopper/dev/faq/</loc>
          <lastmod>2026-01-20</lastmod>
     </url>
     <url>
-         <loc>https://ylab-hi.github.io/DeepChopper/0.1.0/installation/</loc>
+         <loc>https://ylab-hi.github.io/DeepChopper/dev/installation/</loc>
          <lastmod>2026-01-20</lastmod>
     </url>
     <url>
-         <loc>https://ylab-hi.github.io/DeepChopper/0.1.0/parameters/</loc>
+         <loc>https://ylab-hi.github.io/DeepChopper/dev/parameters/</loc>
          <lastmod>2026-01-20</lastmod>
     </url>
     <url>
-         <loc>https://ylab-hi.github.io/DeepChopper/0.1.0/tutorial/</loc>
+         <loc>https://ylab-hi.github.io/DeepChopper/dev/tutorial/</loc>
          <lastmod>2026-01-20</lastmod>
     </url>
 </urlset>
