@@ -12,10 +12,26 @@ on:
       - master
     tags:
       - "*"
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+      - 'DOCS_*.md'
+      - 'TOC_*.md'
+      - 'COLOR_*.md'
   pull_request:
     branches:
       - main
       - master
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+      - 'DOCS_*.md'
+      - 'TOC_*.md'
+      - 'COLOR_*.md'
   workflow_dispatch:
 
 # Add this concurrency configuration
