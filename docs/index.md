@@ -100,11 +100,11 @@ For detailed installation instructions, see the [Installation Guide](installatio
 ### Basic Usage
 
 ```bash
-# 1. Predict chimera artifacts (handles encoding automatically)
+# 1. Predict chimera artifacts (automatically encodes FASTQ data)
 deepchopper predict raw_reads.fastq --output predictions
 
 # 2. Chop the reads at detected adapter locations
-deepchopper chop predictions raw_reads.fastq
+deepchopper chop predictions/ raw_reads.fastq --output chopped.fastq
 ```
 
 For a complete walkthrough, check out the [Tutorial](tutorial.md).

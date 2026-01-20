@@ -3,32 +3,6 @@
 Welcome to the DeepChopper tutorial! This guide will walk you through the process of identifying and removing chimeric artificial reads in Nanopore direct-RNA sequencing data.
 Whether you're new to bioinformatics or an experienced researcher, this tutorial will help you get the most out of DeepChopper.
 
-## Table of Contents
-
-- [Tutorial: Using DeepChopper for Nanopore Direct-RNA Sequencing Data Analysis](#tutorial-using-deepchopper-for-nanopore-direct-rna-sequencing-data-analysis)
-  - [Table of Contents](#table-of-contents)
-  - [Prerequisites](#prerequisites)
-  - [1. Data Acquisition](#1-data-acquisition)
-  - [2. Basecall Using Dorado](#2-basecall-using-dorado)
-  - [3. Predicting Adapter to Detect Artificial Chimeric Reads](#3-predicting-adapter-to-detect-artificial-chimeric-reads)
-    - [Basic Usage](#basic-usage)
-    - [Model Selection](#model-selection)
-    - [Advanced Options](#advanced-options)
-    - [Hardware Acceleration](#hardware-acceleration)
-  - [4. Chopping Artificial Sequences](#4-chopping-artificial-sequences)
-    - [Basic Usage](#basic-usage-1)
-    - [Advanced Options](#advanced-options-1)
-    - [Understanding the Output](#understanding-the-output)
-    - [Performance Notes](#performance-notes)
-  - [5. Web Interface (Optional)](#5-web-interface-optional)
-  - [Next Steps](#next-steps)
-  - [Troubleshooting](#troubleshooting)
-    - [Memory Issues](#memory-issues)
-    - [Performance Issues](#performance-issues)
-    - [Model and Results Issues](#model-and-results-issues)
-    - [Hardware and Compatibility Issues](#hardware-and-compatibility-issues)
-    - [Getting Help](#getting-help)
-
 ## Prerequisites
 
 Before we begin, ensure you have the following installed:
@@ -150,14 +124,14 @@ deepchopper predict raw_no_trim.fastq --output predictions --gpus 2
 
 Now that you have predictions, remove the identified adapter sequences:
 
-### Basic Usage
+### Chopping Reads
 
 ```bash
 # Chop reads based on predictions
 deepchopper chop predictions raw_no_trim.fastq --output chopped.fastq
 ```
 
-### Tuning Parameters
+### Chopping Options
 
 ```bash
 # Specify output prefix
@@ -323,13 +297,14 @@ This will start a local web server where you can:
     - CUDA 12.1: `pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu121`
     - CPU only: `pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cpu`
 
-- **Issue**: `deepchopper-chop` command not found
+- **Issue**: `deepchopper` command not found
 
   **Solution**:
 
-  - Install the Rust-based chopper: `pip install deepchopper-cli` or follow installation guide
-  - Ensure the binary is in your PATH
+  - Ensure the installation directory is in your PATH
+  - Check installation: `pip show deepchopper`
   - Try reinstalling: `pip install --force-reinstall deepchopper`
+  - Activate your virtual environment if you created one
 
 ### Getting Help
 
