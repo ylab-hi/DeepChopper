@@ -1,0 +1,40 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the following article."
+title: "DeepChopper"
+authors:
+  - family-names: Li
+    given-names: Yangyang
+  - family-names: Wang
+    given-names: Ting-You
+  - family-names: Guo
+    given-names: Qingxiang
+  - family-names: Ren
+    given-names: Yanan
+  - family-names: Lu
+    given-names: Xiaotong
+  - family-names: Cao
+    given-names: Qi
+  - family-names: Yang
+    given-names: Rendong
+preferred-citation:
+  type: article
+  title: "Genomic Language Model Mitigates Chimera Artifacts in Nanopore Direct RNA Sequencing"
+  authors:
+    - family-names: Li
+      given-names: Yangyang
+    - family-names: Wang
+      given-names: Ting-You
+    - family-names: Guo
+      given-names: Qingxiang
+    - family-names: Ren
+      given-names: Yanan
+    - family-names: Lu
+      given-names: Xiaotong
+    - family-names: Cao
+      given-names: Qi
+    - family-names: Yang
+      given-names: Rendong
+  journal: "Nature Communications"
+  year: 2026
+  doi: "10.1038/s41467-026-68571-5"
+  url: "https://www.nature.com/articles/s41467-026-68571-5"
