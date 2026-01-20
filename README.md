@@ -10,7 +10,7 @@
 
 <!--toc:start-->
 
-- [ **DeepChopper** ](#-deepchopper-)
+- [**DeepChopper**](#-deepchopper-)
   - [🚀 Quick Start: Try DeepChopper Online](#-quick-start-try-deepchopper-online)
   - [📦 Installation](#-installation)
     - [Compatibility and Support](#compatibility-and-support)
@@ -157,20 +157,20 @@ model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
 
 ## 📚 Cite
 
-If DeepChopper aids your research, please cite [our paper](https://www.biorxiv.org/content/10.1101/2024.10.23.619929v2):
+If DeepChopper aids your research, please cite [our paper](https://www.nature.com/articles/s41467-026-68571-5):
 
 ```bibtex
-@article {Li2024.10.23.619929,
-        author = {Li, Yangyang and Wang, Ting-You and Guo, Qingxiang and Ren, Yanan and Lu, Xiaotong and Cao, Qi and Yang, Rendong},
-        title = {A Genomic Language Model for Chimera Artifact Detection in Nanopore Direct RNA Sequencing},
-        elocation-id = {2024.10.23.619929},
-        year = {2024},
-        doi = {10.1101/2024.10.23.619929},
-        publisher = {Cold Spring Harbor Laboratory},
-        abstract = {Chimera artifacts in nanopore direct RNA sequencing (dRNA-seq) data can confound transcriptome analyses, yet no existing tools are capable of detecting and removing them due to limitations in basecalling models. We present DeepChopper, a genomic language model that accurately identifies and eliminates adapter sequences within base-called dRNA-seq reads, effectively removing chimeric read artifacts. DeepChopper significantly improves critical downstream analyses, including transcript annotation and gene fusion detection, enhancing the reliability and utility of nanopore dRNA-seq for transcriptomics research. Competing Interests: The authors have declared no competing interests.},
-        URL = {https://www.biorxiv.org/content/early/2024/10/25/2024.10.23.619929},
-        eprint = {https://www.biorxiv.org/content/early/2024/10/25/2024.10.23.619929.full.pdf},
-        journal = {bioRxiv}
+@article{li2026genomic,
+  title = {Genomic Language Model Mitigates Chimera Artifacts in Nanopore Direct {{RNA}} Sequencing},
+  author = {Li, Yangyang and Wang, Ting-You and Guo, Qingxiang and Ren, Yanan and Lu, Xiaotong and Cao, Qi and Yang, Rendong},
+  date = {2026-01-19},
+  journaltitle = {Nature Communications},
+  shortjournal = {Nat Commun},
+  publisher = {Nature Publishing Group},
+  issn = {2041-1723},
+  doi = {10.1038/s41467-026-68571-5},
+  url = {https://www.nature.com/articles/s41467-026-68571-5},
+  urldate = {2026-01-20}
 }
 ```
 
