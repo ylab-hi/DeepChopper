@@ -10,25 +10,17 @@ Whether you're new to bioinformatics or an experienced researcher, this tutorial
   - [Prerequisites](#prerequisites)
   - [1. Data Acquisition](#1-data-acquisition)
   - [2. Basecall Using Dorado](#2-basecall-using-dorado)
-  - [3. Encoding Data with DeepChopper](#3-encoding-data-with-deepchopper)
+  - [3. Predicting Adapter to Detect Artificial Chimeric Reads](#3-predicting-adapter-to-detect-artificial-chimeric-reads)
     - [Basic Usage](#basic-usage)
-    - [For Large Datasets](#for-large-datasets)
-    - [Advanced Options](#advanced-options)
-    - [Parameter Guide](#parameter-guide)
-  - [4. Predicting Adapter to Detect Artificial Chimeric Reads](#4-predicting-adapter-to-detect-artificial-chimeric-reads)
-    - [Basic Usage](#basic-usage-1)
     - [Model Selection](#model-selection)
-    - [Advanced Options](#advanced-options-1)
-    - [For Chunked Data](#for-chunked-data)
+    - [Advanced Options](#advanced-options)
     - [Hardware Acceleration](#hardware-acceleration)
-  - [5. Chopping Artificial Sequences](#5-chopping-artificial-sequences)
-    - [Basic Usage](#basic-usage-2)
-    - [For Chunked Predictions](#for-chunked-predictions)
-    - [Advanced Options](#advanced-options-2)
-    - [Parameter Guide](#parameter-guide-1)
+  - [4. Chopping Artificial Sequences](#4-chopping-artificial-sequences)
+    - [Basic Usage](#basic-usage-1)
+    - [Advanced Options](#advanced-options-1)
     - [Understanding the Output](#understanding-the-output)
     - [Performance Notes](#performance-notes)
-  - [6. Web Interface (Optional)](#6-web-interface-optional)
+  - [5. Web Interface (Optional)](#5-web-interface-optional)
   - [Next Steps](#next-steps)
   - [Troubleshooting](#troubleshooting)
     - [Memory Issues](#memory-issues)
@@ -82,64 +74,18 @@ The output will be a FASTQ file containing the basecalled sequences with all ada
 wget https://raw.githubusercontent.com/ylab-hi/DeepChopper/refs/heads/main/tests/data/raw_no_trim.fastq
 ```
 
-## 3. Encoding Data with DeepChopper
+## 3. Predicting Adapter to Detect Artificial Chimeric Reads
 
-Prepare your data for the prediction model:
-
-### Basic Usage
-
-```bash
-# Encode the FASTQ file
-deepchopper encode raw_no_trim.fastq
-```
-
-### For Large Datasets
-
-For large datasets, use chunking to avoid memory issues:
-
-```bash
-# Use chunking with default chunk size (1,000,000 reads)
-deepchopper encode raw_no_trim.fastq --chunk
-
-# Specify custom chunk size for better memory control
-deepchopper encode raw_no_trim.fastq --chunk --chunk-size 100000
-```
-
-### Advanced Options
-
-```bash
-# Enable verbose output to see progress
-deepchopper encode raw_no_trim.fastq --verbose
-
-# Combine chunking with verbose output
-deepchopper encode raw_no_trim.fastq --chunk --chunk-size 50000 --verbose
-```
-
-### Parameter Guide
-
-- `--chunk, -c`: Enable chunking for large datasets
-- `--chunk-size, -s`: Number of reads per chunk (default: 1,000,000)
-- `--verbose, -v`: Show detailed progress information
-
-🔍 **Output**:
-
-- Without chunking: `raw_no_trim.parquet`
-- With chunking: Multiple `.parquet` files under `raw_no_trim.fq_chunks/` directory
-
-💡 **Tip**: Use chunking for datasets with >1M reads to prevent memory issues.
-
-## 4. Predicting Adapter to Detect Artificial Chimeric Reads
-
-Analyze the encoded data to identify potential chimeric reads:
+DeepChopper automatically encodes and analyzes your FASTQ data to identify chimeric reads:
 
 ### Basic Usage
 
 ```bash
-# Predict artificial sequences for reads (default: RNA002 model)
-deepchopper predict raw_no_trim.parquet --output predictions
+# Predict chimeric reads (default: RNA002 model, CPU)
+deepchopper predict raw_no_trim.fastq --output predictions
 
-# Predict artificial sequences for reads using GPU
-deepchopper predict raw_no_trim.parquet --output predictions --gpus 2
+# With GPU acceleration
+deepchopper predict raw_no_trim.fastq --output predictions --gpus 1
 ```
 
 ### Model Selection
@@ -162,19 +108,17 @@ deepchopper predict raw_no_trim.parquet --output predictions --model rna004
 ### Advanced Options
 
 ```bash
-# Limit the number of samples to process (useful for testing)
-deepchopper predict raw_no_trim.parquet --output predictions --max-sample 1000
+# Process a small subset for testing
+deepchopper predict raw_no_trim.fastq --output predictions --max-sample 1000
 
-# Adjust batch size for memory management
-deepchopper predict raw_no_trim.parquet --output predictions --batch-size 8
+# Use larger batch size for faster processing (requires more memory)
+deepchopper predict raw_no_trim.fastq --output predictions --batch-size 32 --gpus 1
 
-# Combine multiple options
-deepchopper predict raw_no_trim.parquet \
-    --output predictions \
-    --model rna004 \
-    --gpus 1 \
-    --batch-size 16 \
-    --workers 4
+# Specify number of data loader workers (default: 0)
+deepchopper predict raw_no_trim.fastq --output predictions --workers 4
+
+# Enable verbose output
+deepchopper predict raw_no_trim.fastq --output predictions --verbose
 ```
 
 ### For Chunked Data
@@ -190,30 +134,30 @@ This step will analyze the encoded data and produce results containing predictio
 
 ### Hardware Acceleration
 
-DeepChopper automatically detects and uses available hardware acceleration:
+DeepChopper can leverage GPUs for significantly faster processing:
 
-- **CUDA GPUs**: Specified with `--gpus N` (where N is the number of GPUs)
-- **Apple Silicon (M1/M2/M3)**: Automatically uses Metal Performance Shaders (MPS) when `--gpus 1` is specified
-- **CPU**: Default when no GPU is specified or available
+```bash
+# Use single GPU (recommended)
+deepchopper predict raw_no_trim.fastq --output predictions --gpus 1
 
-## 5. Chopping Artificial Sequences
+# Use multiple GPUs (if available)
+deepchopper predict raw_no_trim.fastq --output predictions --gpus 2
+```
 
-Remove identified artificial sequences:
+💡 **Performance Tip**: GPU acceleration can provide 10-50x speedup for large datasets. For datasets with <10K reads, CPU processing is sufficient.
+
+## 4. Chopping Artificial Sequences
+
+Now that you have predictions, remove the identified adapter sequences:
 
 ### Basic Usage
 
 ```bash
-# Chop artificial sequences
-deepchopper chop predictions/0 raw_no_trim.fastq
+# Chop reads based on predictions
+deepchopper chop predictions raw_no_trim.fastq --output chopped.fastq
 ```
 
-### For Chunked Predictions
-
-```bash
-deepchopper chop predictions_chunk1/0 predictions_chunk2/0 raw_no_trim.fastq
-```
-
-### Advanced Options
+### Tuning Parameters
 
 ```bash
 # Specify output prefix
@@ -281,7 +225,7 @@ These parameters have been shown to provide robust and reliable results across a
 - Lower batch sizes = less memory but slower processing
 - Higher batch sizes = more memory but faster processing
 
-## 6. Web Interface (Optional)
+## 5. Web Interface (Optional)
 
 DeepChopper also provides a user-friendly web interface for quick tests and demonstrations:
 

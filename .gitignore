@@ -595,3 +595,6 @@ analysis_data
 poetry.lock
 issues_resolve
 claudedocs/
+
+# MkDocs
+/site/
