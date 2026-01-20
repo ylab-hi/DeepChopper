@@ -1,6 +1,8 @@
-# DeepChopper Parameter Optimization Guidelines
+# Parameter Tuning
 
-This guide provides recommendations for tuning DeepChopper parameters across different research contexts and dataset characteristics.
+**Guidelines for optimizing DeepChopper parameters for your specific dataset.**
+
+Learn how to adjust parameters for different RNA chemistries, dataset characteristics, and use cases.
 
 ## Core Parameters
 

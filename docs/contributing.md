@@ -1,6 +1,8 @@
-# Contributing to DeepChopper
+# Contributing
 
-We welcome contributions to DeepChopper! This document provides guidelines for contributing to the project.
+**Guidelines for contributing to DeepChopper development.**
+
+We welcome contributions! This guide covers setting up your development environment, coding standards, and the contribution process.
 
 ## Getting Started
 

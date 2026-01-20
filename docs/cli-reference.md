@@ -1,6 +1,8 @@
 # CLI Reference
 
-This page provides comprehensive documentation for all DeepChopper command-line interface (CLI) commands.
+**Complete documentation for all DeepChopper command-line interface commands.**
+
+Reference guide covering all available commands, options, and usage examples.
 
 ## Overview
 

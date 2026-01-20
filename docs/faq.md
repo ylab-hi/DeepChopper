@@ -1,4 +1,8 @@
-# Frequently Asked Questions (FAQ)
+# FAQ
+
+**Frequently asked questions and answers about DeepChopper.**
+
+Find quick answers to common questions about installation, usage, performance, and troubleshooting.
 
 ## General Questions
 

@@ -37,8 +37,8 @@ theme:
     # Light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: teal
-      accent: cyan
+      primary: blue
+      accent: light blue
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
@@ -46,8 +46,8 @@ theme:
     # Dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: teal
-      accent: cyan
+      primary: blue
+      accent: light blue
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -70,7 +70,7 @@ theme:
     - search.highlight # Highlight search results
     - search.share # Share search results
     - toc.follow # TOC follows scrolling
-    - toc.integrate # TOC integrated in navigation
+    # - toc.integrate # TOC integrated in navigation (disabled for clearer left sidebar)
     - content.code.copy # Copy code blocks
     - content.code.annotate # Code annotations
     - content.tabs.link # Link tabs
@@ -159,7 +159,7 @@ plugins:
       repository: ylab-hi/DeepChopper
       branch: main
 
-# Extra configuration
+# # Extra configuration
 extra:
   social:
     - icon: fontawesome/brands/github

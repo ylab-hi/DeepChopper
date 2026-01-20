@@ -1,6 +1,8 @@
-# Installation Guide
+# Installation
 
-This guide provides detailed instructions for installing DeepChopper on various platforms.
+**Detailed instructions for installing DeepChopper on Linux, macOS, and Windows.**
+
+This guide covers multiple installation methods, GPU setup, and troubleshooting common issues.
 
 ## Requirements
 

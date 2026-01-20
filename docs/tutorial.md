@@ -1,7 +1,9 @@
-# Tutorial: Using DeepChopper for Nanopore Direct-RNA Sequencing Data Analysis
+# Tutorial
 
-Welcome to the DeepChopper tutorial! This guide will walk you through the process of identifying and removing chimeric artificial reads in Nanopore direct-RNA sequencing data.
-Whether you're new to bioinformatics or an experienced researcher, this tutorial will help you get the most out of DeepChopper.
+**Complete guide for using DeepChopper with Nanopore direct-RNA sequencing data.**
+
+This tutorial will walk you through the process of identifying and removing chimeric artificial reads in Nanopore direct-RNA sequencing data.
+Whether you're new to bioinformatics or an experienced researcher, this guide will help you get the most out of DeepChopper.
 
 ## Prerequisites
 
