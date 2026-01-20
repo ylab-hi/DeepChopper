@@ -158,6 +158,11 @@ plugins:
   - git-committers:
       repository: ylab-hi/DeepChopper
       branch: main
+  - social: # Requires mkdocs-material[imaging] - optional enhancement
+      cards: true
+      cards_layout_options:
+        background_color: "#6b2c91" # Deep Purple
+        color: "#ffffff"
 
 # # Extra configuration
 extra:

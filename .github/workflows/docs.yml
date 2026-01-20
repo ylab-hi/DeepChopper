@@ -3,7 +3,7 @@ name: Deploy Documentation
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
     branches:
       - main
   pull_request:
@@ -28,7 +28,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -37,7 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install --system mkdocs mkdocs-material mkdocs-git-revision-date-localized-plugin mkdocs-glightbox mkdocs-minify-plugin mkdocs-git-committers-plugin-2 mike
+          uv pip install --system mkdocs mkdocs-material[imaging] mkdocs-git-revision-date-localized-plugin mkdocs-glightbox mkdocs-minify-plugin mkdocs-git-committers-plugin-2 mike
 
       - name: Build documentation
         env:
@@ -57,7 +57,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -66,7 +66,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install --system mkdocs mkdocs-material mkdocs-git-revision-date-localized-plugin mkdocs-glightbox mkdocs-minify-plugin mkdocs-git-committers-plugin-2 mike
+          uv pip install --system mkdocs mkdocs-material[imaging] mkdocs-git-revision-date-localized-plugin mkdocs-glightbox mkdocs-minify-plugin mkdocs-git-committers-plugin-2 mike
 
       - name: Configure git
         run: |
