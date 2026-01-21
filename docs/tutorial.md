@@ -313,9 +313,7 @@ This will start a local web server where you can:
 If you encounter issues not covered here:
 
 1. Check the [GitHub Issues](https://github.com/ylab-hi/DeepChopper/issues) for similar problems
-2. Review the [full documentation](https://github.com/ylab-hi/DeepChopper)
-3. Use `--verbose` flag to see detailed error messages
-4. Open a new issue with:
+1. Open a new issue with:
    - DeepChopper version (`deepchopper --version`)
    - Command you ran
    - Full error message
