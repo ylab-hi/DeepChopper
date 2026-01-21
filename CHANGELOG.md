@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 📚 Documentation
+
+- **Website Redesign**: Complete documentation website overhaul with modern blue theme
+  - Migrated from teal/cyan to professional blue color scheme (#2563eb)
+  - Improved readability and WCAG AA compliance
+  - Cleaner navigation with TOC on right sidebar (disabled `toc.integrate`)
+  - Shortened page titles for better navigation UX
+- **Version Management**: Implemented versioned documentation with mike
+  - Deployed version selector for easy switching between releases
+  - Currently maintaining `dev` (development) and `1.2.9` (stable) versions
+  - Automatic `dev` docs deployment on every push to main
+  - Version-specific docs for each tagged release
+- **CI/CD Optimization**: Enhanced GitHub Actions workflows
+  - Added path filters to skip Python builds on docs-only changes
+  - Saves ~20-40 CI minutes per documentation update
+  - Consolidated documentation deployment into single unified workflow
+  - Integrated with mike for automated version deployment
+- **Navigation Improvements**: 
+  - Disabled `navigation.tabs` in favor of native Material for MkDocs version selector
+  - Improved left sidebar navigation with sections and expansion
+  - Better mobile responsiveness
+- **Content Updates**:
+  - Fixed broken internal links in tutorial
+  - Updated contributing guide with uv setup instructions
+  - Updated installation documentation for current dependencies
+
 ### 🐛 Bug Fixes
 
 - **Critical**: Replace deprecated `HuggingFaceDataset.from_dict()` with `.select()` for datasets>=3.0.0 compatibility in `only_fq.py`
