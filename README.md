@@ -28,6 +28,15 @@
 🧬 DeepChopper leverages a language model to accurately detect and chop artificial sequences that may cause chimeric reads, ensuring higher quality and more reliable sequencing results.
 By integrating seamlessly with existing workflows, DeepChopper provides a robust solution for researchers and bioinformaticians working with Nanopore direct-RNA sequencing data.
 
+## ✨ What's New in v1.3.0
+
+- **🚀 Direct FASTQ Processing**: No more encoding step! DeepChopper now works directly with FASTQ files
+- **⚡ Simplified Workflow**: Go from raw data to results in just 2 commands (`predict` → `chop`)
+- **📦 Auto-format Detection**: Automatically handles `.fastq`, `.fq`, `.fastq.gz`, and `.fq.gz` files
+- **⚠️ Breaking Change**: The `encode` command has been removed - update your pipelines accordingly
+
+[See full changelog →](./CHANGELOG.md#130---2026-01-21)
+
 📘 **FEATURED:** We provide a comprehensive tutorial that includes an example dataset in our [full documentation](./documentation/tutorial.md).
 
 ## 🚀 Quick Start: Try DeepChopper Online
@@ -96,30 +105,28 @@ Here's a quick overview:
 
 ### Command-Line Interface
 
-DeepChopper offers three main commands: `encode`, `predict`, and `chop`.
+> **🎉 New in v1.3.0:** DeepChopper now works directly with FASTQ files! No encoding step required.
 
-1. **Encode** your input data:
+DeepChopper offers two main commands: `predict` and `chop`.
 
-   ```bash
-   deepchopper encode <input.fq>
-   ```
-
-2. **Predict** chimera artifacts:
+1. **Predict** chimera artifacts directly from FASTQ:
 
    ```bash
-   deepchopper predict <input.parquet> --output predictions
+   deepchopper predict input.fastq --output predictions
    ```
 
    Using GPUs? Add the `--gpus` flag:
 
    ```bash
-   deepchopper predict <input.parquet> --output predictions --gpus 2
+   deepchopper predict input.fastq --output predictions --gpus 2
    ```
 
-3. **Chop** chimera artifacts:
+   Supports all FASTQ formats: `.fastq`, `.fq`, `.fastq.gz`, `.fq.gz`
+
+2. **Chop** chimera artifacts:
 
    ```bash
-   deepchopper chop <predictions> raw.fq
+   deepchopper chop predictions/0 input.fastq --output chopped.fastq
    ```
 
    **Memory Optimization:** For large datasets (>5M reads), use the `--chunk-size` parameter to control memory usage:
