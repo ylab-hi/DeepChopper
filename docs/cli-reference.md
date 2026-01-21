@@ -97,7 +97,7 @@ deepchopper predict raw_reads.fastq --batch-size 32 --gpus 1
 
 Creates a directory containing:
 
-- `predictions.parquet` - Predicted adapter positions for each read
+- `predictions/` - Directory containing predicted adapter positions for each read
 - `metadata.json` - Processing metadata and statistics
 
 ---
@@ -292,7 +292,7 @@ deepchopper chop test_predictions/ raw_reads.fastq --output test_chopped.fastq
 
 ### Quality Control
 
-1. **Inspect predictions**: Check `predictions.parquet` for adapter positions
+1. **Inspect predictions**: Check `predictions/` directory for adapter positions
 2. **Monitor statistics**: Review processing logs for quality metrics
 3. **Validate results**: Compare input/output read counts
 4. **Adjust parameters**: Fine-tune based on your data characteristics

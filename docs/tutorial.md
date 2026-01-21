@@ -52,7 +52,7 @@ wget https://raw.githubusercontent.com/ylab-hi/DeepChopper/refs/heads/main/tests
 
 ## 3. Predicting Adapter to Detect Artificial Chimeric Reads
 
-DeepChopper automatically encodes and analyzes your FASTQ data to identify chimeric reads:
+DeepChopper analyzes your FASTQ data directly to identify chimeric reads:
 
 ### Basic Usage
 
@@ -70,10 +70,10 @@ DeepChopper supports different models optimized for different RNA sequencing kit
 
 ```bash
 # Use RNA002 model (default - for RNA002 sequencing kit)
-deepchopper predict raw_no_trim.parquet --output predictions --model rna002
+deepchopper predict raw_no_trim.fastq --output predictions --model rna002
 
 # Use RNA004 model (for RNA004 sequencing kit)
-deepchopper predict raw_no_trim.parquet --output predictions --model rna004
+deepchopper predict raw_no_trim.fastq --output predictions --model rna004
 ```
 
 🎯 **Important**: Choose the model that matches your sequencing kit:
@@ -97,16 +97,7 @@ deepchopper predict raw_no_trim.fastq --output predictions --workers 4
 deepchopper predict raw_no_trim.fastq --output predictions --verbose
 ```
 
-### For Chunked Data
-
-```bash
-deepchopper predict raw_no_trim.fq_chunks/raw_no_trim.fq_0.parquet --output predictions_chunk1
-deepchopper predict raw_no_trim.fq_chunks/raw_no_trim.fq_1.parquet --output predictions_chunk2
-```
-
-📊 **Results**: Check the `predictions` folder for output files.
-
-This step will analyze the encoded data and produce results containing predictions, indicating whether it's likely to be chimeric or not.
+📊 **Results**: Check the `predictions` folder for output files containing chimera predictions for each read.
 
 ### Hardware Acceleration
 
@@ -223,7 +214,7 @@ This will start a local web server where you can:
 ## Next Steps
 
 - **Advanced Parameters**: Check [our documentation](./parameters.md) for detailed parameters of the `chop` command
-- **CLI Options**: Explore all available options with `deepchopper --help`, `deepchopper encode --help`, `deepchopper predict --help`, etc.
+- **CLI Options**: Explore all available options with `deepchopper --help`, `deepchopper predict --help`, `deepchopper chop --help`, etc.
 - **Downstream Analysis**: Use your cleaned data for:
   - Transcript annotation
   - Gene expression quantification
@@ -234,21 +225,13 @@ This will start a local web server where you can:
 
 ### Memory Issues
 
-- **Issue**: Out of memory errors when encoding
-
-  **Solution**:
-
-  - Use the `--chunk` option: `deepchopper encode input.fastq --chunk`
-  - Reduce chunk size: `deepchopper encode input.fastq --chunk --chunk-size 50000`
-  - Process smaller batches of files if dealing with multiple FASTQ files
-
 - **Issue**: Out of memory errors for CPU or CUDA (GPU) when predicting
 
   **Solution**:
 
-  - Reduce batch size: `deepchopper predict input.parquet --batch-size 4`
-  - Use `--max-sample` for testing: `deepchopper predict input.parquet --max-sample 1000`
-  - For large datasets, process in chunks
+  - Reduce batch size: `deepchopper predict input.fastq --batch-size 4`
+  - Use `--max-sample` for testing: `deepchopper predict input.fastq --max-sample 1000`
+  - Process smaller files separately if dealing with very large FASTQ files
 
 - **Issue**: Out of memory when chopping
 
@@ -262,10 +245,9 @@ This will start a local web server where you can:
 
   **Solution**:
 
-  - Enable GPU acceleration: `deepchopper predict input.parquet --gpus 1`
-  - Use chunked encoding for better memory efficiency: `deepchopper encode input.fastq --chunk`
+  - Enable GPU acceleration: `deepchopper predict input.fastq --gpus 1`
   - Increase threads for chopping: `deepchopper chop predictions/0 input.fastq --threads 4`
-  - Increase batch size (if memory allows): `deepchopper predict input.parquet --batch-size 16`
+  - Increase batch size (if memory allows): `deepchopper predict input.fastq --batch-size 16`
 
 - **Issue**: Apple Silicon (M1/M2/M3) not using GPU
 

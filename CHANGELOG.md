@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### ⚠️ Breaking Changes
+
+- **DEPRECATED: `deepchopper encode` command removed**
+  - The `encode` subcommand for converting FASTQ to Parquet format is now deprecated and removed
+  - **Direct FASTQ input**: All DeepChopper commands now accept FASTQ files directly
+  - **No preprocessing required**: Eliminates the need for intermediate Parquet conversion
+  - **Simpler workflow**: `deepchopper predict` now works directly with `.fastq`, `.fq`, `.fastq.gz`, or `.fq.gz` files
+  - **Migration**: Users should remove any `deepchopper encode` steps from their pipelines
+  - **Why deprecated**: Parquet encoding added unnecessary complexity and storage overhead without significant performance benefits for typical use cases
+
+### 🚀 Features
+
+- **Direct FASTQ Processing**: Complete pipeline overhaul to work directly with FASTQ files
+  - Automatic format detection (plain text, gzip, bgzip)
+  - Streaming processing for memory efficiency
+  - No intermediate file conversion required
+  - Faster time-to-results by eliminating encoding step
+
 ### 📚 Documentation
 
 - **Website Redesign**: Complete documentation website overhaul with modern blue theme
