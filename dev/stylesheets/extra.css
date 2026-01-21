@@ -9,22 +9,22 @@
   --md-primary-fg-color: #2563eb;        /* Professional blue */
   --md-primary-fg-color--light: #3b82f6; /* Lighter blue */
   --md-primary-fg-color--dark: #1e40af;  /* Darker blue */
-  
+
   /* Accent Colors */
   --md-accent-fg-color: #0ea5e9;         /* Sky blue */
   --md-accent-fg-color--light: #38bdf8;
-  
+
   /* Neutral Colors */
   --md-default-fg-color: #1f2937;        /* Dark gray text */
   --md-default-fg-color--light: #6b7280; /* Medium gray */
   --md-default-fg-color--lighter: #9ca3af;
   --md-default-fg-color--lightest: #e5e7eb;
-  
+
   /* Background Colors */
   --md-default-bg-color: #ffffff;
   --md-code-bg-color: #f9fafb;
   --md-code-hl-color: rgba(37, 99, 235, 0.1);
-  
+
   /* Success, Warning, Error */
   --md-success-fg-color: #059669;
   --md-warning-fg-color: #f59e0b;
@@ -36,15 +36,15 @@
   --md-primary-fg-color: #3b82f6;
   --md-primary-fg-color--light: #60a5fa;
   --md-primary-fg-color--dark: #2563eb;
-  
+
   --md-accent-fg-color: #0ea5e9;
   --md-accent-fg-color--light: #38bdf8;
-  
+
   --md-default-fg-color: #e5e7eb;
   --md-default-fg-color--light: #9ca3af;
   --md-default-fg-color--lighter: #6b7280;
   --md-default-fg-color--lightest: #374151;
-  
+
   --md-default-bg-color: #0f172a;
   --md-code-bg-color: #1e293b;
   --md-code-hl-color: rgba(59, 130, 246, 0.15);
@@ -483,11 +483,11 @@ hr {
   .md-footer {
     display: none;
   }
-  
+
   .md-content {
     margin: 0;
   }
-  
+
   .md-typeset a {
     color: inherit;
     text-decoration: underline;
@@ -502,11 +502,11 @@ hr {
   .md-typeset h1 {
     font-size: 1.875rem;
   }
-  
+
   .md-typeset h2 {
     font-size: 1.5rem;
   }
-  
+
   .grid.cards {
     grid-template-columns: 1fr;
   }
