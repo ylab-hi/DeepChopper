@@ -595,6 +595,7 @@ analysis_data
 poetry.lock
 issues_resolve
 laudedocs/
+AGENTS.md
 agent_docs
 # MkDocs
 /site/

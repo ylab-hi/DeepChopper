@@ -67,7 +67,7 @@
     DeepChopper solves this problem with a three-step approach:
 
     1. :material-magnify: **Detecting** adapter sequences that basecallers miss
-    2. :material-content-cut: **Chopping** reads at adapter locations to remove chimeric artifacts  
+    2. :material-content-cut: **Chopping** reads at adapter locations to remove chimeric artifacts
     3. :material-shield-check: **Preserving** high-quality sequence data for downstream analysis
 
 ## Quick Start

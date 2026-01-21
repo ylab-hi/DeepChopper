@@ -20,13 +20,13 @@ We welcome contributions! This guide covers setting up your development environm
    ```bash
    # Install uv package manager
    pip install uv
-   
+
    # Install dependencies
    uv sync
-   
+
    # Build and install in development mode
    maturin develop --release
-   
+
    # Run tests to verify
    uv run pytest tests -k "not slow"
    ```
@@ -37,11 +37,11 @@ We welcome contributions! This guide covers setting up your development environm
    # Create conda environment
    conda create -n deepchopper python=3.10
    conda activate deepchopper
-   
+
    # Install uv and dependencies
    pip install uv
    uv sync
-   
+
    # Build and install
    maturin develop --release
    ```

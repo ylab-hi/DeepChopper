@@ -32,6 +32,7 @@ theme:
   language: en
   logo: logo.webp
   favicon: logo.webp
+  font: Roboto Mono
 
   palette:
     # Light mode

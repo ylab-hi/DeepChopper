@@ -41,7 +41,7 @@ All notable changes to this project will be documented in this file.
   - Saves ~20-40 CI minutes per documentation update
   - Consolidated documentation deployment into single unified workflow
   - Integrated with mike for automated version deployment
-- **Navigation Improvements**: 
+- **Navigation Improvements**:
   - Disabled `navigation.tabs` in favor of native Material for MkDocs version selector
   - Improved left sidebar navigation with sections and expansion
   - Better mobile responsiveness

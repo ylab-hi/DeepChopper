@@ -35,7 +35,7 @@ By integrating seamlessly with existing workflows, DeepChopper provides a robust
 - **📦 Auto-format Detection**: Automatically handles `.fastq`, `.fq`, `.fastq.gz`, and `.fq.gz` files
 - **⚠️ Breaking Change**: The `encode` command has been removed - update your pipelines accordingly
 
-[See full changelog →](./CHANGELOG.md#130---2026-01-21)
+[See full changelog →](./CHANGELOG.md)
 
 📘 **FEATURED:** We provide a comprehensive tutorial that includes an example dataset in our [full documentation](https://ylab-hi.github.io/DeepChopper/latest/).
 
@@ -96,11 +96,11 @@ Below are the compatibility matrices for PyPI installations:
 | 3.11 | ✅ | ✅ | ✅ | ✅ |
 | 3.12 | ✅ | ✅ | ✅ | ✅ |
 
-🆘 Trouble installing? Check our [Troubleshooting Guide](https://github.com/ylab-hi/DeepChopper/blob/main/documentation/tutorial.md#troubleshooting) or [open an issue](https://github.com/ylab-hi/DeepChopper/issues).
+🆘 Trouble installing? Check our [Troubleshooting Guide](https://ylab-hi.github.io/DeepChopper/latest/tutorial/#troubleshooting) or [open an issue](https://github.com/ylab-hi/DeepChopper/issues).
 
 ## 🛠️ Usage
 
-For a comprehensive guide, check out our [full tutorial](./documentation/tutorial.md).
+For a comprehensive guide, check out our [full tutorial](https://ylab-hi.github.io/DeepChopper/latest/tutorial/).
 Here's a quick overview:
 
 ### Command-Line Interface
@@ -126,23 +126,8 @@ DeepChopper offers two main commands: `predict` and `chop`.
 2. **Chop** chimera artifacts:
 
    ```bash
-   deepchopper chop predictions/0 input.fastq --output chopped.fastq
+   deepchopper chop predictions/0 input.fastq
    ```
-
-   **Memory Optimization:** For large datasets (>5M reads), use the `--chunk-size` parameter to control memory usage:
-
-   ```bash
-   # Low memory (~1-2GB): Slower but memory-efficient
-   deepchopper chop <predictions> raw.fq --chunk-size 1000
-
-   # Balanced (default, ~5-10GB): Good balance of speed and memory
-   deepchopper chop <predictions> raw.fq --chunk-size 10000
-
-   # High performance (~20-50GB): Fastest, requires more memory
-   deepchopper chop <predictions> raw.fq --chunk-size 50000
-   ```
-
-   The chop command uses **streaming mode** to minimize memory usage. Instead of loading all reads into memory at once (which can require 100GB+ for 20M reads), it processes records in configurable chunks and writes results incrementally.
 
 Want a GUI? Launch the web interface (note: limited to one FASTQ record at a time):
 
