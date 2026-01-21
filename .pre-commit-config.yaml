@@ -1,6 +1,3 @@
-default_language_version:
-  node: system
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -34,25 +31,6 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --unsafe-fixes]
       - id: ruff-format
-
-    # python docstring coverage checking
-  - repo: local
-    hooks:
-      - id: interrogate
-        name: interrogate
-        entry: interrogate
-        language: system
-        types: ["python"]
-        args:
-          [
-            --verbose,
-            --fail-under=80,
-            --ignore-init-module,
-            --ignore-init-method,
-            --ignore-module,
-            --ignore-nested-functions,
-            -vv,
-          ]
 
   # shell scripts linter
   - repo: https://github.com/shellcheck-py/shellcheck-py

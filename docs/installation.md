@@ -114,7 +114,7 @@ pip install deepchopper
 ```
 
 !!! note "Apple Silicon (M1/M2/M3)"
-    DeepChopper has native support for Apple Silicon Macs. No special configuration needed!
+DeepChopper has native support for Apple Silicon Macs. No special configuration needed!
 
 ### Windows
 
@@ -162,9 +162,9 @@ deepchopper predict data.parquet --gpus 2
 
 | Python Version | Linux x86_64 | macOS Intel | macOS Apple Silicon | Windows x86_64 |
 |:--------------:|:------------:|:-----------:|:-------------------:|:--------------:|
-| 3.10           | ✅           | ✅          | ✅                  | ✅             |
-| 3.11           | ✅           | ✅          | ✅                  | ✅             |
-| 3.12           | ✅           | ✅          | ✅                  | ✅             |
+| 3.10 | ✅ | ✅ | ✅ | ✅ |
+| 3.11 | ✅ | ✅ | ✅ | ✅ |
+| 3.12 | ✅ | ✅ | ✅ | ✅ |
 
 ## Upgrading DeepChopper
 

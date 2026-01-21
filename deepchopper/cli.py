@@ -157,9 +157,9 @@ def chop(
     min_read_length_after_chop: int = typer.Option(20, "--min-read-length", help="Minimum read length after chop"),
     output_chopped_seqs: bool = typer.Option(False, "--output-chopped", help="Output chopped sequences"),
     chop_type: str = typer.Option("all", "--chop-type", help="Chop type"),
-    threads: int = typer.Option(2, "--threads", help="Number of threads"),
+    threads: int = typer.Option(2, "--threads", "-t", help="Number of threads"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
-    output_prefix: str | None = typer.Option(None, "--prefix", "-o", help="Output prefix"),
+    output_prefix: str | None = typer.Option(None, "--output", "-o", help="Output prefix"),
     max_batch_size: int | None = typer.Option(None, "--max-batch", help="Maximum batch size"),
 ):
     """Chop sequences based on predictions."""
@@ -234,11 +234,6 @@ def main(
 ):
     """DeepChopper CLI."""
 
-
-app.command(
-    help="DeepChopper: encode the given fastq (DEPRECATED)",
-    epilog="DEPRECATED: Please use `deepchopper predict fastq_path` directly.",
-)(encode)
 
 app.command(
     help="DeepChopper: predict the given dataset",

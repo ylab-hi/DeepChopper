@@ -111,7 +111,7 @@ deepchopper predict raw_no_trim.fastq --output predictions --gpus 1
 deepchopper predict raw_no_trim.fastq --output predictions --gpus 2
 ```
 
-💡 **Performance Tip**: GPU acceleration can provide 10-50x speedup for large datasets. For datasets with <10K reads, CPU processing is sufficient.
+💡 **Performance Tip**: GPU acceleration can provide 10-50x speedup for large datasets. For datasets with \<10K reads, CPU processing is sufficient.
 
 ## 4. Chopping Artificial Sequences
 
@@ -121,18 +121,12 @@ Now that you have predictions, remove the identified adapter sequences:
 
 ```bash
 # Chop reads based on predictions
-deepchopper chop predictions raw_no_trim.fastq --output chopped.fastq
+deepchopper chop predictions/0 raw_no_trim.fastq --output chopped
 ```
 
 ### Chopping Options
 
 ```bash
-# Specify output prefix
-deepchopper chop predictions/0 raw_no_trim.fastq --prefix my_cleaned_data
-
-# Control memory usage with batch size (useful for large datasets)
-deepchopper chop predictions/0 raw_no_trim.fastq --max-batch 5000
-
 # Adjust smoothing and filtering parameters
 deepchopper chop predictions/0 raw_no_trim.fastq \
     --smooth-window 21 \
@@ -150,9 +144,9 @@ deepchopper chop predictions/0 raw_no_trim.fastq --threads 4
 
 Key parameters you can adjust:
 
-- `--prefix, -o`: Custom output file prefix
+- `--output, -o`: Custom output file prefix
 - `--max-batch`: Maximum batch size for memory management (default: auto)
-- `--threads`: Number of threads to use (default: 2)
+- `--threads, -t`: Number of threads to use (default: 2)
 - `--smooth-window`: Smooth window size for prediction smoothing (default: 21)
 - `--min-interval-size`: Minimum interval size to consider (default: 13)
 - `--min-read-length`: Minimum read length after chopping (default: 20)
@@ -160,15 +154,15 @@ Key parameters you can adjust:
 - `--output-chopped`: Output the chopped sequences separately
 - `--chop-type`: Type of chopping to perform (default: "all")
 
-🎉 **Success**: Look for the output file with the `.chop.fq.bgz` suffix.
+🎉 **Success**: Look for the output file with the `.chop.fq.gz` suffix.
 
-This command takes the original FASTQ file (`raw_no_trim.fastq`) and the predictions (`predictions`), and produces a new FASTQ file (with suffix `.chop.fq.bgz`) with the chimeric-artifact chopped.
+This command takes the original FASTQ file (`raw_no_trim.fastq`) and the predictions (`predictions`), and produces a new FASTQ file (with suffix `.chop.fq.gz`) with the chimeric-artifact chopped.
 
 ### Understanding the Output
 
 The default output is a compressed file in BGZIP format:
 
-- **Format**: BGZIP-compressed FASTQ (`.chop.fq.bgz`)
+- **Format**: BGZIP-compressed FASTQ (`.chop.fq.gz`)
 - **View**: Use `zless -S OUTPUT` to view the output file contents in a terminal
 - **The `-S` flag**: Prevents line wrapping, making it easier to read long sequences
 - **Compatibility**: Can be directly used with most bioinformatics tools that support BGZIP
@@ -295,7 +289,7 @@ This will start a local web server where you can:
 If you encounter issues not covered here:
 
 1. Check the [GitHub Issues](https://github.com/ylab-hi/DeepChopper/issues) for similar problems
-1. Open a new issue with:
+2. Open a new issue with:
    - DeepChopper version (`deepchopper --version`)
    - Command you ran
    - Full error message

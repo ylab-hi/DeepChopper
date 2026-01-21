@@ -33,22 +33,25 @@ You can use both tools together for comprehensive adapter removal.
 ### What are the system requirements?
 
 **Minimum:**
+
 - Python 3.10+
 - 8GB RAM
 - 2GB storage
 
 **Recommended:**
+
 - 16GB+ RAM
 - NVIDIA GPU with CUDA support
 - 10GB storage (for models and data)
 
 ### Can I use DeepChopper without a GPU?
 
-Yes! DeepChopper works on CPU, though it's slower. For small datasets (<10K reads), CPU processing is reasonable. For larger datasets, GPU acceleration is recommended.
+Yes! DeepChopper works on CPU, though it's slower. For small datasets (\<10K reads), CPU processing is reasonable. For larger datasets, GPU acceleration is recommended.
 
 ### Which operating systems are supported?
 
 DeepChopper supports:
+
 - Linux (x86_64)
 - macOS (Intel and Apple Silicon)
 - Windows (x86_64)
@@ -67,11 +70,13 @@ DeepChopper has zero-shot capability, so the RNA002 model works well on RNA004 d
 ### How long does processing take?
 
 Processing time depends on:
+
 - Dataset size
 - Hardware (CPU vs GPU)
 - Batch size
 
 **Approximate times for 1 million reads:**
+
 - CPU: 2-6 hours
 - GPU (single): 10-30 minutes
 - GPU (multiple): 5-15 minutes
@@ -110,12 +115,14 @@ wait
 ### I'm running out of memory. What should I do?
 
 **For prediction:**
+
 ```bash
 # Reduce batch size
 deepchopper predict data.fastq --batch-size 4
 ```
 
 **For chopping:**
+
 ```bash
 # Reduce chunk size
 deepchopper chop predictions/ data.fastq --chunk-size 1000
@@ -145,6 +152,7 @@ Check these indicators:
 This is expected! DeepChopper splits chimeric reads at adapter positions, creating multiple valid reads from single chimeric reads.
 
 **Example:**
+
 ```
 Input:  1 chimeric read (Read1-Adapter-Read2)
 Output: 2 valid reads (Read1, Read2)
@@ -254,12 +262,14 @@ DeepChopper is optimized for Oxford Nanopore direct RNA sequencing. It's not tes
 ### Does DeepChopper send my data anywhere?
 
 No. DeepChopper processes all data locally. The only network access is for:
+
 - Downloading models from Hugging Face Hub (one-time)
 - Using the optional `--share` flag in web interface
 
 ### Where are models stored?
 
 Models are cached locally in:
+
 - Linux: `~/.cache/huggingface/`
 - macOS: `~/Library/Caches/huggingface/`
 - Windows: `%USERPROFILE%\.cache\huggingface\`
@@ -290,6 +300,7 @@ Yes, after the initial model download. Models are cached locally and don't requi
 ### How do I request a feature?
 
 Open a [GitHub Discussion](https://github.com/ylab-hi/DeepChopper/discussions) describing:
+
 - The feature you'd like
 - Your use case
 - Why it would be helpful
@@ -297,6 +308,7 @@ Open a [GitHub Discussion](https://github.com/ylab-hi/DeepChopper/discussions) d
 ### How can I contribute?
 
 We welcome contributions! See the [Contributing Guide](contributing.md) for:
+
 - Setting up development environment
 - Code style guidelines
 - Testing procedures

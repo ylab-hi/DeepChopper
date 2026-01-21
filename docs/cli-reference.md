@@ -99,7 +99,7 @@ Creates a directory containing:
 
 - `predictions/` - Directory containing predicted adapter positions for each read
 
----
+______________________________________________________________________
 
 ### chop
 
@@ -182,7 +182,7 @@ Creates:
 | 10,000 (default) | ~5-10 GB | Balanced | General use |
 | 50,000 | ~20-50 GB | Fastest | High-memory systems |
 
----
+______________________________________________________________________
 
 ### web
 
@@ -223,7 +223,7 @@ deepchopper web --share
 
 The web interface is limited to processing one FASTQ record at a time. For batch processing, use the `predict` and `chop` commands.
 
----
+______________________________________________________________________
 
 ## Complete Workflow Examples
 
