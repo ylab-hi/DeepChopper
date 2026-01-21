@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-01-21
+
+### 📚 Documentation
+
+- **CLI Reference**: Update CLI parameters and improve documentation clarity
+  - Updated command-line interface examples and reference documentation
+  - Improved FAQ with clearer explanations
+  - Enhanced installation instructions
+  - Refined tutorial with better step-by-step guidance
+- **README Updates**: Update README for version 1.3.0 release information
+  - Improved project description and feature highlights
+  - Updated installation instructions
+  - Enhanced quick start guide
+
+### 🔧 Build & Tooling
+
+- **Pre-commit Configuration**: Update pre-commit hooks and remove obsolete configuration
+  - Removed outdated AGENTS.md file (376 lines)
+  - Cleaned up .pre-commit-config.yaml
+  - Updated dependency lock files
+
+### 🎨 Styling
+
+- **Code Quality**: General code cleanup and formatting improvements
+  - Updated documentation styles for better readability
+  - Improved CSS styling in documentation
+
 ## [1.3.0] - 2026-01-21
 
 ### ⚠️ Breaking Changes

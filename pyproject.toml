@@ -8,7 +8,7 @@ authors = [
   { name = "Ting-you Wang", email = "<tywang@northwestern.edu>" },
 ]
 name = "deepchopper"
-version = "1.3.0"
+version = "1.3.1"
 description = "Genomic language model mitigates chimera artifacts in nanopore direct RNA sequencing"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -45,7 +45,7 @@ dependencies = [
   "hydra-core>=1.3.2",
   "omegaconf>=2.3.0",
   "pyfastx>=2.2.0",
-  "deepchopper-cli>=1.3.0",
+  "deepchopper-cli>=1.3.1",
 ]
 
 [project.urls]

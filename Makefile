@@ -44,6 +44,10 @@ clean: ## Clean up build artifacts
 clean-logs: ## Clean logs
 	rm -rf logs/**
 
+.PHONY: bump-patch
+bump-patch: ## bump version number
+	uv run bump2version bump patch --allow-dirty
+
 .PHONY: dev-packages
 dev-packages: ## Install Python development packages for project
 	uv sync
