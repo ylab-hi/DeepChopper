@@ -37,7 +37,7 @@ By integrating seamlessly with existing workflows, DeepChopper provides a robust
 
 [See full changelog →](./CHANGELOG.md#130---2026-01-21)
 
-📘 **FEATURED:** We provide a comprehensive tutorial that includes an example dataset in our [full documentation](./documentation/tutorial.md).
+📘 **FEATURED:** We provide a comprehensive tutorial that includes an example dataset in our [full documentation](https://ylab-hi.github.io/DeepChopper/latest/).
 
 ## 🚀 Quick Start: Try DeepChopper Online
 
