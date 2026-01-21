@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*.*.*"
+      - "py-cli-v*.*.*"
     branches:
       - main
   pull_request:
@@ -77,10 +78,18 @@ jobs:
         env:
           MKDOCS_GIT_COMMITTERS_APIKEY: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [[ $GITHUB_REF == refs/tags/v* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
+          if [[ $GITHUB_REF == refs/tags/v* ]] || [[ $GITHUB_REF == refs/tags/py-cli-v* ]]; then
+            # Extract version number from tag
+            TAG=${GITHUB_REF#refs/tags/}
+            if [[ $TAG == py-cli-v* ]]; then
+              VERSION=${TAG#py-cli-v}
+            else
+              VERSION=${TAG#v}
+            fi
+            echo "Deploying version: $VERSION"
             mike deploy --push --update-aliases $VERSION latest
             mike set-default --push latest
           else
+            echo "Deploying dev version"
             mike deploy --push dev
           fi
