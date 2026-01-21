@@ -58,8 +58,8 @@ theme:
     - navigation.instant.prefetch # Prefetch pages
     - navigation.instant.progress # Progress indicator
     - navigation.tracking # Anchor tracking
-    - navigation.tabs # Top-level tabs
-    - navigation.tabs.sticky # Sticky tabs
+    # - navigation.tabs # Top-level tabs (disabled for native version selector)
+    # - navigation.tabs.sticky # Sticky tabs (disabled for native version selector)
     - navigation.sections # Section navigation
     - navigation.expand # Expand all sections by default
     - navigation.path # Breadcrumbs
