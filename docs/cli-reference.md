@@ -98,7 +98,6 @@ deepchopper predict raw_reads.fastq --batch-size 32 --gpus 1
 Creates a directory containing:
 
 - `predictions/` - Directory containing predicted adapter positions for each read
-- `metadata.json` - Processing metadata and statistics
 
 ---
 
