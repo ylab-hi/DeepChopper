@@ -6,3 +6,113 @@
     <strong>Click here to go to latest.</strong>
   </a>
 {% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <!-- Custom version selector that works with navigation.tabs -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Check if we're in a versioned path
+      const path = window.location.pathname;
+      if (!path.match(/\/(dev|latest|[\d\.]+)\//)) return;
+      
+      // Get base URL for versions.json
+      const baseUrl = path.split('/').slice(0, -2).join('/') + '/';
+      
+      // Fetch versions
+      fetch(baseUrl + "versions.json")
+        .then(res => res.json())
+        .then(versions => {
+          if (versions.length <= 1) return;
+          
+          // Find current version
+          const match = path.match(/\/([\w\.\-]+)\//);
+          const currentVer = match ? match[1] : "latest";
+          const current = versions.find(v => 
+            v.version === currentVer || (v.aliases && v.aliases.includes(currentVer))
+          );
+          
+          const currentTitle = current ? 
+            (current.title + (current.aliases?.includes("latest") ? " (latest)" : "")) : 
+            currentVer;
+          
+          // Create selector
+          const selector = document.createElement("div");
+          selector.className = "md-version";
+          selector.innerHTML = `
+            <button class="md-version__current" style="
+              background: var(--md-code-bg-color);
+              border: 1px solid var(--md-default-fg-color--lightest);
+              border-radius: 0.2rem;
+              padding: 0.4rem 0.7rem;
+              font-size: 0.7rem;
+              cursor: pointer;
+              color: var(--md-default-fg-color);
+              display: inline-flex;
+              align-items: center;
+              gap: 0.4rem;
+              font-weight: 500;
+            ">
+              📌 ${currentTitle}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+            <div class="md-version__list" style="
+              display: none;
+              position: absolute;
+              top: calc(100% + 0.3rem);
+              right: 0;
+              background: var(--md-default-bg-color);
+              border: 1px solid var(--md-default-fg-color--lightest);
+              border-radius: 0.3rem;
+              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+              min-width: 10rem;
+              z-index: 9999;
+              overflow: hidden;
+            "></div>
+          `;
+          
+          // Add to header
+          const header = document.querySelector(".md-header__inner");
+          const search = header.querySelector('[for="__search"]');
+          selector.style.cssText = "position: relative; margin-left: auto; margin-right: 1rem;";
+          search.parentNode.insertBefore(selector, search);
+          
+          // Populate list
+          const list = selector.querySelector(".md-version__list");
+          versions.forEach(v => {
+            const link = document.createElement("a");
+            link.href = baseUrl + v.version + "/";
+            link.textContent = v.title + (v.aliases?.includes("latest") ? " (latest)" : "");
+            link.style.cssText = `
+              display: block;
+              padding: 0.6rem 1rem;
+              color: var(--md-default-fg-color);
+              text-decoration: none;
+              font-size: 0.75rem;
+              transition: background 0.2s;
+            `;
+            if (v.version === currentVer || v.aliases?.includes(currentVer)) {
+              link.style.fontWeight = "700";
+              link.style.background = "var(--md-code-bg-color)";
+            }
+            link.onmouseenter = () => link.style.background = "var(--md-code-bg-color)";
+            link.onmouseleave = () => {
+              link.style.background = (v.version === currentVer || v.aliases?.includes(currentVer)) ? 
+                "var(--md-code-bg-color)" : "transparent";
+            };
+            list.appendChild(link);
+          });
+          
+          // Toggle
+          const btn = selector.querySelector(".md-version__current");
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            list.style.display = list.style.display === "none" ? "block" : "none";
+          };
+          document.onclick = () => list.style.display = "none";
+        });
+    });
+  </script>
+{% endblock %}
