@@ -990,7 +990,7 @@ wheels = [
 
 [[package]]
 name = "deepchopper"
-version = "1.2.9"
+version = "1.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "datasets" },
@@ -1066,7 +1066,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "datasets", specifier = ">=3.0.0" },
-    { name = "deepchopper-cli", specifier = ">=1.2.9" },
+    { name = "deepchopper-cli", specifier = ">=1.3.0" },
     { name = "evaluate", specifier = ">=0.4.3" },
     { name = "fastapi", specifier = "==0.112.2" },
     { name = "gradio", specifier = "==5.0.1" },
@@ -1136,25 +1136,25 @@ docs = [
 
 [[package]]
 name = "deepchopper-cli"
-version = "1.2.9"
+version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/3e/8b/a9a7e826de096301c3a429274ffc64395beb7a061950d53b59cc1d770c57/deepchopper_cli-1.2.9.tar.gz", hash = "sha256:865983f0ed7d68ebeacaaa35941d50caf7d89f295b3ba07de0015d949c2aefef", size = 68541245, upload-time = "2025-11-18T02:29:17.552Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9f/b8/815b3d911069efaf6854ae03e2a8b1fc1da72b5e4e2e501993f884cc846a/deepchopper_cli-1.3.0.tar.gz", hash = "sha256:ff0138cabdc6b481df8594c7b3630757a625b495e6d81bf14d0d268d59e4e3c1", size = 58793406, upload-time = "2026-01-21T04:51:16.785Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/24/2cec171c2c9b1b0e4997126da93c8a79a87a8bbd9ac65bd4cc2097b135d6/deepchopper_cli-1.2.9-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:f6411d874098d488075c3add32812a6eb8f015faaf9bd438f0d6e1994d4b604f", size = 1861418, upload-time = "2025-11-18T02:29:08.317Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/46/b2ad49580fe542f55c0102da8692a9c4928829131f8ff23c7a75895d314b/deepchopper_cli-1.2.9-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c872f0c6bcd0aa8b894ed25ba704b20da96e103b2d681727461f18b88fdd6807", size = 1773834, upload-time = "2025-11-18T02:29:04.125Z" },
-    { url = "https://files.pythonhosted.org/packages/de/73/b6972a6ab2bd4fa1917e579c9c4f8e34766c7a9a77509970924bd801dc1a/deepchopper_cli-1.2.9-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bbe2f4b5113a08bcdde4804823f99ca46a3f46215480e61af705d51dca565154", size = 2315355, upload-time = "2025-11-18T02:28:59.699Z" },
-    { url = "https://files.pythonhosted.org/packages/38/2a/70c7b5a9a23bc54b0204a8f6d520bed2358f4ca00bcf761d789d3edc0009/deepchopper_cli-1.2.9-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:c1568cae1451606943a4976cdbce695c1ee3386ab10c5c4b783168fe36e2f015", size = 2207593, upload-time = "2025-11-18T02:29:12.439Z" },
-    { url = "https://files.pythonhosted.org/packages/41/2b/5e627c75a2ed8f5fa58882a46c1dfec0ec7160aa6adb65cb4f9731733ef6/deepchopper_cli-1.2.9-cp310-cp310-win_amd64.whl", hash = "sha256:17e21e75ccaddb57b4beb30ffa53ed2749937d2486f59873918b0aedc473117f", size = 1760944, upload-time = "2025-11-18T02:29:20.308Z" },
-    { url = "https://files.pythonhosted.org/packages/94/71/522d5a93bc4dc2e11a10c3b53622e940fb0718ab2bbbf1ae03f58217ba60/deepchopper_cli-1.2.9-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:c4ec815ae8aca8732fc73adfcc1268e4ae377e902a51669dc74ab6f52ac997ab", size = 1861416, upload-time = "2025-11-18T02:29:09.854Z" },
-    { url = "https://files.pythonhosted.org/packages/12/cb/5751e260d981b206c44b451775105b3079d040de060db39084c04705e25c/deepchopper_cli-1.2.9-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:3cc37b91fe16b3458cde749fced913c7239bc0fe1e1578b9620a99e8e358332b", size = 1773833, upload-time = "2025-11-18T02:29:05.694Z" },
-    { url = "https://files.pythonhosted.org/packages/85/88/21f0de3262ac904ca890ef599eee5ab041430364115d1fa058cf62ab9ee2/deepchopper_cli-1.2.9-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:574ebe0ad2be1a71720c1a004c349ab689d588d0a74cee0a3b752cbd7f8e2281", size = 2315355, upload-time = "2025-11-18T02:29:01.243Z" },
-    { url = "https://files.pythonhosted.org/packages/77/e0/f55a195c63d00f076c321e39c05a878487bf4a01329caaa0f368d32ecaff/deepchopper_cli-1.2.9-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:50f87d0041c6bfa7ff02be26ae9098f4f7508126b07c1bfe019bfdc77ed64ddf", size = 2207591, upload-time = "2025-11-18T02:29:13.543Z" },
-    { url = "https://files.pythonhosted.org/packages/36/af/f65234b27ff6a32194f3502ea0f2581b46995ae291248d68414b9dd6ef8b/deepchopper_cli-1.2.9-cp311-cp311-win_amd64.whl", hash = "sha256:2629fc6f55d14810f6cd4d43dca1f31cbe14ece5856881bec9d2d50360811e78", size = 1760936, upload-time = "2025-11-18T02:29:21.46Z" },
-    { url = "https://files.pythonhosted.org/packages/d1/05/48c136a21e4b82a0aab83f6ecfe0248ae474a1f9d1e316cfe868b413032d/deepchopper_cli-1.2.9-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:e711f9145ceae018b3f4cd87e27ebb142804649b99f9572a8010989994c6ff62", size = 1861415, upload-time = "2025-11-18T02:29:11.219Z" },
-    { url = "https://files.pythonhosted.org/packages/ee/bf/f291eb0fad8d03cedc73421e56e83954be8ea26cc3176b6c64963d6c6a47/deepchopper_cli-1.2.9-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:7ada98bf9923a93f893d378e39f940cf61b2caaa488712713f6bfcad0619910c", size = 1773832, upload-time = "2025-11-18T02:29:07.209Z" },
-    { url = "https://files.pythonhosted.org/packages/c7/1d/b40692253e7a24a3ffba8d0bc2d8d26e33a71326cc6608bd41cdd857c2dd/deepchopper_cli-1.2.9-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:de7fded9f63ad278fa4490eaf0ef6beed69578bc6a4ae06afc5eea17d1a22050", size = 2315766, upload-time = "2025-11-18T02:29:02.674Z" },
-    { url = "https://files.pythonhosted.org/packages/d4/c3/2202fae26a08a1da0ce158f26d0f38fdf955c5ea731101cfec881540d5f6/deepchopper_cli-1.2.9-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:5ac9c1b6f14c1f563e29ae53725a0f0376a14b7a6413508870ec1b5316656df8", size = 2207591, upload-time = "2025-11-18T02:29:14.949Z" },
-    { url = "https://files.pythonhosted.org/packages/8b/c1/177cf54d6a2bc2139149b6571a1e2007e5fbf7e54548668c241dd4a84c64/deepchopper_cli-1.2.9-cp312-cp312-win_amd64.whl", hash = "sha256:7faf63bfd385cd967bf6697cc9de7246a4ce5fd55d6b6338e7896e77c0b6a691", size = 1760944, upload-time = "2025-11-18T02:29:22.987Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/c3/c7786725aafc499ec74fd5e58851575804f14c662ede31ba1700287451a2/deepchopper_cli-1.3.0-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:70dc8da414720315833a93a1c416625a691b3c8cc494176fcded72dddf2e94ac", size = 1852511, upload-time = "2026-01-21T04:51:05.505Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/51/5dbbb06027fb452c63381e09dd79925d1edb9dcba0b6eeb155c341902cfa/deepchopper_cli-1.3.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:3e758ebea31986c9f651f23a70cd7992aee138ed6f38811d39bf231cb3c5f304", size = 1761081, upload-time = "2026-01-21T04:50:59.12Z" },
+    { url = "https://files.pythonhosted.org/packages/07/51/acdcddddac1bbb6119bbd569ab2fc7110b9651b3b1f2ec8b937ab5695b09/deepchopper_cli-1.3.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:df57578ea1eaed9e4b1adb6b3dc6caafdb94ce36f9f94dabe9823eeab3991ed6", size = 2363381, upload-time = "2026-01-21T04:50:53.095Z" },
+    { url = "https://files.pythonhosted.org/packages/76/20/d1ff4217e1e08d9ca652e5294c60c341f0154c3367eb521275b620f1be9b/deepchopper_cli-1.3.0-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:c613fd5c26c8752e1e83a505da3ad660dfc7c9d7070d7897ee5b8d366987c393", size = 2191846, upload-time = "2026-01-21T04:51:10.425Z" },
+    { url = "https://files.pythonhosted.org/packages/76/f6/b79f243d39d9ea97dbed9a77711734be81c5f2d8d8dc25980c0cf8771dca/deepchopper_cli-1.3.0-cp310-cp310-win_amd64.whl", hash = "sha256:8d16b73ce5d466dba65c3c913810e165b78cf0b52f136c8c95caccddc8ec595d", size = 1772520, upload-time = "2026-01-21T04:51:19.703Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/f4/3b9cb1a02b4f5a9acea1ae590c30e28beb24bb9d14cdcfd404ddd28e48e3/deepchopper_cli-1.3.0-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:84d546762f74e6c4a0e50baf9c80ae1561fadee4c4ce66b6bb155e87d7205ec9", size = 1852511, upload-time = "2026-01-21T04:51:07.065Z" },
+    { url = "https://files.pythonhosted.org/packages/48/99/4020e474a1d3c7f9275d8d95c15c1ae528f45a2323f61b355ca0793d6a19/deepchopper_cli-1.3.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:b37c565e2b34de48de9419e9fbef932cde6a6de780cff90708dacbb8752502d1", size = 1761081, upload-time = "2026-01-21T04:51:01.231Z" },
+    { url = "https://files.pythonhosted.org/packages/43/68/7416daf7133519b78c55240e716b9d609e4241b89be4d4936076530bd2ef/deepchopper_cli-1.3.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7ac3bfb6bc225d29be74df2963eba4cbb38ea8e59c9ee6627e02612b9ecacab7", size = 2361215, upload-time = "2026-01-21T04:50:55.322Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/86/55b7e01bacdf58a1202ee1295797807949ef473f66ffb48678045c7af539/deepchopper_cli-1.3.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:0837e3cece5e90450873419ef2f6bf7de2702a82293d25d413ed83b2e76c761c", size = 2191845, upload-time = "2026-01-21T04:51:12.256Z" },
+    { url = "https://files.pythonhosted.org/packages/66/4d/e55d31e70c31713e48595b0a5566b1a64e3c1ca59ee3e15c868b553ba14e/deepchopper_cli-1.3.0-cp311-cp311-win_amd64.whl", hash = "sha256:a148982fef4c265bce7415b16e4c99ff19b0abc1529d6b113ec0fe7cf0665f28", size = 1772523, upload-time = "2026-01-21T04:51:21.742Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/c2/552073b79fd76b42cb7474f79a3cbd16b35072582dd239a46afe8a552ea0/deepchopper_cli-1.3.0-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:d19a8f72c9836ddf24ea051e5f6d7b429f71b5457346d1bf79316b97247d6a13", size = 1852512, upload-time = "2026-01-21T04:51:08.821Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/29/11686f5641972ec4f2c5433c0276ed2a376e2f31eb7af17d8b871dd9eac6/deepchopper_cli-1.3.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:a053e9eeaf0bcd23c808eedfb7e3eb53b24d84ecb96a02abfd1eeaa54714ff26", size = 1761080, upload-time = "2026-01-21T04:51:03.424Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/8b/ea4a88d9e8d2a11d2f13a05101fc4d532bda38f21a71294c43854cd628f1/deepchopper_cli-1.3.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:334ca06105f235438ef53387bc04c0b393ba9d83bc6114609287f09c66224681", size = 2361215, upload-time = "2026-01-21T04:50:57.467Z" },
+    { url = "https://files.pythonhosted.org/packages/c1/8e/3faf4860ce529af1ffcdbcbfb51bdf1dc09b25325f1edb0cfec32b26e413/deepchopper_cli-1.3.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:8efbc91ceb66105a8e914740faf0f91cbbc8340940d76aeb3edfc6e8fb595070", size = 2191846, upload-time = "2026-01-21T04:51:13.832Z" },
+    { url = "https://files.pythonhosted.org/packages/34/68/e535064e3f68672a8b126f5c61e31890cee3fbf8d94693aeef7a7750d1bc/deepchopper_cli-1.3.0-cp312-cp312-win_amd64.whl", hash = "sha256:5b6779f26742ec06b987fde2e9d6db2421e666ba11e5a73c4c59ca56d02cea47", size = 1772520, upload-time = "2026-01-21T04:51:23.525Z" },
 ]
 
 [[package]]
