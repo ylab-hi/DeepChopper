@@ -114,7 +114,7 @@ pip install deepchopper
 ```
 
 !!! note "Apple Silicon (M1/M2/M3)"
-DeepChopper has native support for Apple Silicon Macs. No special configuration needed!
+    DeepChopper has native support for Apple Silicon Macs. No special configuration needed!
 
 ### Windows
 

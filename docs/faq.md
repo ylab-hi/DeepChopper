@@ -132,9 +132,12 @@ deepchopper chop predictions/ data.fastq --chunk-size 1000
 
 | Dataset Size | Prediction (CPU) | Prediction (GPU) | Chopping |
 |-------------|------------------|------------------|----------|
-| 100K reads | 2-4 GB | 4-6 GB | 1-2 GB |
-| 1M reads | 4-8 GB | 8-12 GB | 2-5 GB |
-| 10M reads | 8-16 GB | 12-24 GB | 5-20 GB |
+| 100K reads | ~40 GB | ~40 GB | 1-2 GB |
+| 1M reads | ~70 GB | ~20 GB | 2-5 GB |
+| 10M reads | ~70 GB | ~40 GB | 5-20 GB |
+
+!!! note
+    The memory usage can vary based on read lengths and system configuration.
 
 ## Results & Quality
 
@@ -256,6 +259,17 @@ DeepChopper is specifically designed and trained for direct RNA sequencing. It m
 ### Can I use DeepChopper with other sequencing platforms?
 
 DeepChopper is optimized for Oxford Nanopore direct RNA sequencing. It's not tested or recommended for other platforms (Illumina, PacBio, etc.).
+
+### Can DeepChopper identify chimeric reads from Whole Genome Amplification (WGA)?
+
+No. DeepChopper is specifically designed for direct RNA sequencing and identifies chimeric reads caused by internal adapter sequences in Nanopore dRNA-seq data.
+
+**For WGA-related chimeric reads**, you should use [**ChimeraLM**](https://ylab-hi.github.io/ChimeraLM/), a specialized tool designed to identify artificial chimeric reads arising from whole genome amplification processes.
+
+**Key Differences:**
+
+- **DeepChopper**: RNA sequencing, adapter-induced chimeras
+- **ChimeraLM**: DNA sequencing, WGA-induced chimeras
 
 ## Data & Privacy
 

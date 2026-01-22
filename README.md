@@ -186,6 +186,10 @@ uv run deepchopper --help
 
 🎉 Ready to contribute? Check out our [Contribution Guidelines](./CONTRIBUTING.md) to get started!
 
+## 🔗 Related Projects
+
+- **[ChimeraLM](https://ylab-hi.github.io/ChimeraLM/)** - Identify artificial chimeric reads from whole genome amplification (WGA) processes
+
 ## 📬 Support
 
 Need help? Have questions?

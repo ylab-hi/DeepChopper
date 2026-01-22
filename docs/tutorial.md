@@ -14,6 +14,9 @@ Before we begin, ensure you have the following installed:
 - Samtools (for BAM to FASTQ conversion)
 - Sufficient storage space for Nanopore data
 
+!!! note "Working with DNA sequencing data?"
+    DeepChopper is designed for direct RNA sequencing. If you need to identify artificial chimeric reads from whole genome amplification (WGA) processes, please see [**ChimeraLM**](https://ylab-hi.github.io/ChimeraLM/).
+
 ## 1. Data Acquisition
 
 Start by obtaining your Nanopore direct-RNA sequencing data (POD5 files).

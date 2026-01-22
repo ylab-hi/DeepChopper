@@ -19,40 +19,22 @@ ______________________________________________________________________
 <div class="grid cards" markdown>
 
 - :material-target:{ .feature-icon } **High Accuracy**
-
-  ______________________________________________________________________
-
-  State-of-the-art detection of chimeric reads using transformer-based models with >95% sensitivity
+  : State-of-the-art detection of chimeric reads using transformer-based models with >95% sensitivity
 
 - :material-lightning-bolt:{ .feature-icon } **Fast Processing**
-
-  ______________________________________________________________________
-
-  Optimized Rust core with parallel processing capabilities. Process millions of reads in minutes
+  : Optimized Rust core with parallel processing capabilities. Process millions of reads in minutes
 
 - :material-sync:{ .feature-icon } **Zero-shot Capability**
-
-  ______________________________________________________________________
-
-  Works across different RNA chemistries (RNA002, RNA004, and newer) without retraining
+  : Works across different RNA chemistries (RNA002, RNA004, and newer) without retraining
 
 - :material-language-python:{ .feature-icon } **Easy Integration**
-
-  ______________________________________________________________________
-
-  Simple Python API and CLI for seamless workflow integration
+  : Simple Python API and CLI for seamless workflow integration
 
 - :material-chip:{ .feature-icon } **GPU Acceleration**
-
-  ______________________________________________________________________
-
-  Optional GPU support (NVIDIA, Apple Silicon) for faster processing of large datasets
+  : Optional GPU support (NVIDIA, Apple Silicon) for faster processing of large datasets
 
 - :material-web:{ .feature-icon } **Web Interface**
-
-  ______________________________________________________________________
-
-  Interactive web UI for quick testing and visualization
+  : Interactive web UI for quick testing and visualization
 
 </div>
 
@@ -61,16 +43,14 @@ ______________________________________________________________________
 ## :material-help-circle: Why DeepChopper?
 
 !!! info "The Problem"
-Chimera artifacts in nanopore dRNA-seq can confound transcriptome analyses, leading to **false gene fusion calls** and **incorrect transcript annotations**. Existing basecalling tools fail to detect internal adapter sequences, leaving these artifacts in your data.
+    Chimera artifacts in nanopore dRNA-seq can confound transcriptome analyses, leading to **false gene fusion calls** and **incorrect transcript annotations**. Existing basecalling tools fail to detect internal adapter sequences, leaving these artifacts in your data.
 
 !!! success "The Solution"
-DeepChopper solves this problem with a three-step approach:
+    DeepChopper solves this problem with a three-step approach:
 
-```
-1. :material-magnify: **Detecting** adapter sequences that basecallers miss
-2. :material-content-cut: **Chopping** reads at adapter locations to remove chimeric artifacts
-3. :material-shield-check: **Preserving** high-quality sequence data for downstream analysis
-```
+    1. :material-magnify: **Detecting** adapter sequences that basecallers miss
+    2. :material-content-cut: **Chopping** reads at adapter locations to remove chimeric artifacts and split the artifacts to individual reads.
+    3. :material-shield-check: **Preserving** high-quality sequence data for downstream analysis
 
 ## Quick Start
 
@@ -81,7 +61,7 @@ Experience DeepChopper instantly without any installation:
 [![Open in Hugging Face Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)](https://huggingface.co/spaces/yangliz5/deepchopper)
 
 !!! note
-The online version is limited to one FASTQ record at a time. For large-scale analyses, please install DeepChopper locally.
+    The online version is limited to one FASTQ record at a time. For large-scale analyses, please install DeepChopper locally.
 
 ### Installation
 
@@ -118,28 +98,16 @@ ______________________________________________________________________
 <div class="grid cards" markdown>
 
 - :material-dna:{ .feature-icon } **Transcriptome Assembly**
-
-  ______________________________________________________________________
-
-  Remove chimera artifacts to improve transcript reconstruction and assembly quality
+  : Remove chimera artifacts to improve transcript reconstruction and assembly quality
 
 - :material-link-variant:{ .feature-icon } **Gene Fusion Detection**
-
-  ______________________________________________________________________
-
-  Eliminate false positives from adapter-bridged artifacts for accurate fusion calling
+  : Eliminate false positives from adapter-bridged artifacts for accurate fusion calling
 
 - :material-chart-bar:{ .feature-icon } **Differential Expression**
-
-  ______________________________________________________________________
-
-  Ensure accurate read counts by removing chimeric reads before quantification
+  : Ensure accurate read counts by removing chimeric reads before quantification
 
 - :material-quality-high:{ .feature-icon } **RNA-Seq QC**
-
-  ______________________________________________________________________
-
-  Assess and improve data quality in dRNA-seq experiments
+  : Assess and improve data quality in dRNA-seq experiments
 
 </div>
 
@@ -163,6 +131,10 @@ If DeepChopper helps your research, please cite our paper:
   urldate = {2026-01-20}
 }
 ```
+
+## Related Tools
+
+- **[ChimeraLM](https://ylab-hi.github.io/ChimeraLM/)** - For identifying artificial chimeric reads arising from whole genome amplification (WGA) processes in DNA sequencing data
 
 ## Support
 
