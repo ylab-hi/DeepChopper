@@ -52,7 +52,7 @@ jobs:
             target: x86_64
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/cache@v5
         with:
           path: |
@@ -101,7 +101,7 @@ jobs:
             target: x64
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/cache@v5
         with:
           path: |
@@ -155,7 +155,7 @@ jobs:
             target: aarch64
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/cache@v5
         with:
           path: |
