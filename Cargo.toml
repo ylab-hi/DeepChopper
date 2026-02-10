@@ -109,7 +109,8 @@ thiserror = "2.0"
 anyhow = "1.0"
 walkdir = { version = "2.5" }
 rayon = { version = "1.11" }
-pyo3 = { version = "0.28.0", features = [
+numpy = "0.27.0"
+pyo3 = { version = "0.27.0", features = [
   "abi3-py310",
   "extension-module",
   "anyhow",
@@ -131,7 +132,6 @@ noodles = { version = "0.104.0", features = [
 bio = "3.0"
 needletail = "0.6.3"
 ahash = "0.8.12"
-numpy = "0.28.0"
 ndarray = { version = "0.17", features = ["serde", "rayon"] }
 num-traits = { version = "0.2" }
 serde = "1.0"
