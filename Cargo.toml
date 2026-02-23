@@ -119,7 +119,7 @@ pyo3 = { version = "0.27.0", features = [
 ctrlc = "3.5"
 log = "0.4"
 pyo3-log = "0.13.2"
-noodles = { version = "0.104.0", features = [
+noodles = { version = "0.105.0", features = [
   "bgzf",
   "core",
   "csi",
