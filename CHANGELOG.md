@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - **Pre-commit Configuration**: Update ruff-pre-commit to v0.15.10, nbstripout to 0.9.1, and remove mdformat hook
 - **Code Formatting**: Apply updated ruff formatting to `cli.py`
 - **CI Fix**: Install local wheel directly (`dist/*.whl`) in CI test steps instead of resolving from PyPI, ensuring the freshly built package is tested
+- **CI Fix**: Skip macOS x86_64 CLI tests since `macos-latest` now runs on ARM64 runners and cannot execute cross-compiled x86_64 binaries
 
 ## [1.3.1] - 2026-01-21
 

@@ -238,6 +238,7 @@ jobs:
           name: wheels-macos-${{ matrix.platform.target }}-py${{ matrix.python-version }}
           path: ./py_cli/dist
       - name: Test CLI
+        if: ${{ matrix.platform.target != 'x86_64' }}
         run: |
           set -e
           cd py_cli
