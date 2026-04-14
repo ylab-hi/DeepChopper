@@ -225,6 +225,49 @@ pip install torch --index-url https://download.pytorch.org/whl/cu121
 deepchopper chop predictions raw.fq --chunk-size 1000
 ```
 
+#### Issue: PyTorch CUDA/NCCL symbol errors (common on HPC clusters)
+
+If you see errors like:
+
+```
+ImportError: libtorch_cuda.so: undefined symbol: ncclCommWindowDeregister
+```
+
+This means the installed PyTorch version is incompatible with the CUDA/NCCL libraries
+available in your environment. This is common on HPC clusters where system CUDA versions
+may differ from what PyTorch expects.
+
+**Solution**: Reinstall PyTorch with the CUDA version that matches your system:
+
+```bash
+# 1. Check your system's CUDA version
+nvidia-smi
+
+# 2. Reinstall PyTorch for your CUDA version
+# For CUDA 11.8:
+pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu118
+
+# For CUDA 12.1:
+pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu121
+
+# For CUDA 12.4:
+pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu124
+```
+
+On HPC systems, you may also need to load the appropriate CUDA module before installing
+or running DeepChopper:
+
+```bash
+module avail cuda       # list available CUDA versions
+module load cuda/12.1   # load the matching version
+```
+
+If you do not need GPU acceleration, you can use the CPU-only build of PyTorch:
+
+```bash
+pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cpu
+```
+
 ### Additional Prerequisites
 
 Some analyses may require additional tools:
