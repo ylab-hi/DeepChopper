@@ -89,7 +89,7 @@ jobs:
           set -e
           uv venv
           source .venv/bin/activate
-          uv pip install deepchopper --find-links dist --force-reinstall
+          uv pip install dist/*.whl --force-reinstall
           deepchopper -h
 
   windows:
@@ -141,7 +141,7 @@ jobs:
           set -e
           uv venv
           source .venv/Scripts/activate
-          uv pip install deepchopper --find-links dist --force-reinstall
+          uv pip install dist/*.whl --force-reinstall
           deepchopper -h
 
   macos:
@@ -189,7 +189,7 @@ jobs:
           set -e
           uv venv
           source .venv/bin/activate
-          uv pip install deepchopper --find-links dist --force-reinstall
+          uv pip install dist/*.whl --force-reinstall
           deepchopper -h
 
   sdist:

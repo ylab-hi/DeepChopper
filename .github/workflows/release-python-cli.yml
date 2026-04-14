@@ -90,7 +90,7 @@ jobs:
           cd py_cli
           uv venv
           source .venv/bin/activate
-          uv pip install deepchopper-cli --find-links dist --force-reinstall
+          uv pip install dist/*.whl --force-reinstall
           deepchopper-chop --help
 
       - name: Debug output
@@ -191,7 +191,7 @@ jobs:
           cd py_cli
           uv venv
           source .venv/Scripts/activate
-          uv pip install deepchopper-cli --find-links dist --force-reinstall
+          uv pip install dist/*.whl --force-reinstall
           deepchopper-chop --help
 
   macos:
@@ -243,7 +243,7 @@ jobs:
           cd py_cli
           uv venv
           source .venv/bin/activate
-          uv pip install deepchopper-cli --find-links dist --force-reinstall
+          uv pip install dist/*.whl --force-reinstall
           deepchopper-chop --help
 
   sdist:

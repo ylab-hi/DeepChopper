@@ -6,12 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
-- **Fix ImportError with huggingface_hub** ([#124](https://github.com/ylab-hi/DeepChopper/issues/124)): Unpin `gradio` and `fastapi` dependencies to resolve `ImportError: cannot import name 'HfFolder' from 'huggingface_hub'` caused by outdated transitive dependency constraints
+- **Fix ImportError with huggingface_hub** ([#124](https://github.com/ylab-hi/DeepChopper/issues/124)): Set minimum versions for `gradio>=5.12.0` and `fastapi>=0.115.0` to resolve `ImportError: cannot import name 'HfFolder' from 'huggingface_hub'` caused by outdated transitive dependency constraints
 
 ### 🔧 Build & Tooling
 
 - **Pre-commit Configuration**: Update ruff-pre-commit to v0.15.10, nbstripout to 0.9.1, and remove mdformat hook
 - **Code Formatting**: Apply updated ruff formatting to `cli.py`
+- **CI Fix**: Install local wheel directly (`dist/*.whl`) in CI test steps instead of resolving from PyPI, ensuring the freshly built package is tested
 
 ## [1.3.1] - 2026-01-21
 
