@@ -77,9 +77,11 @@ def predict(
         case_sensitive=False,
         metavar="MODEL",
         rich_help_panel="Model",
-        callback=lambda v: v.lower()
-        if v.lower() in {"rna002", "rna004"}
-        else typer.BadParameter("Model must be one of: rna002, rna004"),
+        callback=lambda v: (
+            v.lower()
+            if v.lower() in {"rna002", "rna004"}
+            else typer.BadParameter("Model must be one of: rna002, rna004")
+        ),
     ),
     limit_predict_batches: int | None = typer.Option(None, "--limit-batches", help="Limit prediction batches"),
     max_sample: int | None = typer.Option(None, "--max-sample", help="Maximum number of samples to process"),

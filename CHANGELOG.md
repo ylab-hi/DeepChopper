@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 🐛 Bug Fixes
+
+- **Fix ImportError with huggingface_hub** ([#124](https://github.com/ylab-hi/DeepChopper/issues/124)): Unpin `gradio` and `fastapi` dependencies to resolve `ImportError: cannot import name 'HfFolder' from 'huggingface_hub'` caused by outdated transitive dependency constraints
+
+### 🔧 Build & Tooling
+
+- **Pre-commit Configuration**: Update ruff-pre-commit to v0.15.10, nbstripout to 0.9.1, and remove mdformat hook
+- **Code Formatting**: Apply updated ruff formatting to `cli.py`
+
 ## [1.3.1] - 2026-01-21
 
 ### 📚 Documentation

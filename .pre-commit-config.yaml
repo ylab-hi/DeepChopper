@@ -26,7 +26,7 @@ repos:
       - id: cargo-check
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.14.13
+    rev: v0.15.10
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --unsafe-fixes]
@@ -38,16 +38,9 @@ repos:
     hooks:
       - id: shellcheck
 
-  # md formatting
-  - repo: https://github.com/executablebooks/mdformat
-    rev: 1.0.0
-    hooks:
-      - id: mdformat
-        args: ["--number"]
-
   # jupyter notebook cell output clearing
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.9.0
+    rev: 0.9.1
     hooks:
       - id: nbstripout
 
