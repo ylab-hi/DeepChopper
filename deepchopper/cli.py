@@ -25,6 +25,19 @@ from .utils import (
 )
 
 
+class _LightningTipFilter(logging.Filter):
+    """Filter out Lightning promotional tip messages while keeping useful info."""
+
+    _SUPPRESSED_PATTERNS = ("litlogger", "litmodels", "LitLogger", "LitModelCheckpoint", "seamless cloud")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return not any(pattern in msg for pattern in self._SUPPRESSED_PATTERNS)
+
+
+_tip_filter = _LightningTipFilter()
+
+
 def _suppress_third_party_warnings():
     """Suppress noisy third-party warnings that are not actionable by users."""
     # HuggingFace Hub unauthenticated request warning (uses logging, not warnings)
@@ -38,8 +51,8 @@ def _suppress_third_party_warnings():
     transformers.logging.set_verbosity_error()
     transformers.logging.disable_progress_bar()
 
-    # Suppress Lightning info messages (tips, GPU info, etc.)
-    logging.getLogger("lightning.pytorch").setLevel(logging.WARNING)
+    # Suppress Lightning promotional tips while keeping GPU/device info
+    logging.getLogger("lightning.pytorch").addFilter(_tip_filter)
 
     # Lightning/PyTorch _pytree LeafSpec deprecation
     warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
@@ -59,7 +72,7 @@ def _restore_third_party_warnings():
     transformers.logging.set_verbosity_warning()
     transformers.logging.enable_progress_bar()
 
-    logging.getLogger("lightning.pytorch").setLevel(logging.INFO)
+    logging.getLogger("lightning.pytorch").removeFilter(_tip_filter)
 
     warnings.resetwarnings()
 
