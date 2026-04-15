@@ -77,6 +77,8 @@ jobs:
           args: --release --out dist -i python${{ matrix.python-version }}
           sccache: "true"
           manylinux: auto
+        env:
+          RUSTFLAGS: ""
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
@@ -179,6 +181,8 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist  -i python${{ matrix.python-version }}
           sccache: "true"
+        env:
+          RUSTFLAGS: ""
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
