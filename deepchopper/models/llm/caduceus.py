@@ -48,7 +48,7 @@ class TokenClassificationModule(nn.Module):
             input_ids,
             inputs_embeds=None,
             output_hidden_states=None,
-            return_dict=None,
+            return_dict=True,
         )
 
         hidden_states = transformer_outputs[0]

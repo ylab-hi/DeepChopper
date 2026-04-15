@@ -1,4 +1,6 @@
 import logging
+import os
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -15,6 +17,21 @@ import deepchopper
 from .utils import (
     highlight_target,
 )
+
+
+def _suppress_third_party_warnings():
+    """Suppress noisy third-party warnings that are not actionable by users."""
+    # Lightning promotional tips (litlogger, litmodels)
+    os.environ["LIGHTNING_DISABLE_TIPS"] = "1"
+    # HuggingFace Hub unauthenticated request warning
+    warnings.filterwarnings("ignore", message=".*unauthenticated.*")
+    # Lightning/PyTorch _pytree LeafSpec deprecation
+    warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
+    # Suppress HyenaDNA lm_head.weight unexpected key warning (benign)
+    import transformers
+
+    transformers.logging.set_verbosity_error()
+
 
 if TYPE_CHECKING:
     from lightning.pytorch import LightningDataModule
@@ -88,6 +105,8 @@ def predict(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
 ):
     """Predict the given dataset using DeepChopper."""
+    _suppress_third_party_warnings()
+
     if verbose:
         set_logging_level(logging.INFO)
 
@@ -117,6 +136,12 @@ def predict(
         if model == "rna002"
         else deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper-rna004")
     )
+
+    # Restore transformers logging after model loading
+    import transformers
+
+    transformers.logging.set_verbosity_warning()
+
     output_path = Path(output_path or "predictions")
     callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir=output_path, write_interval="batch")]
 
