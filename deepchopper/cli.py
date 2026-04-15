@@ -4,6 +4,12 @@ import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+# Set environment variables before importing lightning/transformers
+# so that they take effect at import time. These suppress noisy
+# third-party warnings. Use --verbose to re-enable all warnings.
+os.environ.setdefault("LIGHTNING_DISABLE_TIPS", "1")
+os.environ.setdefault("POSSIBLE_USER_WARNINGS", "0")
+
 import lightning
 import torch
 import typer
@@ -21,16 +27,36 @@ from .utils import (
 
 def _suppress_third_party_warnings():
     """Suppress noisy third-party warnings that are not actionable by users."""
-    # Lightning promotional tips (litlogger, litmodels)
-    os.environ["LIGHTNING_DISABLE_TIPS"] = "1"
-    # HuggingFace Hub unauthenticated request warning
-    warnings.filterwarnings("ignore", message=".*unauthenticated.*")
-    # Lightning/PyTorch _pytree LeafSpec deprecation
-    warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
-    # Suppress HyenaDNA lm_head.weight unexpected key warning (benign)
+    # HuggingFace Hub unauthenticated request warning (uses logging, not warnings)
+    import huggingface_hub.utils.logging as hf_logging
+
+    hf_logging.set_verbosity_error()
+
+    # Suppress transformers logging and progress bars
     import transformers
 
     transformers.logging.set_verbosity_error()
+    transformers.logging.disable_progress_bar()
+
+    # Lightning/PyTorch _pytree LeafSpec deprecation
+    warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
+
+
+def _restore_third_party_warnings():
+    """Restore third-party warnings for verbose/debug mode."""
+    os.environ.pop("LIGHTNING_DISABLE_TIPS", None)
+    os.environ.pop("POSSIBLE_USER_WARNINGS", None)
+
+    import huggingface_hub.utils.logging as hf_logging
+
+    hf_logging.set_verbosity_warning()
+
+    import transformers
+
+    transformers.logging.set_verbosity_warning()
+    transformers.logging.enable_progress_bar()
+
+    warnings.resetwarnings()
 
 
 if TYPE_CHECKING:
@@ -105,10 +131,11 @@ def predict(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
 ):
     """Predict the given dataset using DeepChopper."""
-    _suppress_third_party_warnings()
-
     if verbose:
+        _restore_third_party_warnings()
         set_logging_level(logging.INFO)
+    else:
+        _suppress_third_party_warnings()
 
     # Path validation
     if isinstance(data_path, str):
@@ -136,11 +163,6 @@ def predict(
         if model == "rna002"
         else deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper-rna004")
     )
-
-    # Restore transformers logging after model loading
-    import transformers
-
-    transformers.logging.set_verbosity_warning()
 
     output_path = Path(output_path or "predictions")
     callbacks = [deepchopper.models.callbacks.CustomWriter(output_dir=output_path, write_interval="batch")]

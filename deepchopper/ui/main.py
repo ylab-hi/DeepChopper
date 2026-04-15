@@ -4,6 +4,10 @@ import warnings
 from functools import partial
 from pathlib import Path
 
+# Suppress third-party warnings before importing heavy libraries
+os.environ.setdefault("LIGHTNING_DISABLE_TIPS", "1")
+os.environ.setdefault("POSSIBLE_USER_WARNINGS", "0")
+
 import gradio as gr
 import lightning
 import torch
@@ -62,20 +66,21 @@ def predict(
     num_workers: int = 1,
 ):
     # Suppress noisy third-party warnings
-    os.environ["LIGHTNING_DISABLE_TIPS"] = "1"
-    warnings.filterwarnings("ignore", message=".*unauthenticated.*")
-    warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
+    import huggingface_hub.utils.logging as hf_logging
+
+    hf_logging.set_verbosity_error()
+
     import transformers
 
     transformers.logging.set_verbosity_error()
+    transformers.logging.disable_progress_bar()
+    warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
 
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
     dataset, tokenized_dataset = load_dataset(text, tokenizer)
 
     dataloader = DataLoader(tokenized_dataset, batch_size=batch_size, num_workers=num_workers, persistent_workers=True)
     model = deepchopper.DeepChopper.from_pretrained("yangliz5/deepchopper")
-
-    transformers.logging.set_verbosity_warning()
 
     accelerator = "gpu" if torch.cuda.is_available() else "cpu"
     trainer = lightning.pytorch.trainer.Trainer(
