@@ -76,7 +76,13 @@ def predict(
 
     transformers.logging.set_verbosity_error()
     transformers.logging.disable_progress_bar()
-    logging.getLogger("lightning.pytorch").setLevel(logging.WARNING)
+
+    # Suppress Lightning promotional tips while keeping GPU/device info
+    _suppressed = ("litlogger", "litmodels", "LitLogger", "LitModelCheckpoint", "seamless cloud")
+    tip_filter = logging.Filter()
+    tip_filter.filter = lambda record: not any(p in record.getMessage() for p in _suppressed)
+    logging.getLogger("lightning.pytorch").addFilter(tip_filter)
+
     warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
 
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
