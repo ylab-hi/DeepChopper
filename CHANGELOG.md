@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-04-15
+
+### 🐛 Bug Fixes
+
+- **Fix `deepchopper chop` panic with non-ACGTN characters** ([#123](https://github.com/ylab-hi/DeepChopper/issues/123)): Normalize FASTQ sequences using `deepchopper.normalize_seq()` before tokenization, and make `id_list2seq_i64`/`id_list2seq` robust against unknown token IDs
+- **Fix `use_return_dict` deprecation**: Pass `return_dict=True` explicitly in HyenaDNA model calls
+
+### 🔇 Noise Reduction
+
+- **Suppress third-party warnings**: Centralized warning suppression for HuggingFace Hub, Transformers, and Lightning promotional tips while keeping useful GPU/device info. Use `--verbose` to re-enable all warnings
+
+### 🔧 Build & Tooling
+
+- **CI Fix**: Override `target-cpu=native` with `RUSTFLAGS=""` to produce portable wheels that work on all x86-64 CPUs
+- **Documentation**: Add PyTorch CUDA/NCCL troubleshooting for HPC environments
+
 ## [1.3.2] - 2026-04-14
 
 ### 🐛 Bug Fixes

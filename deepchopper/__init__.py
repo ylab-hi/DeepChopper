@@ -5,7 +5,7 @@ from .deepchopper import *  # noqa: F403
 from .models import DeepChopper
 from .utils.suppress_warnings import suppress_third_party_warnings
 
-__version__ = "1.3.2"
+__version__ = "1.3.3"
 
 __all__ = ["DeepChopper", "__version__", "cli", "data", "eval", "models", "train", "ui", "utils"]
 
