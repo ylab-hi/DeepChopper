@@ -32,11 +32,17 @@ pub fn ascii_list2str(ascii_list: &[i64]) -> String {
 }
 
 pub fn id_list2seq_i64(id_list: &[i64]) -> String {
-    id_list.par_iter().map(|id| ID_TABLE_I64[id]).collect()
+    id_list
+        .par_iter()
+        .map(|id| *ID_TABLE_I64.get(id).unwrap_or(&'N'))
+        .collect()
 }
 
 pub fn id_list2seq(id_list: &[u8]) -> String {
-    id_list.par_iter().map(|id| ID_TABLE[id]).collect()
+    id_list
+        .par_iter()
+        .map(|id| *ID_TABLE.get(id).unwrap_or(&'N'))
+        .collect()
 }
 
 pub fn majority_voting(labels: &[i8], window_size: usize) -> Vec<i8> {
@@ -142,5 +148,19 @@ mod tests {
     fn test_id_list2seq_i64() {
         let id = vec![7, 8, 9, 10, 11];
         assert_eq!(id_list2seq_i64(&id), "ACGTN");
+    }
+
+    #[test]
+    fn test_id_list2seq_i64_with_unknown_tokens() {
+        // Special token IDs (0-6) should map to 'N' instead of panicking
+        let id = vec![0, 1, 6, 7, 8, 9, 10, 11];
+        assert_eq!(id_list2seq_i64(&id), "NNNACGTN");
+    }
+
+    #[test]
+    fn test_id_list2seq_with_unknown_tokens() {
+        // Special token IDs (0-6) should map to 'N' instead of panicking
+        let id: Vec<u8> = vec![0, 1, 6, 7, 8, 9, 10, 11];
+        assert_eq!(id_list2seq(&id), "NNNACGTN");
     }
 }

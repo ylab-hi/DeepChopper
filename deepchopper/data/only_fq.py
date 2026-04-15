@@ -56,9 +56,13 @@ def parse_fastq_file(file_path: Path, has_targets: bool = True) -> Iterator[dict
 
             encoded_qual = deepchopper.encode_qual(qual, deepchopper.default.QUAL_OFFSET)
 
+            # Normalize non-ACGTN characters to N to prevent UNK tokens
+            # in the HyenaDNA tokenizer (which would cause panics downstream)
+            normalized_seq = deepchopper.normalize_seq(seq, False)
+
             yield {
                 "id": name,
-                "seq": seq,
+                "seq": normalized_seq,
                 "qual": encoded_qual,
                 "target": target,
             }
