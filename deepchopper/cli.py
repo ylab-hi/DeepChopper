@@ -1,14 +1,6 @@
 import logging
-import os
-import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING
-
-# Set environment variables before importing lightning/transformers
-# so that they take effect at import time. These suppress noisy
-# third-party warnings. Use --verbose to re-enable all warnings.
-os.environ.setdefault("LIGHTNING_DISABLE_TIPS", "1")
-os.environ.setdefault("POSSIBLE_USER_WARNINGS", "0")
 
 import lightning
 import torch
@@ -23,58 +15,7 @@ import deepchopper
 from .utils import (
     highlight_target,
 )
-
-
-class _LightningTipFilter(logging.Filter):
-    """Filter out Lightning promotional tip messages while keeping useful info."""
-
-    _SUPPRESSED_PATTERNS = ("litlogger", "litmodels", "LitLogger", "LitModelCheckpoint", "seamless cloud")
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        msg = record.getMessage()
-        return not any(pattern in msg for pattern in self._SUPPRESSED_PATTERNS)
-
-
-_tip_filter = _LightningTipFilter()
-
-
-def _suppress_third_party_warnings():
-    """Suppress noisy third-party warnings that are not actionable by users."""
-    # HuggingFace Hub unauthenticated request warning (uses logging, not warnings)
-    import huggingface_hub.utils.logging as hf_logging
-
-    hf_logging.set_verbosity_error()
-
-    # Suppress transformers logging and progress bars
-    import transformers
-
-    transformers.logging.set_verbosity_error()
-    transformers.logging.disable_progress_bar()
-
-    # Suppress Lightning promotional tips while keeping GPU/device info
-    logging.getLogger("lightning.pytorch.utilities.rank_zero").addFilter(_tip_filter)
-
-    # Lightning/PyTorch _pytree LeafSpec deprecation
-    warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
-
-
-def _restore_third_party_warnings():
-    """Restore third-party warnings for verbose/debug mode."""
-    os.environ.pop("LIGHTNING_DISABLE_TIPS", None)
-    os.environ.pop("POSSIBLE_USER_WARNINGS", None)
-
-    import huggingface_hub.utils.logging as hf_logging
-
-    hf_logging.set_verbosity_warning()
-
-    import transformers
-
-    transformers.logging.set_verbosity_warning()
-    transformers.logging.enable_progress_bar()
-
-    logging.getLogger("lightning.pytorch.utilities.rank_zero").removeFilter(_tip_filter)
-
-    warnings.resetwarnings()
+from .utils.suppress_warnings import restore_third_party_warnings
 
 
 if TYPE_CHECKING:
@@ -150,10 +91,8 @@ def predict(
 ):
     """Predict the given dataset using DeepChopper."""
     if verbose:
-        _restore_third_party_warnings()
+        restore_third_party_warnings()
         set_logging_level(logging.INFO)
-    else:
-        _suppress_third_party_warnings()
 
     # Path validation
     if isinstance(data_path, str):

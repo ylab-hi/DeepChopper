@@ -1,12 +1,6 @@
 import multiprocessing
-import os
-import warnings
 from functools import partial
 from pathlib import Path
-
-# Suppress third-party warnings before importing heavy libraries
-os.environ.setdefault("LIGHTNING_DISABLE_TIPS", "1")
-os.environ.setdefault("POSSIBLE_USER_WARNINGS", "0")
 
 import gradio as gr
 import lightning
@@ -65,26 +59,6 @@ def predict(
     batch_size: int = 1,
     num_workers: int = 1,
 ):
-    # Suppress noisy third-party warnings
-    import logging
-
-    import huggingface_hub.utils.logging as hf_logging
-
-    hf_logging.set_verbosity_error()
-
-    import transformers
-
-    transformers.logging.set_verbosity_error()
-    transformers.logging.disable_progress_bar()
-
-    # Suppress Lightning promotional tips while keeping GPU/device info
-    _suppressed = ("litlogger", "litmodels", "LitLogger", "LitModelCheckpoint", "seamless cloud")
-    tip_filter = logging.Filter()
-    tip_filter.filter = lambda record: not any(p in record.getMessage() for p in _suppressed)
-    logging.getLogger("lightning.pytorch.utilities.rank_zero").addFilter(tip_filter)
-
-    warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
-
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
     dataset, tokenized_dataset = load_dataset(text, tokenizer)
 

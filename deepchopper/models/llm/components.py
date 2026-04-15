@@ -74,7 +74,7 @@ class TokenClassification(PreTrainedModel):
         input_quals: torch.Tensor,
         inputs_embeds: torch.FloatTensor | None = None,
         output_hidden_states: bool | None = None,
-        return_dict: bool | None = True,
+        return_dict: bool = True,
     ):
         transformer_outputs = self.hyenadna(
             input_ids,
