@@ -66,6 +66,8 @@ def predict(
     num_workers: int = 1,
 ):
     # Suppress noisy third-party warnings
+    import logging
+
     import huggingface_hub.utils.logging as hf_logging
 
     hf_logging.set_verbosity_error()
@@ -74,6 +76,7 @@ def predict(
 
     transformers.logging.set_verbosity_error()
     transformers.logging.disable_progress_bar()
+    logging.getLogger("lightning.pytorch").setLevel(logging.WARNING)
     warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
 
     tokenizer = deepchopper.models.llm.load_tokenizer_from_hyena_model(model_name="hyenadna-small-32k-seqlen")
