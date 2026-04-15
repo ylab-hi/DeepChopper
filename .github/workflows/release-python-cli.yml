@@ -78,6 +78,8 @@ jobs:
           sccache: "true"
           manylinux: auto
           working-directory: ./py_cli
+        env:
+          RUSTFLAGS: ""
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
@@ -136,6 +138,8 @@ jobs:
           sccache: "true"
           manylinux: musllinux_1_2
           working-directory: ./py_cli
+        env:
+          RUSTFLAGS: ""
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
