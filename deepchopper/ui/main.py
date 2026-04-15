@@ -81,7 +81,7 @@ def predict(
     _suppressed = ("litlogger", "litmodels", "LitLogger", "LitModelCheckpoint", "seamless cloud")
     tip_filter = logging.Filter()
     tip_filter.filter = lambda record: not any(p in record.getMessage() for p in _suppressed)
-    logging.getLogger("lightning.pytorch").addFilter(tip_filter)
+    logging.getLogger("lightning.pytorch.utilities.rank_zero").addFilter(tip_filter)
 
     warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
 

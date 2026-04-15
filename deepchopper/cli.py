@@ -52,7 +52,7 @@ def _suppress_third_party_warnings():
     transformers.logging.disable_progress_bar()
 
     # Suppress Lightning promotional tips while keeping GPU/device info
-    logging.getLogger("lightning.pytorch").addFilter(_tip_filter)
+    logging.getLogger("lightning.pytorch.utilities.rank_zero").addFilter(_tip_filter)
 
     # Lightning/PyTorch _pytree LeafSpec deprecation
     warnings.filterwarnings("ignore", message=".*LeafSpec.*deprecated.*")
@@ -72,7 +72,7 @@ def _restore_third_party_warnings():
     transformers.logging.set_verbosity_warning()
     transformers.logging.enable_progress_bar()
 
-    logging.getLogger("lightning.pytorch").removeFilter(_tip_filter)
+    logging.getLogger("lightning.pytorch.utilities.rank_zero").removeFilter(_tip_filter)
 
     warnings.resetwarnings()
 
