@@ -17,7 +17,6 @@ from .utils import (
 )
 from .utils.suppress_warnings import restore_third_party_warnings
 
-
 if TYPE_CHECKING:
     from lightning.pytorch import LightningDataModule
 
