@@ -15,7 +15,7 @@ use crate::{kmer::to_kmer_target_region, types::Element};
 
 use super::{triat::Encoder, FqEncoderOption};
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Builder, Default, Clone)]
 pub struct JsonEncoder {
     pub option: FqEncoderOption,

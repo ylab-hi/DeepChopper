@@ -27,7 +27,7 @@ pub struct ParquetData {
     pub target: Vec<Element>, // kmer_target
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Builder, Default, Clone, Serialize, Deserialize)]
 pub struct ParquetEncoder {
     pub option: FqEncoderOption,

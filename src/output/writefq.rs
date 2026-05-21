@@ -369,10 +369,10 @@ mod tests {
         write_zip_fq_parallel(&test_records, file_path.clone(), Some(2)).unwrap();
 
         // Test streaming reader
-        let mut streaming_reader = StreamingFastqReader::new(&file_path).unwrap();
+        let streaming_reader = StreamingFastqReader::new(&file_path).unwrap();
 
         let mut count = 0;
-        while let Some(result) = streaming_reader.next() {
+        for result in streaming_reader {
             let record = result.unwrap();
             assert!(count < test_records.len());
 
