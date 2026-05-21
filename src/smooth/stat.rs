@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 
 const FLANK_SIZE_COUNT_PLOYA: usize = 5;
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Default, Deserialize, Serialize, Clone)]
 pub struct StatResult {
     #[pyo3(get, set)]

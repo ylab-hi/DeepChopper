@@ -24,7 +24,7 @@ pub const MIN_SEQ_SIZE: usize = 20;
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 // 23      1       0       0       0       0       0       0       +       seq     51      3       27      chr12   133275309       11447342     11447366 1       24,     3,      11447342,
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Default, Builder, Clone, Serialize, Deserialize)]
 pub struct PslAlignment {
     #[pyo3(get, set)]

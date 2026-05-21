@@ -24,7 +24,7 @@ use super::{triat::Encoder, FqEncoderOption};
 use needletail::Sequence;
 use rayon::prelude::*;
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Builder, Default, Clone)]
 #[builder(build_fn(skip))] // Specify custom build function
 pub struct TensorEncoder {
