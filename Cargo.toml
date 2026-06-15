@@ -160,4 +160,4 @@ sysinfo = "0.39"
 
 
 [build-dependencies]
-pyo3-build-config = "0.28"
+pyo3-build-config = "0.29"
