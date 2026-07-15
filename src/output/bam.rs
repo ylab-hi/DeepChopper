@@ -191,14 +191,19 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(
         thread::available_parallelism().unwrap_or(NonZeroUsize::MIN)
     };
 
-    let decoder = bgzf::io::MultithreadedReader::with_worker_count(worker_count, file);
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(worker_count.get())
+        .build()?;
 
-    let mut reader = bam::io::Reader::from(decoder);
-    let _header = reader.read_header()?;
+    pool.install(|| {
+        let decoder = bgzf::io::MultithreadedReader::new(file);
 
-    println!("Reading bam file with {} threads", worker_count);
+        let mut reader = bam::io::Reader::from(decoder);
+        let _header = reader.read_header()?;
 
-    let res: Result<HashMap<String, BamRecord>> = reader
+        println!("Reading bam file with {} threads", worker_count);
+
+        let res: Result<HashMap<String, BamRecord>> = reader
         .records()
         .par_bridge()
         .map(|result| {
@@ -248,7 +253,8 @@ pub fn read_bam_records_parallel<P: AsRef<Path>>(
             ))
         })
         .collect();
-    res
+        res
+    })
 }
 
 pub fn read_bam_records<P: AsRef<Path>>(path: P) -> Result<HashMap<String, BamRecord>> {

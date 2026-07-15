@@ -4,7 +4,7 @@ use noodles::bam;
 use noodles::bgzf;
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
-use std::{fs::File, num::NonZeroUsize, thread};
+use std::fs::File;
 
 use noodles::sam::alignment::record::data::field::Tag;
 use noodles::sam::alignment::record::data::field::Value;
@@ -25,18 +25,11 @@ struct Cli {
     debug: u8,
 }
 
-fn count_chemeric_reads(bam: &Path, threads: Option<usize>) -> Result<usize> {
+fn count_chemeric_reads(bam: &Path, _threads: Option<usize>) -> Result<usize> {
     let file = File::open(bam)?;
 
-    let worker_count = if let Some(threads) = threads {
-        NonZeroUsize::new(threads)
-            .unwrap()
-            .min(thread::available_parallelism().unwrap_or(NonZeroUsize::MIN))
-    } else {
-        thread::available_parallelism().unwrap_or(NonZeroUsize::MIN)
-    };
-
-    let decoder = bgzf::io::MultithreadedReader::with_worker_count(worker_count, file);
+    // The multithreaded reader uses the global rayon thread pool configured in `main`.
+    let decoder = bgzf::io::MultithreadedReader::new(file);
 
     let mut reader = bam::io::Reader::from(decoder);
     let _header = reader.read_header()?;

@@ -1,8 +1,6 @@
 use std::fs::File;
-use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use std::thread;
 
 use ahash::HashMap;
 use anyhow::Result;
@@ -267,12 +265,10 @@ fn main() -> Result<()> {
     // Create temporary output file in the same directory as the final output
     let temp_output = output_dir.join(format!(".deepchopper_temp_{}.fq.gz", std::process::id()));
 
-    // Set up the writer for incremental writing
-    let worker_count = NonZeroUsize::new(cli.threads.unwrap_or(2))
-        .map(|count| count.min(thread::available_parallelism().unwrap()))
-        .unwrap();
+    // Set up the writer for incremental writing.
+    // The multithreaded writer uses the global rayon thread pool configured above.
     let sink = File::create(&temp_output)?;
-    let encoder = bgzf::io::MultithreadedWriter::with_worker_count(worker_count, sink);
+    let encoder = bgzf::io::MultithreadedWriter::new(sink);
     let writer = Mutex::new(fastq::io::Writer::new(encoder));
 
     // Stream FASTQ records and process with parallel chunks

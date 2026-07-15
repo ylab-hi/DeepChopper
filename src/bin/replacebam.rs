@@ -4,7 +4,7 @@ use noodles::bam;
 use noodles::bgzf;
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
-use std::{fs::File, num::NonZeroUsize, thread};
+use std::fs::File;
 
 use ahash::HashMap;
 use ahash::HashSet;
@@ -32,19 +32,12 @@ struct Cli {
 
 fn load_internal_read<P: AsRef<Path>>(
     path: P,
-    threads: Option<usize>,
+    _threads: Option<usize>,
 ) -> Result<HashMap<BString, bam::record::Record>> {
     let file = File::open(path)?;
 
-    let worker_count = if let Some(threads) = threads {
-        NonZeroUsize::new(threads)
-            .unwrap()
-            .min(thread::available_parallelism().unwrap_or(NonZeroUsize::MIN))
-    } else {
-        thread::available_parallelism().unwrap_or(NonZeroUsize::MIN)
-    };
-
-    let decoder = bgzf::io::MultithreadedReader::with_worker_count(worker_count, file);
+    // The multithreaded reader uses the global rayon thread pool configured in `main`.
+    let decoder = bgzf::io::MultithreadedReader::new(file);
 
     let mut reader = bam::io::Reader::from(decoder);
     let _header = reader.read_header()?;
@@ -80,15 +73,8 @@ fn replace_internal<P: AsRef<Path>>(dc_path: P, do_path: P, threads: Option<usiz
         .collect();
 
     let file = File::open(do_path)?;
-    let worker_count = if let Some(threads) = threads {
-        NonZeroUsize::new(threads)
-            .unwrap()
-            .min(thread::available_parallelism().unwrap_or(NonZeroUsize::MIN))
-    } else {
-        thread::available_parallelism().unwrap_or(NonZeroUsize::MIN)
-    };
-
-    let decoder = bgzf::io::MultithreadedReader::with_worker_count(worker_count, file);
+    // The multithreaded reader uses the global rayon thread pool configured in `main`.
+    let decoder = bgzf::io::MultithreadedReader::new(file);
     let mut reader = bam::io::Reader::from(decoder);
     let header = reader.read_header()?;
 

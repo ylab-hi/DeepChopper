@@ -55,13 +55,15 @@ impl ChopType {
     }
 }
 
+type SplitRecordsResult<'a> = (usize, Vec<String>, Vec<&'a BStr>, Vec<&'a BStr>);
+
 fn _split_records_by_remove_internal<'a>(
     seq: &'a BStr,
     id: &'a BStr,
     qual: &'a [u8],
     target: &'a [Range<usize>],
     min_retain_interval_length: Option<usize>,
-) -> Result<(usize, Vec<String>, Vec<&'a BStr>, Vec<&'a BStr>)> {
+) -> Result<SplitRecordsResult<'a>> {
     let mut seqs = Vec::new();
     let mut quals = Vec::new();
     let mut selected_intervals = Vec::new();
@@ -344,7 +346,7 @@ mod tests {
 
     #[test]
     fn test_generate_unmaped_intervals() {
-        let intervals = vec![8100..8123];
+        let intervals: Vec<Range<usize>> = std::iter::once(8100..8123).collect();
         let seq_len = 32768;
         let selected_intervals = generate_unmaped_intervals(&intervals, seq_len);
         assert_eq!(selected_intervals, vec![0..8100, 8123..32767]);

@@ -20,7 +20,7 @@ pub fn parse_target_from_id(src: &[u8]) -> Result<Vec<Range<usize>>> {
     // TODO: add code to parse negative case and then return [0, 0) <03-02-24, Yangyang Li>
     // if no | in the id, return [0, 0)
     if !src.contains(&b'|') {
-        return Ok(vec![0..0]);
+        return Ok(std::iter::once(0..0).collect());
     }
     // @738735b7-2105-460e-9e56-da980ef816c2+4f605fb4-4107-4827-9aed-9448d02834a8|462:528,100:120
     // remove content before |
@@ -41,7 +41,7 @@ pub fn parse_target_from_id(src: &[u8]) -> Result<Vec<Range<usize>>> {
 
     if result.is_err() {
         println!("Invalid target format - expected 'start:end' or 'start1:end1-start2:end2'. Defaulting to [0,0]");
-        Ok(vec![0..0])
+        Ok(std::iter::once(0..0).collect())
     } else {
         result
     }

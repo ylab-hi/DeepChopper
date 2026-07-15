@@ -228,20 +228,26 @@ pub fn write_zip_fq_parallel(
         .map(|count| count.min(thread::available_parallelism().unwrap()))
         .unwrap();
 
-    let sink = File::create(file_path)?;
-    let encoder = bgzf::io::MultithreadedWriter::with_worker_count(worker_count, sink);
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(worker_count.get())
+        .build()?;
 
-    let mut writer = fastq::io::Writer::new(encoder);
+    pool.install(|| -> Result<()> {
+        let sink = File::create(file_path)?;
+        let encoder = bgzf::io::MultithreadedWriter::new(sink);
 
-    for record in records {
-        let record = fastq::Record::new(
-            Definition::new(record.id.to_vec(), ""),
-            record.seq.to_vec(),
-            record.qual.to_vec(),
-        );
-        writer.write_record(&record)?;
-    }
-    Ok(())
+        let mut writer = fastq::io::Writer::new(encoder);
+
+        for record in records {
+            let record = fastq::Record::new(
+                Definition::new(record.id.to_vec(), ""),
+                record.seq.to_vec(),
+                record.qual.to_vec(),
+            );
+            writer.write_record(&record)?;
+        }
+        Ok(())
+    })
 }
 
 pub fn write_fq_parallel_for_noodle_record(
@@ -253,15 +259,21 @@ pub fn write_fq_parallel_for_noodle_record(
         .map(|count| count.min(thread::available_parallelism().unwrap()))
         .unwrap();
 
-    let sink = File::create(file_path)?;
-    let encoder = bgzf::io::MultithreadedWriter::with_worker_count(worker_count, sink);
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(worker_count.get())
+        .build()?;
 
-    let mut writer = fastq::io::Writer::new(encoder);
+    pool.install(|| -> Result<()> {
+        let sink = File::create(file_path)?;
+        let encoder = bgzf::io::MultithreadedWriter::new(sink);
 
-    for record in records {
-        writer.write_record(record)?;
-    }
-    Ok(())
+        let mut writer = fastq::io::Writer::new(encoder);
+
+        for record in records {
+            writer.write_record(record)?;
+        }
+        Ok(())
+    })
 }
 
 pub fn read_noodle_records_from_gzip_fq<P: AsRef<Path>>(file_path: P) -> Result<Vec<FastqRecord>> {

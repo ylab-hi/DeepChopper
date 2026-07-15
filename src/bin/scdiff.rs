@@ -11,7 +11,7 @@ use std::path::PathBuf;
 
 use bstr::BString;
 use noodles::sam::alignment::record::cigar::op::Op;
-use std::{fs::File, num::NonZeroUsize, thread};
+use std::fs::File;
 
 use ahash::HashMap;
 use ahash::HashSet;
@@ -67,7 +67,7 @@ fn compare_right_softclip_for_terminal_chop<P: AsRef<Path>>(
     cpbam: P,
     bam: P,
     align_end_diff: usize,
-    threads: Option<usize>,
+    _threads: Option<usize>,
     selected_reads: Option<PathBuf>,
 ) -> Result<HashMap<String, isize>> {
     let selected_reads = match selected_reads {
@@ -79,18 +79,11 @@ fn compare_right_softclip_for_terminal_chop<P: AsRef<Path>>(
         log::info!("selected reads: {}", selected_reads.len());
     }
 
-    let worker_count = if let Some(threads) = threads {
-        std::num::NonZeroUsize::new(threads)
-            .unwrap()
-            .min(thread::available_parallelism().unwrap_or(NonZeroUsize::MIN))
-    } else {
-        thread::available_parallelism().unwrap_or(NonZeroUsize::MIN)
-    };
-
     let cpfile = File::open(cpbam.as_ref())?;
     let bamfile = File::open(bam.as_ref())?;
 
-    let bamdecoder = bgzf::io::MultithreadedReader::with_worker_count(worker_count, bamfile);
+    // The multithreaded readers use the global rayon thread pool configured in `main`.
+    let bamdecoder = bgzf::io::MultithreadedReader::new(bamfile);
     let mut bamreader = bam::io::Reader::from(bamdecoder);
     let _header = bamreader.read_header()?;
 
@@ -114,7 +107,7 @@ fn compare_right_softclip_for_terminal_chop<P: AsRef<Path>>(
         })
         .collect();
 
-    let cpdecoder = bgzf::io::MultithreadedReader::with_worker_count(worker_count, cpfile);
+    let cpdecoder = bgzf::io::MultithreadedReader::new(cpfile);
     let mut cpreader = bam::io::Reader::from(cpdecoder);
     let _header = cpreader.read_header()?;
 

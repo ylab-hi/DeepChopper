@@ -17,7 +17,7 @@ use noodles::bam;
 
 use noodles::sam::alignment::record::data::field::Tag;
 use noodles::sam::alignment::record::data::field::Value;
-use std::{num::NonZeroUsize, thread};
+
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -45,19 +45,12 @@ struct Cli {
 
 fn summary_sa_info<P: AsRef<Path>>(
     bam: P,
-    threads: Option<usize>,
+    _threads: Option<usize>,
     names: Option<HashSet<String>>,
 ) -> Result<HashMap<String, Vec<String>>> {
-    let worker_count = if let Some(threads) = threads {
-        std::num::NonZeroUsize::new(threads)
-            .unwrap()
-            .min(thread::available_parallelism().unwrap_or(NonZeroUsize::MIN))
-    } else {
-        thread::available_parallelism().unwrap_or(NonZeroUsize::MIN)
-    };
-
     let file = File::open(bam.as_ref())?;
-    let decoder = bgzf::io::MultithreadedReader::with_worker_count(worker_count, file);
+    // The multithreaded reader uses the global rayon thread pool configured in `main`.
+    let decoder = bgzf::io::MultithreadedReader::new(file);
     let mut reader = bam::io::Reader::from(decoder);
     let header = reader.read_header()?;
     let references = header.reference_sequences();

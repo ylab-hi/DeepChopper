@@ -839,6 +839,7 @@ fn parse_psl_by_qname(file_path: PathBuf) -> Result<HashMap<String, Vec<smooth::
     output_prefix=None,
     max_batch_size=None,
 ))]
+#[allow(clippy::too_many_arguments)]
 fn py_predict_cli(
     predicts: Vec<PathBuf>,
     fq: PathBuf,
