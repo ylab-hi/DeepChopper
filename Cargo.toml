@@ -143,7 +143,7 @@ lexical = "7.0"
 bstr = "1.12.1"
 lazy_static = "1.5.0"
 tempfile = "3.24"
-parquet = "58.3"
+parquet = "59.0"
 arrow = "59.0"
 candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.10.1" }
 colored = "3"
